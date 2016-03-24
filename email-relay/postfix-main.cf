@@ -1,0 +1,51 @@
+# See /usr/share/postfix/main.cf.dist for a commented, more complete version
+
+
+# Debian specific:  Specifying a file name will cause the first
+# line of that file to be used as the name.  The Debian default
+# is /etc/mailname.
+#myorigin = /etc/mailname
+
+smtpd_banner = $myhostname ESMTP smtpd
+#smtpd_banner = $myhostname ESMTP $mail_name ($mail_version)
+biff = no
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+# Uncomment the next line to generate "delayed mail" warnings
+#delay_warning_time = 4h
+
+# readme_directory: The location of the Postfix README files.
+readme_directory = no
+
+
+inet_interfaces = all
+#inet_protocols = ipv4
+inet_protocols = all
+myhostname = __POSTFIX_HOSTNAME__
+#mydomain = example.net
+myorigin = $mydomain
+#proxy_interfaces = __POSTFIX_HOSTNAME__
+#smtpd_client_restrictions = permit_mynetworks, permit_sasl_authenticated, reject
+#smtpd_helo_restrictions = reject_unknown_helo_hostname
+#smtpd_sender_restrictions = reject_unknown_sender_domain
+smtpd_relay_restrictions = permit_mynetworks permit_sasl_authenticated reject_unauth_destination
+#smtpd_data_restrictions = reject_unauth_pipelining
+#mynetworks = 127.0.0.0/8 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8 [fe80::]/10 [::ffff:127.0.0.0]/104 [::1]/128
+#mynetworks_style = class
+mynetworks_style = subnet
+#relayhost = 
+#smtp_tls_security_level = may
+smtp_tls_security_level = dane
+smtp_dns_support_level = dnssec
+smtp_host_lookup = dns
+
+
+# OpenDKIM
+milter_default_action = accept
+milter_protocol = 2
+#smtpd_milters = inet:localhost:8891
+#non_smtpd_milters = inet:localhost:8891
+smtpd_milters = local:/var/run/opendkim/opendkim.sock
+non_smtpd_milters = local:/var/run/opendkim/opendkim.sock

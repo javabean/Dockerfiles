@@ -1,0 +1,612 @@
+# https://docs.docker.com/compose/compose-file/
+# https://hub.docker.com/explore/
+
+version: "2"
+
+services:
+
+  base-service:
+    build: .
+     # https://github.com/docker/compose/issues/2778
+     # https://github.com/docker/compose/pull/2978
+     # default tmpfs opts: rw,noexec,nosuid,nodev,size=65536k / 50%
+#    tmpfs:
+#    - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
+#    - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
+#    - /tmp
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "9"
+    cpu_shares: 1024
+    mem_limit: 128m
+    memswap_limit: 192m
+#    read_only: true
+    restart: none
+
+########################################################################
+
+  http-proxy:
+    extends:
+      service: base-service
+    build: apache-proxy
+    container_name: http-proxy
+    ports:
+    - "80:80"
+    - "443:443"
+#    depends_on:
+#    - tomcat
+#    - owncloud
+#    - prestashop
+#    - joomla
+    links:
+    - tomcat:tomcat
+    - owncloud:owncloud
+    - prestashop:prestashop
+    - joomla:joomla
+    volumes:
+#    - /opt/http-proxy/mods-available:/opt/http-proxy/mods-available:ro
+    - /opt/http-proxy/mods-enabled:/opt/http-proxy/mods-enabled:ro
+#    - /opt/http-proxy/conf-available:/opt/http-proxy/conf-available:ro
+    - /opt/http-proxy/conf-enabled:/opt/http-proxy/conf-enabled:ro
+    - /opt/http-proxy/conf-include:/opt/http-proxy/conf-include:ro
+#    - /opt/http-proxy/sites-available:/opt/http-proxy/sites-available:ro
+    - /opt/http-proxy/sites-enabled:/opt/http-proxy/sites-enabled:ro
+    - /opt/http-proxy/tls:/opt/http-proxy/tls:ro
+#    - /opt/letsencrypt:/opt/http-proxy/tls:ro
+    - /srv/http-proxy:/var/www
+    - /srv/logs/http-proxy:/var/log
+#    networks:
+#    # "default" needed to get connectivity from outside(!)
+#    - default
+#    - tomcat-front
+#    - owncloud-front
+#    - prestashop-front
+#    - joomla-front
+    cpu_shares: 256
+    mem_limit: 128m
+    memswap_limit: 192m
+    restart: unless-stopped
+
+########################################################################
+
+  tomcat:
+    extends:
+      service: base-service
+    build:
+      context: tomcat
+      args:
+      - TOMCAT_VERSION=7.0.68
+    container_name: tomcat
+    expose:
+    - "8080"
+    - "8443"
+    environment:
+    - CATALINA_BASE=/opt/tomcat/my-instance
+    links:
+    - email-relay:email-relay
+    volumes:
+    - /opt/tomcat:/opt/tomcat
+    - /srv/logs/tomcat:/var/log
+    networks:
+    - default
+#    - tomcat-front
+    - tomcat-back-internal
+    - tomcat-back
+    mem_limit: 1024m
+    memswap_limit: 1024m
+#    memory-swappiness: "10"
+    restart: on-failure:2
+
+########################################################################
+
+  owncloud:
+    extends:
+      service: base-service
+#    image: owncloud:latest
+    build:
+      context: owncloud
+      args:
+      - OWNCLOUD_VERSION=stable
+    container_name: owncloud
+    expose:
+    - "80"
+    - "443"
+#    depends_on:
+#    - redis-owncloud
+#    - email-relay
+    links:
+#    - mysql:mysql
+#    - memcached-owncloud:memcached
+    - redis-owncloud:redis
+    - email-relay:email-relay
+    volumes:
+    - /srv/owncloud/acme-challenge/.well-known:/var/www/owncloud/.well-known
+    - /opt/owncloud/config:/var/www/owncloud/config
+    - /opt/owncloud/apps:/var/www/owncloud/apps2
+    - /opt/owncloud/ip-restriction.conf:/etc/apache2/conf-enabled/ip-restriction.conf:ro
+    - /srv/owncloud:/srv/owncloud
+    - /srv/logs/owncloud:/var/log
+    networks:
+    - default
+#    - owncloud-front
+    - owncloud-back-internal
+    - owncloud-back
+    mem_limit: 384m
+    memswap_limit: 512m
+    restart: unless-stopped
+
+########################################################################
+
+  prestashop:
+    extends:
+      service: base-service
+#    image: prestashop/prestashop:1.6
+    build:
+      context: prestashop
+      args:
+      - PRESTASHOP_VERSION=1.6.0.14
+    container_name: prestashop
+    expose:
+    - "80"
+    - "443"
+    environment:
+    - PS_FOLDER_ADMIN=admin
+    - PS_FOLDER_INSTALL=install
+    - PS_INSTALL_AUTO=0
+    - DB_SERVER=mysql
+    - DB_USER=
+    - DB_PASSWD=
+    #- DB_NAME=
+    - PS_LANGUAGE=fr
+    - PS_COUNTRY=fr
+    - PS_TIMEZONE=Europe/Paris
+    - PS_DOMAIN=www.example.com
+    - ADMIN_FIRST_NAME=Admin
+    - ADMIN_LAST_NAME=Istrator
+    - ADMIN_MAIL=prestashop-admin@example.com
+    - ADMIN_PASSWD=changeme
+    - ADMIN_NEWSLETTER=0
+    - ADMIN_SEND_EMAIL=1
+#    depends_on:
+#    - mysql
+#    - email-relay
+    links:
+    - mysql:mysql
+#    - memcached-prestashop:memcached
+    - email-relay:email-relay
+    volumes:
+    - /srv/prestashop/acme-challenge/.well-known:/var/www/html/.well-known
+    - /srv/prestashop/htaccess:/var/www/html/.htaccess
+    - /srv/prestashop/override:/var/www/html/override
+    #- /srv/prestashop/mails:/var/www/html/mails
+    # tous les dossiers du dossier /img, sauf /img/admin et /img/jquery-ui
+    - /srv/prestashop/img:/var/www/html/img
+    # Ne copiez que les modules que vous avez ajoutés depuis que vous avez installé PrestaShop la première fois (et qui ne font donc pas partie de l'installation par défaut).
+    - /srv/prestashop/modules:/var/www/html/modules
+    #- /srv/prestashop/themes/votreTheme:/var/www/html/themes/votreTheme
+    # produits téléchargeables, les fichiers attachés, et les produits personnalisables
+    - /srv/prestashop/download:/var/www/html/download
+    - /srv/prestashop/upload:/var/www/html/upload
+    - /srv/prestashop/config:/var/www/html/config
+#    - /srv/prestashop/config/config.inc.php:/var/www/html/config/config.inc.php
+#    - /srv/prestashop/config/defines.inc.php:/var/www/html/config/defines.inc.php
+#    - /srv/prestashop/config/settings.inc.php:/var/www/html/config/settings.inc.php
+#    - /srv/prestashop/config/smarty.config.inc.php:/var/www/html/config/smarty.config.inc.php
+    #- /srv/prestashop/translations/myTranslation:/var/www/html/translations/myTranslation
+    - /srv/prestashop/translations/fr:/var/www/html/translations/fr
+    - /srv/logs/prestashop:/var/log
+    networks:
+    - default
+#    - prestashop-front
+    - prestashop-back-internal
+    - prestashop-back
+    mem_limit: 384m
+    memswap_limit: 512m
+    restart: unless-stopped
+
+########################################################################
+
+  joomla:
+    extends:
+      service: base-service
+#    image: joomla:3.4-apache
+    build:
+      context: joomla
+      args:
+      - JOOMLA_VERSION=3.4.8
+    container_name: joomla
+    expose:
+    - "80"
+    - "443"
+    #environment:
+    #- JOOMLA_DB_HOST=mysql
+    #- JOOMLA_DB_USER=
+    #- JOOMLA_DB_PASSWORD=
+    #- JOOMLA_DB_NAME=
+#    depends_on:
+#    - mysql
+#    - email-relay
+    links:
+    - mysql:mysql
+#    - memcached-joomla:memcached
+    - email-relay:email-relay
+    volumes:
+    - /srv/logs/joomla:/var/log
+    - /srv/joomla/acme-challenge/.well-known:/var/www/html/.well-known
+    - /srv/joomla/administrator:/var/www/html/administrator
+    - /srv/joomla/components:/var/www/html/components
+    - /srv/joomla/images:/var/www/html/images
+    - /srv/joomla/language:/var/www/html/language
+    - /srv/joomla/libraries:/var/www/html/libraries
+    - /srv/joomla/media:/var/www/html/media
+    - /srv/joomla/modules:/var/www/html/modules
+    - /srv/joomla/plugins:/var/www/html/plugins
+    - /srv/joomla/templates:/var/www/html/templates
+    #- /srv/joomla/logs:/var/www/html/logs
+    #- /srv/joomla/tmp:/var/www/html/tmp
+    - /srv/joomla/configuration.php:/var/www/html/configuration.php
+    networks:
+    - default
+#    - joomla-front
+    - joomla-back-internal
+    - joomla-back
+    mem_limit: 384m
+    memswap_limit: 512m
+    restart: on-failure:5
+
+########################################################################
+
+  email-relay:
+    extends:
+      service: base-service
+    build:
+      context: email-relay
+      args:
+      - POSTFIX_HOSTNAME=myhost.example.net
+    container_name: email-relay
+    expose:
+    - "25"
+    volumes:
+    - /opt/email-relay:/opt/email-relay:ro
+#    - /srv/logs/email-relay:/var/log
+    networks:
+    - tomcat-back
+    - owncloud-back
+    - prestashop-back
+    - joomla-back
+    logging:
+      driver: "none"
+    cpu_shares: 128
+    mem_limit: 64m
+    memswap_limit: 96m
+#    memory-swappiness: "10"
+    restart: always
+
+########################################################################
+
+  mysql:
+    extends:
+      service: base-service
+#    image: mysql:5.6
+    build:
+      context: mysql
+      args:
+      #- MYSQL_VERSION=5.6
+      - MYSQL_VERSION=${MYSQL_VERSION}
+    container_name: mysql
+    expose:
+    - "3306"
+    environment:
+    - MYSQL_ROOT_PASSWORD=
+#    - MYSQL_CUSTOM_OPTS=--table_open_cache=500 --max_connections=51
+#    - MYSQL_CUSTOM_OPTS=--key_buffer_size=4M --sort_buffer_size=128K --read_buffer_size=64K --net_buffer_length=8K
+#    - MYSQL_CUSTOM_OPTS=--innodb_buffer_pool_size=64M --innodb_log_buffer_size=8M
+#    - MYSQL_CUSTOM_OPTS=--default-storage-engine=MyISAM --default_tmp_storage_engine=MyISAM
+#    - MYSQL_CUSTOM_OPTS=--sql-mode=NO_ENGINE_SUBSTITUTION
+    # http://bugs.mysql.com/bug.php?id=68287
+    # There are thresholds based on table_open_cache and table_definition_cache and max_connections and crossing the thresholds produces a big increase in RAM used. The thresholds work by first deciding if the server size is small, medium or large.
+    # Small: all three are same as or less than defaults (2000, 400, 151). (max 52.6 megabytes RAM)
+    # Large: any of the three is more than twice the default. (min 400 megabytes RAM)
+    # Medium: others. (90.7-98.4 megabytes RAM)
+    # instead of turning off performance_schema, you can reduce RAM usage with --table_open_cache=400 --table_definition_cache=400 --max_connections=151
+    - MYSQL_CUSTOM_OPTS=--performance_schema=off
+    volumes:
+    - /opt/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    - /srv/mysql/data:/var/lib/mysql
+    - /srv/mysql/backup:/srv
+    - /srv/logs/mysql:/var/log
+    networks:
+#    - tomcat-back-internal
+#    - owncloud-back-internal
+    - prestashop-back-internal
+    - joomla-back-internal
+#    ulimits:
+#      nproc: 65535
+#      nofile:
+#        soft: 20000
+#        hard: 40000
+    cpu_shares: 512
+    mem_limit: 448m
+    memswap_limit: 512m
+    restart: unless-stopped
+
+########################################################################
+
+  memcached:
+    extends:
+      service: base-service
+#    image: memcached:1.4
+    build: memcached
+    expose:
+    - "11211/tcp"
+    - "11211/udp"
+    environment:
+    - MEM_SIZE=64
+#    volumes:
+#    - /srv/logs/memcached:/var/log
+    logging:
+      driver: "none"
+    cpu_shares: 128
+    mem_limit: 128m
+    memswap_limit: 128m
+    restart: always
+
+  memcached-prestashop:
+    extends:
+      service: memcached
+    container_name: memcached-prestashop
+    environment:
+    - MEM_SIZE=96
+    networks:
+    - prestashop-back-internal
+
+  memcached-owncloud:
+    extends:
+      service: memcached
+    container_name: memcached-owncloud
+    environment:
+    - MEM_SIZE=32
+    networks:
+    - owncloud-back-internal
+
+########################################################################
+
+  redis:
+    extends:
+      service: base-service
+#    image: redis:3
+    build: redis
+    expose:
+    - "6379"
+    environment:
+    - MAX_MEMORY=64mb
+#    volumes:
+#    - /srv/redis:/var/lib/redis
+#    - /srv/logs/redis:/var/log
+    logging:
+      driver: "none"
+    cpu_shares: 128
+    mem_limit: 128m
+    memswap_limit: 128m
+    restart: always
+
+  redis-owncloud:
+    extends:
+      service: redis
+    container_name: redis-owncloud
+    environment:
+    - MAX_MEMORY=32mb
+    networks:
+    - owncloud-back-internal
+
+########################################################################
+
+  dnsmasq:
+    extends:
+      service: base-service
+    build: dnsmasq
+    container_name: dnsmasq
+#    expose:
+#    - "53/tcp"
+#    - "53/udp"
+    ports:
+    # publish service on gateway IP since we can't assign a fixed IP to this container
+    - "172.31.1.254:53:53/udp"
+#    - "172.31.1.254:53:53/tcp"
+    environment:
+    - DNSMASQ_EXTRA_OPTS=--no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --cache-size=300 --rebind-domain-ok=/plex.direct/gestionbbox.lan/
+    volumes:
+    - /opt/dnsmasq:/opt/dnsmasq:ro
+    - /opt/dnsmasq/dnsmasq.d:/etc/dnsmasq.d:ro
+    - /srv/logs/dnsmasq:/var/log
+    cap_add:
+    - NET_ADMIN
+    #- NET_RAW already in base capabilities: https://github.com/docker/docker/blob/master/daemon/execdriver/native/template/default_template_linux.go#L16-L29
+    networks:
+    - vpn
+    cpu_shares: 128
+    mem_limit: 64m
+    memswap_limit: 96m
+    restart: always
+
+########################################################################
+
+  dovecot:
+    extends:
+      service: base-service
+    build: dovecot-imap
+    container_name: dovecot
+    ports:
+    # IMAP(s)
+#    - "143:143"
+    - "993:993"
+    # POP3(s)
+#    - "110:110"
+#    - "995:995"
+    # SMTP / submission / SMTPs
+#    - "25:25"
+#    - "587:587"
+#    - "465:465"
+    # Sieve
+#    - "4190:4190"
+    volumes:
+    - /opt/dovecot:/opt/dovecot:ro
+    - /srv/dovecot:/srv/dovecot
+    - /srv/logs/dovecot:/var/log
+    networks:
+    - dovecot
+    cpu_shares: 256
+    mem_limit: 128m
+    memswap_limit: 256m
+    restart: unless-stopped
+
+########################################################################
+
+  pptp:
+    extends:
+      service: base-service
+    build:
+      context: vpn-pptp
+      args:
+      - DNS_SERVER_1=8.8.8.8
+      - DNS_SERVER_2=8.8.4.4
+    container_name: pptp
+    ports:
+    - "1723:1723"
+#    dns:
+#    - 172.31.53.53
+    volumes:
+    - /opt/pptp/chap-secrets:/etc/ppp/chap-secrets:ro
+    - /lib/modules:/lib/modules:ro
+    #- /srv/logs/pptp:/var/log
+    network_mode: host
+    cap_add:
+    - NET_ADMIN
+    cpu_shares: 128
+    mem_limit: 64m
+    memswap_limit: 96m
+    restart: on-failure:4
+
+  openvpn:
+    extends:
+      service: base-service
+    build: vpn-openvpn
+    container_name: openvpn
+    #devices:
+    #  - "/dev/net/tun:/dev/net/tun:rwm"
+    ports:
+    - "1194/udp:1194/udp"
+#    - "1194/tcp:1194/tcp"
+    environment:
+#    - DNS_USE_RESOLVCONF=true
+    - DNS_EXTRA_SERVER_1=172.31.1.254
+#    - DNS_EXTRA_SERVER_2=8.8.4.4
+    - EASYRSA_REQ_COUNTRY=US
+    - EASYRSA_REQ_PROVINCE=California
+    - EASYRSA_REQ_CITY=San Francisco
+    - EASYRSA_REQ_ORG=Copyleft Certificate Co
+    #- EASYRSA_REQ_EMAIL=me@example.net
+    #- EASYRSA_REQ_OU=My Organizational Unit
+    #- EASYRSA_KEY_SIZE=2048
+    # CA expiration time in days
+    #- EASYRSA_CA_EXPIRE=3650
+    # issued cert expiration time in days
+    #- EASYRSA_CERT_EXPIRE=3650
+    #- EASYRSA_REQ_CN=ChangeMe
+    #- EASYRSA_BATCH=
+    depends_on:
+    - dnsmasq
+    dns:
+#    - 172.31.53.53
+    # use service on gateway IP since we can't assign a fixed IP to dns container
+    - 172.31.1.254
+    volumes:
+    - /opt/openvpn:/etc/openvpn
+    - /lib/modules:/lib/modules:ro
+    #- /srv/logs/openvpn:/var/log
+    cap_add:
+    - NET_ADMIN
+    networks:
+    - vpn
+    cpu_shares: 128
+    mem_limit: 64m
+    memswap_limit: 96m
+#    restart: unless-stopped
+
+########################################################################
+
+  letsencrypt:
+    extends:
+      service: base-service
+    #image: quay.io/letsencrypt/letsencrypt:latest
+    build: letsencrypt
+    container_name: letsencrypt
+#    ports:
+#    - "80:80"
+#    - "443:443"
+    volumes:
+    - /opt/letsencrypt:/etc/letsencrypt
+    - /srv/letsencrypt:/var/lib/letsencrypt
+    - /srv/logs/letsencrypt:/var/log
+    # webroot authentification lets encrypt
+    - /srv/http-proxy/polycarpe/.well-known:/srv/http-proxy/polycarpe/.well-known
+    - /srv/owncloud/acme-challenge:/srv/owncloud/acme-challenge
+    - /srv/prestashop/acme-challenge:/srv/prestashop/acme-challenge
+    - /srv/joomla/acme-challenge:/srv/joomla/acme-challenge
+    - /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known:/opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known
+#    networks:
+#    - default
+    restart: none
+
+########################################################################
+
+#volumes:
+
+########################################################################
+
+networks:
+#  default:
+#    driver_opts:
+#      com.docker.network.bridge.enable_icc: "false"
+#      com.docker.network.bridge.enable_ip_masquerade: "false"
+  tomcat-front:
+    driver: bridge
+  tomcat-back-internal:
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+  tomcat-back:
+    driver: bridge
+  owncloud-front:
+    driver: bridge
+  owncloud-back-internal:
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+  owncloud-back:
+    driver: bridge
+  prestashop-front:
+    driver: bridge
+  prestashop-back-internal:
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+  prestashop-back:
+    driver: bridge
+  joomla-front:
+    driver: bridge
+  joomla-back-internal:
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+  joomla-back:
+    driver: bridge
+  dovecot:
+    driver: bridge
+  vpn:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.0.0/16
+        ip_range: 172.31.1.0/24
+        gateway: 172.31.1.254
+        aux_addresses:
+          dnsmasq: 172.31.53.53

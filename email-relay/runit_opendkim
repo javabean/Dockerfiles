@@ -1,0 +1,7 @@
+#!/bin/sh
+
+chown opendkim: /opt/email-relay/dkim/keys/*/*.private
+
+#exec /sbin/setuser opendkim /usr/sbin/opendkim -f -x /etc/opendkim.conf
+#exec chpst -u opendkim /usr/sbin/opendkim -f -x /etc/opendkim.conf
+exec /usr/sbin/opendkim -f -x /etc/opendkim.conf

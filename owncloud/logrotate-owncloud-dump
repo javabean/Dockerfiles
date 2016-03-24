@@ -1,0 +1,15 @@
+# see also automysqlbackup
+/srv/owncloud/backup/owncloud-dump.sql.gz {
+	missingok
+	ifempty
+	daily
+	rotate 9
+	dateext
+	extension .sql.gz
+	nocompress
+	create
+	prerotate
+		[ -f /etc/container_environment.sh ] && . /etc/container_environment.sh
+		sqlite3 /srv/owncloud/data/owncloud.db .dump | gzip > /srv/owncloud/backup/owncloud-dump.sql.gz || true
+	endscript
+}

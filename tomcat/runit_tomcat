@@ -1,0 +1,10 @@
+#!/bin/sh
+
+#if [ -x /usr/bin/authbind ]; then
+#	/usr/bin/authbind --deep "$CATALINA_HOME/bin/catalina.sh" start $*
+#else
+#	$CATALINA_HOME/bin/catalina.sh start $*
+#fi
+
+exec /sbin/setuser tomcat $CATALINA_HOME/bin/catalina.sh run >> "$CATALINA_BASE/logs/catalina.out" 2>&1
+#exec chpst -u tomcat $CATALINA_HOME/bin/catalina.sh run >> "$CATALINA_BASE/logs/catalina.out" 2>&1

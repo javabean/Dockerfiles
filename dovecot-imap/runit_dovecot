@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# If this wasn't so expensive at startup, we would:
+#chown -R mail:mail /srv/dovecot
+
+[ -e /opt/dovecot/local.conf ] && chown dovecot:dovecot /opt/dovecot/local.conf
+[ -e /opt/dovecot/passwd ] && chown dovecot:dovecot /opt/dovecot/passwd
+
+exec /usr/sbin/dovecot -F -c /etc/dovecot/dovecot.conf

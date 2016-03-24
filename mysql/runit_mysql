@@ -1,0 +1,11 @@
+#!/bin/sh
+
+mkdir -p /var/log/mysql
+chown mysql:adm /var/log/mysql
+
+# https://dev.mysql.com/doc/refman/5.7/en/server-parameters.html
+
+# Can not use mysqld_safe since it won't pass on SIGTERM signal on container shut down...
+#exec /entrypoint.sh mysqld_safe --bind-address=0.0.0.0 ${MYSQL_CUSTOM_OPTS}
+# Do not use "/usr/sbin/mysqld" as /entrypoint.sh looks for "mysqld"
+exec /entrypoint.sh mysqld --basedir=/usr --datadir=/var/lib/mysql --plugin-dir=/usr/lib/mysql/plugin --user=mysql --bind-address=0.0.0.0 ${MYSQL_CUSTOM_OPTS} --log-error=/var/log/mysql/error.log --pid-file=/var/run/mysqld/mysqld.pid --socket=/var/run/mysqld/mysqld.sock --port=3306 --character-set-server=utf8 --collation-server=utf8_unicode_ci --skip-character-set-client-handshake

@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+# copy backup of conf dirs if mounted volume is empty
+/usr/local/bin/restore_conf.sh
+
+rm -f /usr/local/apache2/logs/httpd.pid /var/run/apache2/apache2.pid
+#exec /sbin/setuser www-data /usr/sbin/apache2 -DFOREGROUND -k start
+#exec chpst -u www-data /usr/sbin/apache2 -DFOREGROUND -k start
+exec /usr/sbin/apache2ctl -D FOREGROUND -k start
