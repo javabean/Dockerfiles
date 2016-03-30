@@ -1,11 +1,7 @@
 FROM cedrik/baseimage:latest
 MAINTAINER Cédrik LIME
 
-RUN mkdir -p /etc/service/redis
-#RUN ln -sf /bin/sv /etc/init.d/redis
-COPY runit_redis /etc/service/redis/run
-#COPY runit_redis /etc/my_init.d/redis
-#COPY runit_redis_log /etc/service/redis/log/run
+COPY docker-entrypoint.sh  /usr/local/bin/
 
 COPY 60-redis.conf /etc/sysctl.d/
 
@@ -15,8 +11,11 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 
 #VOLUME ["/var/lib/redis/" "/var/log"]
 
+USER redis
+
 EXPOSE 6379
 
-#ENTRYPOINT /usr/bin/redis-server
-#CMD ["/etc/redis/redis.conf", "--daemonize", "no"]
-CMD ["/sbin/my_init"]
+#ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/tini", "-c", "--", "/usr/local/bin/docker-entrypoint.sh"]
+
+CMD ["/usr/bin/redis-server"]

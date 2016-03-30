@@ -1,14 +1,11 @@
 FROM cedrik/baseimage:latest
 MAINTAINER Cédrik LIME
 
-RUN mkdir -p /etc/service/dnsmasq /opt/dnsmasq/dnsmasq.d
-#RUN ln -sf /bin/sv /etc/init.d/dnsmasq
-COPY runit_dnsmasq /etc/service/dnsmasq/run
-#COPY runit_dnsmasq /etc/my_init.d/dnsmasq
+COPY docker-entrypoint.sh backup_conf.sh restore_conf.sh  /usr/local/bin/
 
-COPY backup_conf.sh restore_conf.sh  /usr/local/bin/
-
-RUN apt-get update \
+RUN mkdir -p /opt/dnsmasq/dnsmasq.d \
+	&& touch /opt/dnsmasq/hosts /opt/dnsmasq/resolv.conf \
+	&& apt-get update \
 	&& DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dnsmasq dns-root-data \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 # copy conf dirs to enable populating empty volumes (see runit_dnsmasq)
@@ -17,6 +14,11 @@ RUN apt-get update \
 
 #VOLUME ["/var/log"]
 
-EXPOSE 53
+#USER dnsmasq
 
-CMD ["/sbin/my_init"]
+EXPOSE 53/tcp 53/udp
+
+#ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/tini", "-c", "--", "/usr/local/bin/docker-entrypoint.sh"]
+
+CMD ["/usr/sbin/dnsmasq"]
