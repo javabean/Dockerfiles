@@ -10,7 +10,7 @@ RUN /bd_build/prepare.sh && \
 	/bd_build/utilities.sh && \
 	/bd_build/cleanup.sh
 
-#ENTRYPOINT ["/usr/local/bin/tini", "--", "/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/tini", "-c", "--", "/docker-entrypoint.sh"]
 #ENTRYPOINT ["/usr/local/bin/dumb-init", "/docker-entrypoint.sh"]
 
 CMD ["/sbin/my_init"]
