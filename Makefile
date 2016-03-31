@@ -8,12 +8,12 @@ unexport VERSION = 0.9.18.1
 
 DOCKER_APT_VERSION = 1.10.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.6.2
+DOCKER_COMPOSE_VERSION = 1.7.0-rc1
 # url fragment
 DOCKER_MACHINE_VERSION = v0.6.0
 
 #COMPOSE_PROJECT_NAME = `basename`
-#COMPOSE_FILE = docker-compose.yml
+#COMPOSE_FILE = docker-compose_1.yml:docker-compose_2.yml
 
 UBUNTU_VERSION  = 15.10
 
@@ -28,7 +28,7 @@ MYSQL_VERSION   = 5.6
 ########################################################################
 
 
-docker_compose_build = http-proxy tomcat dovecot dnsmasq email-relay owncloud redis-owncloud memcached-owncloud mysql prestashop joomla openvpn letsencrypt
+docker_compose_build = http-proxy tomcat dovecot dnsmasq email-relay owncloud redis-owncloud memcached-owncloud mysql prestashop joomla openvpn
 .PHONY: $(docker_compose_build)
 
 
@@ -42,6 +42,7 @@ export
 .PHONY: pull
 pull:
 	docker pull ubuntu:$(UBUNTU_VERSION)
+	docker pull quay.io/letsencrypt/letsencrypt
 
 .PHONY: build
 build: $(docker_compose_build)
@@ -94,7 +95,7 @@ ip:
 .PHONY: new-certificates
 new-certificates:
 	# --dry-run --test-cert
-	docker-compose run --rm letsencrypt certonly --non-interactive --dry-run \
+	docker-compose run --rm letsencrypt --authenticators certonly --non-interactive --dry-run \
 		--webroot \
 		-w /srv/http-proxy/polycarpe -d polycarpe.fr -d www.polycarpe.fr \
 		-w /srv/owncloud/acme-challenge -d oc.cedrik.fr \
@@ -105,7 +106,7 @@ new-certificates:
 .PHONY: renew-certificates
 renew-certificates:
 	# --dry-run --test-cert
-	docker-compose run --rm letsencrypt renew --non-interactive --keep-until-expiring
+	docker-compose run --rm letsencrypt --authenticators renew --non-interactive --keep-until-expiring
 
 ########################################################################
 
@@ -116,7 +117,7 @@ clean:
 	docker ps --no-trunc -a -q -f "status=exited" | xargs --no-run-if-empty docker rm --volumes=false
 	# remove untagged images
 	docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi
-	docker network rm `docker network ls --filter type=custom --no-trunc -q`
+	docker network ls --filter type=custom --no-trunc -q | xargs --no-run-if-empty docker network rm
 
 .PHONY: distclean
 distclean: clean
