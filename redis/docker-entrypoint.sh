@@ -10,7 +10,8 @@ fi
 
 # check for the expected command
 if [ "$1" = 'redis' -o "$1" = '/usr/bin/redis-server' ]; then
-	exec /sbin/setuser redis "$@" /etc/redis/redis.conf --daemonize no --logfile "" --maxmemory ${MAX_MEMORY:-64mb} --maxmemory-policy noeviction
+	#exec /sbin/setuser redis "$@" /etc/redis/redis.conf --daemonize no --logfile "" --maxmemory ${MAX_MEMORY:-64mb} --maxmemory-policy noeviction
+	exec "$@" /etc/redis/redis.conf --daemonize no --logfile "" --maxmemory ${MAX_MEMORY:-64mb} --maxmemory-policy noeviction
 fi
 
 # else default to run whatever the user wanted like "bash"

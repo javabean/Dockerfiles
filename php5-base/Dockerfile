@@ -6,8 +6,9 @@ MAINTAINER Cédrik LIME
 ARG MYSQL_VERSION=5.6
 
 # http://dev.mysql.com/doc/refman/5.7/en/checking-gpg-signature.html
-RUN gpg --keyserver keys.gnupg.net --recv-keys 5072E1F5 \
-	&& gpg --export -a 5072E1F5 | apt-key add -
+#RUN gpg --keyserver keys.gnupg.net --recv-keys 5072E1F5 \
+#	&& gpg --export -a 5072E1F5 | apt-key add -
+RUN apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5
 
 RUN echo "deb http://repo.mysql.com/apt/ubuntu/ `lsb_release --codename | cut -f 2` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
 

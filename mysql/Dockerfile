@@ -20,15 +20,16 @@ COPY runit_mysql /etc/service/mysql/run
 #RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 #	wget \
 #	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-#	&& curl -ORL http://dev.mysql.com/get/mysql-apt-config_0.6.0-1_all.deb \
-#	&& dpkg -i mysql-apt-config_0.6.0-1_all.deb
-#	&& rm mysql-apt-config_0.6.0-1_all.deb
+#	&& curl -ORL http://dev.mysql.com/get/mysql-apt-config_0.7.2-1_all.deb \
+#	&& dpkg -i mysql-apt-config_0.7.2-1_all.deb
+#	&& rm mysql-apt-config_0.7.2-1_all.deb
 # Selecting a Major Release Version:
 #RUN dpkg-reconfigure mysql-apt-config
 
 # http://dev.mysql.com/doc/refman/5.7/en/checking-gpg-signature.html
-RUN gpg --keyserver keys.gnupg.net --recv-keys 5072E1F5 \
-	&& gpg --export -a 5072E1F5 | apt-key add -
+#RUN gpg --keyserver keys.gnupg.net --recv-keys 5072E1F5 \
+#	&& gpg --export -a 5072E1F5 | apt-key add -
+RUN apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5
 
 RUN echo "deb http://repo.mysql.com/apt/ubuntu/ `lsb_release --codename | cut -f 2` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
 

@@ -7,13 +7,13 @@ services:
 
   base-service:
     build: .
-     # https://github.com/docker/compose/issues/2778
-     # https://github.com/docker/compose/pull/2978
      # default tmpfs opts: rw,noexec,nosuid,nodev,size=65536k / 50%
 #    tmpfs:
-#    - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
+#    - /run:rw,nosuid,noexec,relatime,size=32768k,mode=755
 #    - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
+#    - /var/log:rw,noexec,nosuid,nodev,size=65536k
 #    - /tmp
+#   shm_size: 64M
     logging:
       driver: "json-file"
       options:
@@ -55,7 +55,7 @@ services:
     - /opt/http-proxy/sites-enabled:/opt/http-proxy/sites-enabled:ro
     - /opt/http-proxy/tls:/opt/http-proxy/tls:ro
 #    - /opt/letsencrypt:/opt/http-proxy/tls:ro
-    - /srv/http-proxy:/var/www
+    - /srv/http-proxy:/var/www:ro
     - /srv/logs/http-proxy:/var/log
 #    networks:
 #    # "default" needed to get connectivity from outside(!)
@@ -67,6 +67,7 @@ services:
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
+    read_only: false
     restart: unless-stopped
 
 ########################################################################
@@ -77,7 +78,7 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=7.0.68
+      - TOMCAT_VERSION=7.0.69
     container_name: tomcat
     expose:
     - "8080"
@@ -97,6 +98,7 @@ services:
     mem_limit: 1024m
     memswap_limit: 1024m
 #    memory-swappiness: "10"
+    read_only: false
     restart: on-failure:2
 
 ########################################################################
@@ -135,6 +137,7 @@ services:
     - owncloud-back
     mem_limit: 384m
     memswap_limit: 512m
+    read_only: false
     restart: unless-stopped
 
 ########################################################################
@@ -196,6 +199,7 @@ services:
 #    - /srv/prestashop/config/smarty.config.inc.php:/var/www/html/config/smarty.config.inc.php
     #- /srv/prestashop/translations/myTranslation:/var/www/html/translations/myTranslation
     - /srv/prestashop/translations/fr:/var/www/html/translations/fr
+#    - /srv/prestashop/admin-backups:/var/www/html/${PS_FOLDER_ADMIN}/backups/
     - /srv/logs/prestashop:/var/log
     networks:
     - default
@@ -204,6 +208,7 @@ services:
     - prestashop-back
     mem_limit: 384m
     memswap_limit: 512m
+    read_only: false
     restart: unless-stopped
 
 ########################################################################
@@ -234,19 +239,7 @@ services:
     - email-relay:email-relay
     volumes:
     - /srv/logs/joomla:/var/log
-    - /srv/joomla/acme-challenge/.well-known:/var/www/html/.well-known
-    - /srv/joomla/administrator:/var/www/html/administrator
-    - /srv/joomla/components:/var/www/html/components
-    - /srv/joomla/images:/var/www/html/images
-    - /srv/joomla/language:/var/www/html/language
-    - /srv/joomla/libraries:/var/www/html/libraries
-    - /srv/joomla/media:/var/www/html/media
-    - /srv/joomla/modules:/var/www/html/modules
-    - /srv/joomla/plugins:/var/www/html/plugins
-    - /srv/joomla/templates:/var/www/html/templates
-    #- /srv/joomla/logs:/var/www/html/logs
-    #- /srv/joomla/tmp:/var/www/html/tmp
-    - /srv/joomla/configuration.php:/var/www/html/configuration.php
+    - /srv/joomla:/var/www/html
     networks:
     - default
 #    - joomla-front
@@ -254,6 +247,7 @@ services:
     - joomla-back
     mem_limit: 384m
     memswap_limit: 512m
+    read_only: false
     restart: on-failure:5
 
 ########################################################################
@@ -282,6 +276,7 @@ services:
     mem_limit: 64m
     memswap_limit: 96m
 #    memory-swappiness: "10"
+    read_only: false
     restart: always
 
 ########################################################################
@@ -330,6 +325,7 @@ services:
     cpu_shares: 512
     mem_limit: 448m
     memswap_limit: 512m
+    read_only: false
     restart: unless-stopped
 
 ########################################################################
@@ -346,6 +342,8 @@ services:
     - MEM_SIZE=64
 #    volumes:
 #    - /srv/logs/memcached:/var/log
+#    tmpfs:
+#    - /var/log
     logging:
       driver: "none"
     cpu_shares: 128
@@ -371,6 +369,15 @@ services:
     networks:
     - owncloud-back-internal
 
+  memcached-joomla:
+    extends:
+      service: memcached
+    container_name: memcached-joomla
+    environment:
+    - MEM_SIZE=64
+    networks:
+    - joomla-back-internal
+
 ########################################################################
 
   redis:
@@ -385,6 +392,8 @@ services:
 #    volumes:
 #    - /srv/redis:/var/lib/redis
 #    - /srv/logs/redis:/var/log
+#    tmpfs:
+#    - /var/log
     logging:
       driver: "none"
     cpu_shares: 128
@@ -400,36 +409,6 @@ services:
     - MAX_MEMORY=32mb
     networks:
     - owncloud-back-internal
-
-########################################################################
-
-  dnsmasq:
-    extends:
-      service: base-service
-    build: dnsmasq
-    container_name: dnsmasq
-#    expose:
-#    - "53/tcp"
-#    - "53/udp"
-    ports:
-    # publish service on gateway IP since we can't assign a fixed IP to this container
-    - "172.31.1.254:53:53/udp"
-#    - "172.31.1.254:53:53/tcp"
-    environment:
-    - DNSMASQ_EXTRA_OPTS=--no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --cache-size=300 --rebind-domain-ok=/plex.direct/gestionbbox.lan/
-    volumes:
-    - /opt/dnsmasq:/opt/dnsmasq:ro
-    - /opt/dnsmasq/dnsmasq.d:/etc/dnsmasq.d:ro
-    - /srv/logs/dnsmasq:/var/log
-    cap_add:
-    - NET_ADMIN
-    #- NET_RAW already in base capabilities: https://github.com/docker/docker/blob/master/daemon/execdriver/native/template/default_template_linux.go#L16-L29
-    networks:
-    - vpn
-    cpu_shares: 128
-    mem_limit: 64m
-    memswap_limit: 96m
-    restart: always
 
 ########################################################################
 
@@ -460,7 +439,68 @@ services:
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 256m
+    read_only: false
     restart: unless-stopped
+
+########################################################################
+
+  # dnsmasq is our internal (since no ACL) DNS server
+  dnsmasq:
+    extends:
+      service: base-service
+    build: dnsmasq
+    container_name: dnsmasq
+    expose:
+    - "53/tcp"
+    - "53/udp"
+    ports:
+    # also publish service on gateway IP since docker-compose 1.6 can't assign a fixed IP to this container
+    - "172.31.1.254:53:53/udp"
+    environment:
+    - DNSMASQ_EXTRA_OPTS=--log-facility=- --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --cache-size=300 --rebind-domain-ok=/plex.direct/gestionbbox.lan/
+    volumes:
+    - /opt/dnsmasq:/opt/dnsmasq:ro
+    - /opt/dnsmasq/dnsmasq.d:/etc/dnsmasq.d:ro
+#    - /srv/logs/dnsmasq:/var/log
+#    tmpfs:
+#    - /var/log
+    cap_add:
+    - NET_ADMIN
+    #- NET_RAW already in base capabilities: https://github.com/docker/docker/blob/master/daemon/execdriver/native/template/default_template_linux.go#L16-L29
+    networks:
+      vpn:
+        ipv4_address: 172.31.53.53
+    cpu_shares: 128
+    mem_limit: 96m
+    memswap_limit: 128m
+    restart: always
+
+  # Unbound is our external DNS gateway, with ACL
+  unbound:
+    extends:
+      service: base-service
+    build: unbound
+    container_name: unbound
+#    ports:
+#    - "53:53/tcp"
+#    - "53:53/udp"
+#    environment:
+#    - ROOT_TRUST_ANCHOR_UPDATE=
+    depends_on:
+    - dnsmasq
+    dns:
+    - 172.31.53.53
+    volumes:
+    - /opt/unbound:/etc/unbound/unbound.conf.d:ro
+#    - /srv/logs/unbound:/var/log
+#    tmpfs:
+#    - /var/log
+    networks:
+    - vpn
+    cpu_shares: 128
+    mem_limit: 64m
+    memswap_limit: 96m
+    restart: always
 
 ########################################################################
 
@@ -470,17 +510,19 @@ services:
     build:
       context: vpn-pptp
       args:
-      - DNS_SERVER_1=8.8.8.8
+      - DNS_SERVER_1=172.31.53.53
       - DNS_SERVER_2=8.8.4.4
     container_name: pptp
     ports:
     - "1723:1723"
-#    dns:
-#    - 172.31.53.53
+    dns:
+    - 172.31.53.53
     volumes:
     - /opt/pptp/chap-secrets:/etc/ppp/chap-secrets:ro
     - /lib/modules:/lib/modules:ro
     #- /srv/logs/pptp:/var/log
+#    tmpfs:
+#    - /var/log
     network_mode: host
     cap_add:
     - NET_ADMIN
@@ -501,7 +543,8 @@ services:
 #    - "1194/tcp:1194/tcp"
     environment:
 #    - DNS_USE_RESOLVCONF=true
-    - DNS_EXTRA_SERVER_1=172.31.1.254
+#    - DNS_EXTRA_SERVER_1=172.31.1.254
+    - DNS_EXTRA_SERVER_1=172.31.53.53
 #    - DNS_EXTRA_SERVER_2=8.8.4.4
     - EASYRSA_REQ_COUNTRY=US
     - EASYRSA_REQ_PROVINCE=California
@@ -519,13 +562,15 @@ services:
     depends_on:
     - dnsmasq
     dns:
-#    - 172.31.53.53
-    # use service on gateway IP since we can't assign a fixed IP to dns container
-    - 172.31.1.254
+    - 172.31.53.53
+    # use service on gateway IP since docker-compose 1.6 can't assign a fixed IP to dns container
+#    - 172.31.1.254
     volumes:
     - /opt/openvpn:/etc/openvpn
     - /lib/modules:/lib/modules:ro
     #- /srv/logs/openvpn:/var/log
+#    tmpfs:
+#    - /var/log
     cap_add:
     - NET_ADMIN
     networks:
@@ -533,6 +578,7 @@ services:
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
+    read_only: false
 #    restart: unless-stopped
 
 ########################################################################
@@ -540,8 +586,9 @@ services:
   letsencrypt:
     extends:
       service: base-service
-    #image: quay.io/letsencrypt/letsencrypt:latest
-    build: letsencrypt
+    image: quay.io/letsencrypt/letsencrypt:latest
+    #build: letsencrypt
+    command: --authenticators
     container_name: letsencrypt
 #    ports:
 #    - "80:80"
@@ -558,6 +605,9 @@ services:
     - /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known:/opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known
 #    networks:
 #    - default
+    logging:
+      driver: "none"
+    read_only: false
     restart: none
 
 ########################################################################
@@ -571,6 +621,7 @@ networks:
 #    driver_opts:
 #      com.docker.network.bridge.enable_icc: "false"
 #      com.docker.network.bridge.enable_ip_masquerade: "false"
+#      com.docker.network.enable_ipv6: "false"
   tomcat-front:
     driver: bridge
   tomcat-back-internal:
@@ -608,5 +659,6 @@ networks:
       - subnet: 172.31.0.0/16
         ip_range: 172.31.1.0/24
         gateway: 172.31.1.254
-        aux_addresses:
-          dnsmasq: 172.31.53.53
+# defining aux addresses prevents from assigning them to containers
+#        aux_addresses:
+#          dns: 172.31.53.53

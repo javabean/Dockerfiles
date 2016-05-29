@@ -8,9 +8,9 @@ unexport VERSION = 0.9.18.1
 
 DOCKER_APT_VERSION = 1.10.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.7.0-rc1
+DOCKER_COMPOSE_VERSION = 1.7.1
 # url fragment
-DOCKER_MACHINE_VERSION = v0.6.0
+DOCKER_MACHINE_VERSION = v0.7.0
 
 #COMPOSE_PROJECT_NAME = `basename`
 #COMPOSE_FILE = docker-compose_1.yml:docker-compose_2.yml
@@ -28,7 +28,7 @@ MYSQL_VERSION   = 5.6
 ########################################################################
 
 
-docker_compose_build = http-proxy tomcat dovecot dnsmasq email-relay owncloud redis-owncloud memcached-owncloud mysql prestashop joomla openvpn
+docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay owncloud redis-owncloud memcached-owncloud mysql prestashop joomla openvpn
 .PHONY: $(docker_compose_build)
 
 
@@ -100,7 +100,7 @@ new-certificates:
 		-w /srv/http-proxy/polycarpe -d polycarpe.fr -d www.polycarpe.fr \
 		-w /srv/owncloud/acme-challenge -d oc.cedrik.fr \
 		-w /srv/prestashop/acme-challenge -d boutique.vingt-citadelles.fr -d boutique.piacercanto.org \
-		-w /srv/joomla/acme-challenge -d beta.piacercanto.org \
+		-w /srv/joomla -d beta.piacercanto.org \
 		-w /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT -d www.cedrik.fr -d cedrik.fr -d wpad.cedrik.fr
 
 .PHONY: renew-certificates
@@ -139,12 +139,10 @@ mkdirs:
 	/opt/mysql/docker-entrypoint-initdb.d         /srv/logs/mysql/mysql \
 	  /srv/mysql/data /srv/mysql/backup \
 	/opt/dnsmasq/dnsmasq.d                        /srv/logs/dnsmasq \
+	/opt/unbound                                  /srv/logs/unbound \
 	/opt/dovecot           /srv/dovecot           /srv/logs/dovecot \
 	/opt/email-relay/dkim/keys \
-		/srv/joomla/administrator /srv/joomla/components /srv/joomla/images /srv/joomla/language \
-		/srv/joomla/libraries /srv/joomla/media /srv/joomla/modules /srv/joomla/plugins \
-		/srv/joomla/templates /srv/joomla/logs \
-	                                              /srv/logs/joomla/apache2 \
+		                   /srv/joomla            /srv/logs/joomla/apache2 \
 	/opt/openvpn                                  /srv/logs/openvpn \
 	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt
 	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/prestashop/acme-challenge/.well-known/acme-challenge  /srv/joomla/acme-challenge/.well-known/acme-challenge
@@ -162,6 +160,26 @@ mkdirs:
 
 ########################################################################
 
+.PHONY: install-docker
+install-docker:
+	#curl -fsSL https://get.docker.com/gpg | sudo apt-key add -
+	if [ ! -f /etc/apt/sources.list.d/docker.list ]; then \
+		curl -fsSL https://get.docker.com/ | sudo sh; \
+		sudo usermod -aG docker `whoami`; \
+	else \
+		sudo apt-get install docker-engine=$(DOCKER_APT_VERSION); \
+	fi
+
+.PHONY: install-docker-rpi
+install-docker-rpi:
+	if [ ! -f /etc/apt/sources.list.d/Hypriot_Schatzkiste.list ]; then \
+		sudo apt-get install apt-transport-https \
+		sudo curl -RL -o /etc/apt/sources.list.d/Hypriot_Schatzkiste.list "https://packagecloud.io/install/repositories/Hypriot/Schatzkiste/config_file.list?os=raspbian&dist=8&source=script" \
+		curl -fsSL https://packagecloud.io/Hypriot/Schatzkiste/gpgkey | sudo apt-key add - \
+		sudo usermod -aG docker `whoami`; \
+	fi \
+	sudo apt-get update && sudo apt-get install docker-hypriot=$(DOCKER_APT_VERSION); \
+
 .PHONY: install-docker-compose
 install-docker-compose:
 	sudo curl -fsSLR -o /usr/local/bin/docker-compose https://github.com/docker/compose/releases/download/$(DOCKER_COMPOSE_VERSION)/docker-compose-`uname -s`-`uname -m`
@@ -170,8 +188,22 @@ install-docker-compose:
 	sudo curl -fsSLR -o /etc/bash_completion.d/docker-compose https://raw.githubusercontent.com/docker/compose/$(DOCKER_COMPOSE_VERSION)/contrib/completion/bash/docker-compose
 	sudo touch -r /usr/local/bin/docker-compose /etc/bash_completion.d/docker-compose
 
+.PHONY: install-docker-compose-rpi
+install-docker-compose-rpi:
+	if [ ! -f /etc/apt/sources.list.d/Hypriot_Schatzkiste.list ]; then \
+		sudo apt-get install apt-transport-https \
+		sudo curl -RL -o /etc/apt/sources.list.d/Hypriot_Schatzkiste.list "https://packagecloud.io/install/repositories/Hypriot/Schatzkiste/config_file.list?os=raspbian&dist=8&source=script" \
+		curl -fsSL https://packagecloud.io/Hypriot/Schatzkiste/gpgkey | sudo apt-key add - \
+		sudo usermod -aG docker `whoami`; \
+	fi \
+	sudo apt-get update && sudo apt-get install docker-compose=$(DOCKER_APT_VERSION); \
+	sudo curl -fsSLR -o /etc/bash_completion.d/docker-compose https://raw.githubusercontent.com/docker/compose/$$(docker-compose version --short)/contrib/completion/bash/docker-compose
+	sudo touch -r /usr/local/bin/docker-compose /etc/bash_completion.d/docker-compose
+
 .PHONY: install-docker-machine
 install-docker-machine:
+	mkdir -p ~/.docker/machine
+	[ -f ~/.docker/machine/no-error-report ] || touch ~/.docker/machine/no-error-report
 	sudo curl -fsSLR -o /usr/local/bin/docker-machine https://github.com/docker/machine/releases/download/$(DOCKER_MACHINE_VERSION)/docker-machine-`uname -s`-`uname -m`
 	sudo chmod +x /usr/local/bin/docker-machine
 	sudo curl -fsSLR -o /etc/bash_completion.d/docker-machine-prompt https://github.com/docker/machine/raw/$(DOCKER_MACHINE_VERSION)/contrib/completion/bash/docker-machine-prompt.bash
@@ -182,21 +214,11 @@ install-docker-machine:
 	# PS1='[\u@\h \W$(__docker_machine_ps1)]\$ '
 	# PS1='[\u@\h \W$(__docker_machine_ps1 " [%s]")]\$ '
 
-.PHONY: install-docker
-install-docker:
-	#curl -fsSL https://get.docker.com/gpg | sudo apt-key add -
-	if [ ! -f /etc/apt/sources.list.d/docker.list ]; then \
-		curl -sSL https://get.docker.com/ | sudo sh; \
-		sudo usermod -aG docker `whoami`; \
-	else \
-		sudo apt-get install docker-engine=$(DOCKER_APT_VERSION); \
-	fi
-
 .PHONY: install
 install: install-docker-compose install-docker mkdirs
 
 .PHONY: uninstall
 uninstall: distclean
 	rm /usr/local/bin/docker-* /etc/bash_completion.d/docker-*
-	apt-get purge -y docker-engine
+	apt-get purge -y docker-engine docker-hypriot docker-compose
 	echo "Left over: config & data dirs: /opt /srv"
