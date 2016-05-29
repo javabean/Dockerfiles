@@ -2,8 +2,5 @@
 set -e
 
 # copy conf dirs to enable populating empty volumes (see restore_conf.sh)
-rm -rf /owncloud-config.bak
-cp -a /var/www/owncloud/config /owncloud-config.bak
-
-rm -rf /owncloud-apps.bak
-cp -a /var/www/owncloud/apps /owncloud-apps.bak
+tar czf /owncloud-config.tgz -C /var/www/owncloud config
+tar czf /owncloud-apps.tgz -C /var/www/owncloud apps

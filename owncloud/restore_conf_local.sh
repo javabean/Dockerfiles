@@ -5,10 +5,10 @@ set -e
 
 # if [ ! "$(ls -A "${d}")" ]; then
 if ! ls -A /var/www/owncloud/config/* > /dev/null 2>&1; then
-	cp -a /owncloud-config.bak/. /var/www/owncloud/config/
+	tar xzf /owncloud-config.tgz -C /var/www/owncloud
 fi
 
 # if [ ! "$(ls -A "${d}")" ]; then
 if ! ls -A /var/www/owncloud/apps/* > /dev/null 2>&1; then
-	cp -a /owncloud-apps.bak/. /var/www/owncloud/apps/
+	tar xzf /owncloud-apps.tgz -C /var/www/owncloud
 fi
