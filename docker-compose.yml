@@ -559,6 +559,8 @@ services:
     #- EASYRSA_CERT_EXPIRE=3650
     #- EASYRSA_REQ_CN=ChangeMe
     #- EASYRSA_BATCH=
+    # OpenVPN extra options
+    #- OPENVPN_OPTS=
     depends_on:
     - dnsmasq
     dns:

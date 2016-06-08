@@ -6,7 +6,7 @@ unexport VERSION = 0.9.18.1
 # START set versions here
 ########################################################################
 
-DOCKER_APT_VERSION = 1.10.*
+DOCKER_APT_VERSION = 1.11.*
 # url fragment
 DOCKER_COMPOSE_VERSION = 1.7.1
 # url fragment
@@ -143,9 +143,11 @@ mkdirs:
 	/opt/dovecot           /srv/dovecot           /srv/logs/dovecot \
 	/opt/email-relay/dkim/keys \
 		                   /srv/joomla            /srv/logs/joomla/apache2 \
+      /srv/wordpress/wp-content  /srv/wordpress/wp-includes-languages \
+                                                  /srv/logs/wordpress/apache2 \
 	/opt/openvpn                                  /srv/logs/openvpn \
 	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt
-	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/prestashop/acme-challenge/.well-known/acme-challenge  /srv/joomla/acme-challenge/.well-known/acme-challenge
+	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/prestashop/acme-challenge/.well-known/acme-challenge  /srv/joomla/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known
 
 	sudo chmod g-rw,o-rwx /opt/http-proxy/tls
 	#sudo chown root:ssl-cert /opt/http-proxy/tls

@@ -3,7 +3,7 @@ What? (purpose)
 
 PrestaShop server
 
-About same usage as https://hub.docker.com/r/prestashop/prestashop/ -- see restore_conf_local.sh for all available options
+About same usage as https://hub.docker.com/r/prestashop/prestashop/ -- see restore_conf_local.sh for all available options  
 In particular, can rename "/admin" via $PS_FOLDER_ADMIN environment variable
 
 
