@@ -40,11 +40,13 @@ services:
 #    - owncloud
 #    - prestashop
 #    - joomla
+#    - wordpress
     links:
     - tomcat:tomcat
     - owncloud:owncloud
     - prestashop:prestashop
     - joomla:joomla
+    - wordpress:wordpress
     volumes:
 #    - /opt/http-proxy/mods-available:/opt/http-proxy/mods-available:ro
     - /opt/http-proxy/mods-enabled:/opt/http-proxy/mods-enabled:ro
@@ -64,6 +66,7 @@ services:
 #    - owncloud-front
 #    - prestashop-front
 #    - joomla-front
+#    - wordpress-front
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
@@ -252,6 +255,59 @@ services:
 
 ########################################################################
 
+  wordpress:
+    extends:
+      service: base-service
+#    image: wordpress:latest
+    build:
+      context: wordpress
+      args:
+      - WORDPRESS_VERSION=latest
+    container_name: wordpress
+    expose:
+    - "80"
+    - "443"
+    #environment:
+    #- WORDPRESS_DB_HOST=mysql
+    #- WORDPRESS_DB_USER=root
+    #- WORDPRESS_DB_PASSWORD=
+    #- WORDPRESS_DB_NAME=wordpress
+    #- WORDPRESS_TABLE_PREFIX=
+    # WordPress key generator: https://api.wordpress.org/secret-key/1.1/salt/
+    #- WORDPRESS_AUTH_KEY=
+    #- WORDPRESS_SECURE_AUTH_KEY=
+    #- WORDPRESS_LOGGED_IN_KEY=
+    #- WORDPRESS_NONCE_KEY=
+    #- WORDPRESS_AUTH_SALT=
+    #- WORDPRESS_SECURE_AUTH_SALT=
+    #- WORDPRESS_LOGGED_IN_SALT=
+    #- WORDPRESS_NONCE_SALT=
+#    depends_on:
+#    - mysql
+#    - email-relay
+    links:
+    - mysql:mysql
+#    - memcached-wordpress:memcached
+    - email-relay:email-relay
+    volumes:
+    - /srv/wordpress/acme-challenge/.well-known:/var/www/html/.well-known
+    - /srv/wordpress/htaccess:/var/www/html/.htaccess
+    - /srv/wordpress/wp-config.php:/var/www/html/wp-config.php
+    - /srv/wordpress/wp-content:/var/www/html/wp-content
+    - /srv/wordpress/wp-includes-languages:/var/www/html/wp-includes/languages
+    - /srv/logs/wordpress:/var/log
+    networks:
+    - default
+#    - wordpress-front
+    - wordpress-back-internal
+    - wordpress-back
+    mem_limit: 384m
+    memswap_limit: 512m
+    read_only: false
+    restart: on-failure:5
+
+########################################################################
+
   email-relay:
     extends:
       service: base-service
@@ -270,6 +326,7 @@ services:
     - owncloud-back
     - prestashop-back
     - joomla-back
+    - wordpress-back
     logging:
       driver: "none"
     cpu_shares: 128
@@ -317,6 +374,7 @@ services:
 #    - owncloud-back-internal
     - prestashop-back-internal
     - joomla-back-internal
+    - wordpress-back-internal
 #    ulimits:
 #      nproc: 65535
 #      nofile:
@@ -377,6 +435,15 @@ services:
     - MEM_SIZE=64
     networks:
     - joomla-back-internal
+
+  memcached-wordpress:
+    extends:
+      service: memcached
+    container_name: memcached-wordpress
+    environment:
+    - MEM_SIZE=64
+    networks:
+    - wordpress-back-internal
 
 ########################################################################
 
@@ -604,6 +671,7 @@ services:
     - /srv/owncloud/acme-challenge:/srv/owncloud/acme-challenge
     - /srv/prestashop/acme-challenge:/srv/prestashop/acme-challenge
     - /srv/joomla/acme-challenge:/srv/joomla/acme-challenge
+    - /srv/wordpress/acme-challenge:/srv/wordpress/acme-challenge
     - /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known:/opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known
 #    networks:
 #    - default
@@ -651,6 +719,13 @@ networks:
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
   joomla-back:
+    driver: bridge
+  wordpress-front:
+    driver: bridge
+  wordpress-back-internal:
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+  wordpress-back:
     driver: bridge
   dovecot:
     driver: bridge
