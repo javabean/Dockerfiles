@@ -58,10 +58,9 @@ if [ ! -f /var/www/html/wp-config.php ]; then
 				</IfModule>
 
 				# http://codex.wordpress.org/Hardening_WordPress#Securing_wp-config.php
-				<files wp-config.php>
-				    order allow,deny
-				    deny from all
-				</files>
+				<Files wp-config.php>
+				    Require all denied
+				</Files>
 
 				# BEGIN WordPress
 				<IfModule mod_rewrite.c>
