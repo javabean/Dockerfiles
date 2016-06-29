@@ -29,7 +29,7 @@ baseimage
 			owncloud	(requires email-relay, redis, memcached[, mysql])
 			prestashop	(requires mysql, email-relay[, memcached])
 			joomla 		(requires mysql, email-relay[, memcached])
-			wordpress*
+			wordpress	(requires mysql, email-relay[, memcached])
 			wallabag*
 	mysql
 	email-relay
@@ -38,7 +38,7 @@ baseimage
 	memcached
 	redis
 	openvpn
-	letsencrypt
+	letsencrypt*
 * = not done yet
 
 For dependencies and additional usage notes, go read docker-compose.yml :-)
@@ -67,6 +67,8 @@ Prestashop: online upgrade before upgrading Docker image, then re-install transl
 
 Joomla: online upgrade before upgrading Docker image
 	https://docs.joomla.org/Portal:Upgrading_Versions
+
+WordPress: online upgrade before upgrading Docker image
 
 mysql/Dockerfile:
 		version upgrades: http://dev.mysql.com/doc/refman/5.7/en/mysql-upgrade.html

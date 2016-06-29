@@ -15,9 +15,9 @@ $minimal_apt_get_install curl
 #curl -o /usr/local/bin/tini -fsSLR https://github.com/krallin/tini/releases/download/v0.9.0/tini-static
 curl -o /usr/local/bin/tini -fsSLR https://github.com/krallin/tini/releases/download/v0.9.0/tini
 chmod +x /usr/local/bin/tini
-curl -o /usr/local/bin/dumb-init -fssLR https://github.com/Yelp/dumb-init/releases/download/v1.0.3/dumb-init_1.0.3_amd64
+curl -o /usr/local/bin/dumb-init -fssLR https://github.com/Yelp/dumb-init/releases/download/v1.1.1/dumb-init_1.1.1_amd64
 chmod +x /usr/local/bin/dumb-init
-#curl -o /usr/local/bin/gosu -fssLR "https://github.com/tianon/gosu/releases/download/1.7/gosu-$(dpkg --print-architecture)"
+#curl -o /usr/local/bin/gosu -fssLR "https://github.com/tianon/gosu/releases/download/1.9/gosu-$(dpkg --print-architecture)"
 #chmod +x /usr/local/bin/gosu
 
 groupadd -g 8377 docker_env

@@ -1,9 +1,10 @@
-unexport NAME = cedrik/baseimage
-unexport VERSION = 0.9.18.1
+unexport IMG_NAME = cedrik/baseimage
+unexport IMG_VERSION = 0.9.18.1
 
 
 ########################################################################
 # START set versions here
+# see also docker-compose's .env
 ########################################################################
 
 DOCKER_APT_VERSION = 1.11.*
@@ -15,20 +16,20 @@ DOCKER_MACHINE_VERSION = v0.7.0
 #COMPOSE_PROJECT_NAME = `basename`
 #COMPOSE_FILE = docker-compose_1.yml:docker-compose_2.yml
 
-UBUNTU_VERSION  = 15.10
+UBUNTU_VERSION ?= 15.10
 
 # Would have been much easier with Debian's redirector httpredir.debian.org...
 #APT_MIRROR = mirrors.online.net
 APT_MIRROR = cz.archive.ubuntu.com
 
-MYSQL_VERSION   = 5.6
+MYSQL_VERSION = 5.6
 
 ########################################################################
 # END set versions here
 ########################################################################
 
 
-docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay owncloud redis-owncloud memcached-owncloud mysql prestashop joomla openvpn
+docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay owncloud redis-owncloud memcached-owncloud mysql prestashop joomla openvpn wordpress web-accelerator
 .PHONY: $(docker_compose_build)
 
 
@@ -78,7 +79,7 @@ joomla: mysql email-relay
 
 .PHONY: tag_latest
 tag_latest:
-	docker tag -f $(NAME):$(VERSION) $(NAME):latest
+	docker tag -f $(IMG_NAME):$(IMG_VERSION) $(IMG_NAME):latest
 
 ########################################################################
 
@@ -88,7 +89,11 @@ stats:
 
 .PHONY: ip
 ip:
-	docker inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $@
+	@#docker inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(filter-out $@,$(MAKECMDGOALS))
+	docker inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(NAME)
+
+#%:
+#	@:
 
 ########################################################################
 
@@ -146,6 +151,7 @@ mkdirs:
       /srv/wordpress/wp-content  /srv/wordpress/wp-includes-languages \
                                                   /srv/logs/wordpress/apache2 \
 	/opt/openvpn                                  /srv/logs/openvpn \
+	                                              /srv/logs/ziproxy \
 	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt
 	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/prestashop/acme-challenge/.well-known/acme-challenge  /srv/joomla/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known
 

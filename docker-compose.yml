@@ -366,6 +366,7 @@ services:
     - MYSQL_CUSTOM_OPTS=--performance_schema=off
     volumes:
     - /opt/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    #- /opt/mysql/conf.d:/etc/mysql/conf.d
     - /srv/mysql/data:/var/lib/mysql
     - /srv/mysql/backup:/srv
     - /srv/logs/mysql:/var/log
@@ -571,6 +572,28 @@ services:
 
 ########################################################################
 
+  web-accelerator:
+    extends:
+      service: base-service
+    build: ziproxy
+    container_name: ziproxy
+    expose:
+    - "3128"
+    dns:
+    - 172.31.53.53
+    volumes:
+    - /srv/logs/ziproxy:/var/log
+    networks:
+      vpn:
+        ipv4_address: 172.31.31.28
+    cpu_shares: 128
+    mem_limit: 128m
+    memswap_limit: 192m
+    read_only: false
+    restart: unless-stopped
+
+########################################################################
+
   pptp:
     extends:
       service: base-service
@@ -648,7 +671,7 @@ services:
     mem_limit: 64m
     memswap_limit: 96m
     read_only: false
-#    restart: unless-stopped
+    restart: unless-stopped
 
 ########################################################################
 
