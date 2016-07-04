@@ -653,6 +653,7 @@ services:
     #- OPENVPN_OPTS=
     depends_on:
     - dnsmasq
+    - web-accelerator
     dns:
     - 172.31.53.53
     # use service on gateway IP since docker-compose 1.6 can't assign a fixed IP to dns container

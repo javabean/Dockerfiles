@@ -101,6 +101,10 @@ push "rcvbuf 0"
 # force all traffic through VPN
 push "redirect-gateway autolocal def1 bypass-dhcp"
 push "comp-lzo"
+push "dhcp-option PROXY_HTTP 172.31.31.28 3128"
+#push "dhcp-option PROXY_HTTPS 172.31.31.28 3128"
+#push "dhcp-option PROXY_BYPASS example1.tld example2.tld example3.tld"
+#push "dhcp-option PROXY_AUTO_CONFIG_URL https://www.cedrik.fr/proxy.pac"
 EOF
 	# DNS
 	# Obtain the resolvers from resolv.conf and use them for OpenVPN
@@ -123,7 +127,7 @@ opt-verify
 ;auth SHA256
 # openvpn --show-ciphers
 ;cipher BF-CBC        # Blowfish (default)
-;cipher AES-128-CBC   # AES
+cipher AES-128-CBC   # AES cipher algorithm is well-suited for the ARM processor
 ;cipher DES-EDE3-CBC  # Triple-DES
 # openvpn --show-engines
 ;engine [engine-name]
@@ -196,7 +200,7 @@ key-direction 1 # since tls-auth is inline
 ;auth SHA256
 # openvpn --show-ciphers
 ;cipher BF-CBC        # Blowfish (default)
-;cipher AES-128-CBC   # AES
+cipher AES-128-CBC   # AES cipher algorithm is well-suited for the ARM processor
 ;cipher DES-EDE3-CBC  # Triple-DES
 # common false alarm on WiFi networks
 mute-replay-warnings
@@ -282,6 +286,10 @@ iptables -C FORWARD -i tun+ -j ACCEPT || {
 # Allow TAP interface connections to be forwarded through other interfaces
 #iptables -C FORWARD -i tap+ -j ACCEPT || {
 #	iptables -A FORWARD -i tap+ -j ACCEPT
+#}
+# Force HTTP proxy; commented out since it is pushed to client
+#iptables -t nat -C PREROUTING -s 10.8.0.0/16 -p tcp --dport 80 -j DNAT --to-destination 172.31.31.28:3128 || {
+#	iptables -t nat -A PREROUTING -s 10.8.0.0/16 -p tcp --dport 80 -j DNAT --to-destination 172.31.31.28:3128
 #}
 
 
