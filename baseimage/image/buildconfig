@@ -1,6 +1,6 @@
 export LC_ALL=C
 export DEBIAN_FRONTEND=noninteractive
-minimal_apt_get_install='apt-get install -y --no-install-recommends'
+minimal_apt_get_install='apt-get install -y --no-install-recommends --no-install-suggests'
 
 # Default services
 # Set 1 to the service you want to disable
