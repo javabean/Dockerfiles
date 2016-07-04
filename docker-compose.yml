@@ -122,7 +122,7 @@ services:
 #    - redis-owncloud
 #    - email-relay
     links:
-#    - mysql:mysql
+    - mysql:mysql
 #    - memcached-owncloud:memcached
     - redis-owncloud:redis
     - email-relay:email-relay
@@ -372,7 +372,7 @@ services:
     - /srv/logs/mysql:/var/log
     networks:
 #    - tomcat-back-internal
-#    - owncloud-back-internal
+    - owncloud-back-internal
     - prestashop-back-internal
     - joomla-back-internal
     - wordpress-back-internal
@@ -581,8 +581,8 @@ services:
     - "3128"
     dns:
     - 172.31.53.53
-    volumes:
-    - /srv/logs/ziproxy:/var/log
+#    volumes:
+#    - /srv/logs/ziproxy:/var/log
     networks:
       vpn:
         ipv4_address: 172.31.31.28

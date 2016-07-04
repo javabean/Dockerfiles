@@ -22,10 +22,11 @@ RUN curl -sRL https://download.owncloud.org/download/repositories/${OWNCLOUD_VER
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	curl bzip2 openssl file sqlite3 \
 	libapache2-mod-xsendfile \
-	php5-gd php5-json php5-mysql php5-curl php5-intl php5-mcrypt php5-imagick \
+	php5-gd php5-json php5-mysql php5-curl php5-intl php5-mcrypt php5-imagick php-xml-parser \
 	php5 php5-cli php5-ldap php5-memcached php5-readline php5-sqlite \
+	#php5-pgsql libapache2-mod-php5 \
 	php5-apcu php5-redis \
-	owncloud \
+	owncloud-files \
 # we need sudo to upgrade DB between OwnCloud versions
 	sudo \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
