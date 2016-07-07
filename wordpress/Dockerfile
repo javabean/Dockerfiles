@@ -17,19 +17,19 @@ COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	mysql-client \
-	libpng12-0 libjpeg62 libjpeg-turbo8 php5-gd php5-mysql \
-	php5-curl libxml2 php5-mcrypt openssl php-soap \
-	php5-json php5-intl \
-	php5-memcache php5-memcached \
-	php5-apcu \
+	libpng12-0 libjpeg62 libjpeg-turbo8 php5.6-gd php5.6-mysql \
+	php5.6-curl libxml2 php5.6-mcrypt openssl php5.6-soap \
+	php5.6-json php5.6-intl \
+	php5.6-memcache php5.6-memcached \
+	php5.6-apcu \
 	sudo \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& for m in "rewrite expires headers mime"; do a2enmod $m; done \
 	# PHP configuration
 	&& sed -i'.bak' \
-		-e 's%\(memory_limit\) = 128M%\1 = 64M%' \
-		-e 's%\(upload_max_filesize\) = .M%\1 = 8M%' \
-		/etc/php5/apache2/php.ini
+		-e 's%\(memory_limit\) = .*M%\1 = 64M%' \
+		-e 's%\(upload_max_filesize\) = .*M%\1 = 8M%' \
+		/etc/php/5.6/apache2/php.ini
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
@@ -54,7 +54,7 @@ RUN curl -fsSLR https://wordpress.org/${WORDPRESS_VERSION}.tar.gz | tar xz -C /v
 	&& curl -fsSLR -o /etc/bash_completion.d/wp-completion.bash https://raw.githubusercontent.com/wp-cli/wp-cli/master/utils/wp-completion.bash \
 # statistics tool
 	&& if test -f /usr/share/php5/apcu/apc.php; then ln -s /usr/share/php5/apcu/apc.php "/var/www/html/wp-admin/"; fi \
-	&& if test -f /usr/share/doc/php5-apcu/apc.php; then ln -s /usr/share/doc/php5-apcu/apc.php "/var/www/html/wp-admin/"; fi \
+	&& if test -f /usr/share/doc/php-apcu/apc.php; then ln -s /usr/share/doc/php-apcu/apc.php "/var/www/html/wp-admin/"; fi \
 	&& rm -rf /tmp/* \
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh

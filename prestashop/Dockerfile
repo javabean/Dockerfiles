@@ -16,21 +16,21 @@ COPY GeoIP.conf /etc/
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	libmcrypt4 libjpeg62 libjpeg-turbo8 libpng12-0 libfreetype6 libxml2 mysql-client wget curl unzip xz-utils \
-	php5-mysql php5-curl libxml2 php5-mcrypt php5-gd openssl php-soap gzip \
+	php5.6-mysql php5.6-curl libxml2 php5.6-mcrypt php5.6-gd openssl php5.6-soap gzip \
 	curl wget openssl unzip libmcrypt4 \
-	php5-gd php5-curl php5-mcrypt php5-mysql \
-	php5-json php5-intl php5-imagick \
-	php5-memcache php5-memcached \
-	php5-apcu \
-	php5-geoip \
+	php5.6-gd php5.6-curl php5.6-mcrypt php5.6-mysql \
+	php5.6-json php5.6-intl php5.6-imagick \
+	php5.6-memcache php5.6-memcached \
+	php5.6-apcu \
+	php5.6-geoip \
 	#geoipupdate geoip-bin mmdb-bin\
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& for m in "rewrite headers env mime"; do a2enmod $m; done \
 	# PHP configuration
 	&& sed -i'.bak' \
-		-e 's%\(memory_limit\) = 128M%\1 = 64M%' \
-		-e 's%\(upload_max_filesize\) = .M%\1 = 8M%' \
-		/etc/php5/apache2/php.ini
+		-e 's%\(memory_limit\) = .*M%\1 = 64M%' \
+		-e 's%\(upload_max_filesize\) = .*M%\1 = 8M%' \
+		/etc/php/5.6/apache2/php.ini
 
 #RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
 #	&& docker-php-ext-install iconv mcrypt pdo mysql pdo_mysql mbstring soap gd
@@ -47,7 +47,7 @@ RUN curl -fsSLR -o /tmp/prestashop.zip https://www.prestashop.com/download/old/p
 	&& chown www-data:www-data -R /var/www/html/ \
 # statistics tool
 	&& if test -f /usr/share/php5/apcu/apc.php; then ln -s /usr/share/php5/apcu/apc.php "/var/www/html/${PS_FOLDER_ADMIN:-admin}/"; fi \
-	&& if test -f /usr/share/doc/php5-apcu/apc.php; then ln -s /usr/share/doc/php5-apcu/apc.php "/var/www/html/${PS_FOLDER_ADMIN:-admin}/"; fi \
+	&& if test -f /usr/share/doc/php-apcu/apc.php; then ln -s /usr/share/doc/php-apcu/apc.php "/var/www/html/${PS_FOLDER_ADMIN:-admin}/"; fi \
 	&& rm -rf /tmp/* \
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh

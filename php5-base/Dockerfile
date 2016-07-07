@@ -12,14 +12,17 @@ RUN apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5
 
 RUN echo "deb http://repo.mysql.com/apt/ubuntu/ `lsb_release --codename | cut -f 2` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+RUN LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/php \
+	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	curl bzip2 openssl file \
-	libapache2-mod-php5 libapache2-mod-bw libapache2-mod-rpaf \
+	libapache2-mod-php5.6 libapache2-mod-bw libapache2-mod-rpaf \
 #	libapache2-mod-security2 \
-	php5-gd php5-json php5-mysql php5-curl php5-intl php5-mcrypt php5-imagick \
-	php5 php5-cli php5-ldap php5-memcache php5-memcached php5-readline php5-sqlite \
-	php5-apcu \
-	mysql-client \
+	php5.6-gd php5.6-json php5.6-curl php5.6-intl php5.6-mcrypt php5.6-imagick \
+	php5.6 php5.6-cli php5.6-memcache php5.6-memcached php5.6-readline php5.6-sqlite3 \
+	php5.6-apcu \
+	php5.6-bz2 php5.6-mbstring php5.6-soap php5.6-xml php5.6-zip \
+#	php5.6-fpm php5.6-ldap \
+	php5.6-mysql mysql-client \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& a2dismod mpm_event && a2enmod mpm_prefork \
 	&& for m in "rewrite headers env dir mime"; do a2enmod $m; done \
@@ -37,7 +40,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 RUN sed -i'.bak' -e 's%\(upload_max_filesize\) = 2M%\1 = 8M%' \
 	-e 's%\(session.cookie_httponly\) =.*%\1 = On%' \
 	-e 's%\(session.hash_function\) = 0%\1 = 1%' \
-	  /etc/php5/apache2/php.ini
+	  /etc/php/5.6/apache2/php.ini
 
 #VOLUME /var/www/html
 #VOLUME ["/var/log"]

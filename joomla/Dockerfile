@@ -16,16 +16,16 @@ COPY joomla.conf /etc/apache2/conf-enabled/
 COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-	libpng12-0 libjpeg62 libjpeg-turbo8 zip unzip mysql-client php5-gd php5-mysql \
-	php5-apcu \
+	libpng12-0 libjpeg62 libjpeg-turbo8 zip unzip mysql-client php5.6-gd php5.6-mysql \
+	php5.6-apcu \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& for m in "rewrite"; do a2enmod $m; done \
 	# PHP configuration
 	&& sed -i'.bak' \
-		-e 's%\(memory_limit\) = 128M%\1 = 64M%' \
-		-e 's%\(upload_max_filesize\) = .M%\1 = 8M%' \
+		-e 's%\(memory_limit\) = .*M%\1 = 64M%' \
+		-e 's%\(upload_max_filesize\) = .*M%\1 = 8M%' \
 		-e 's%\(output_buffering\) = .*%\1 = Off%' \
-		/etc/php5/apache2/php.ini
+		/etc/php/5.6/apache2/php.ini
 
 # Install PHP extensions
 #RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \
@@ -42,7 +42,7 @@ RUN curl -fsSL https://github.com/joomla/joomla-cms/releases/download/${JOOMLA_V
 	&& mv /var/www/html/index.html /var/www/html/index.html.bak \
 # statistics tool
 	&& if test -f /usr/share/php5/apcu/apc.php; then ln -s /usr/share/php5/apcu/apc.php "/var/www/html/administrator/"; fi \
-	&& if test -f /usr/share/doc/php5-apcu/apc.php; then ln -s /usr/share/doc/php5-apcu/apc.php "/var/www/html/administrator/"; fi \
+	&& if test -f /usr/share/doc/php-apcu/apc.php; then ln -s /usr/share/doc/php-apcu/apc.php "/var/www/html/administrator/"; fi \
 	&& chown -R www-data:www-data /var/www/html/ \
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh
