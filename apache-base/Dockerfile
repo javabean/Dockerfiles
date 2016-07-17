@@ -9,7 +9,7 @@ COPY runit_apache2 /etc/service/apache2/run
 #COPY runit_apache2 /etc/my_init.d/apache2
 #COPY apache2.conf /etc/apache2.conf
 
-COPY backup_conf.sh restore_conf.sh  /usr/local/bin/
+COPY backup_conf.sh restore_conf.sh docker-entrypoint.sh  /usr/local/bin/
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2 apache2-utils openssl libapache2-mod-xsendfile \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
@@ -34,4 +34,10 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 EXPOSE 80 443
 
 #CMD ["/usr/sbin/apache2", "-DFOREGROUND", "-k", "start"]
+
+#ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/local/bin/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+#CMD ["/usr/sbin/apache2ctl"]
+
 CMD ["/sbin/my_init"]

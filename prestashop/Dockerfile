@@ -62,4 +62,8 @@ EXPOSE 80 443
 
 #ADD https://raw.githubusercontent.com/PrestaShop/docker/master/config_files/docker_run.sh  /
 #ENTRYPOINT ["/docker_run.sh"]
-CMD ["/sbin/my_init"]
+
+#ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["/usr/sbin/apache2ctl"]

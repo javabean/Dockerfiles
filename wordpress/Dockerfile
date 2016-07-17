@@ -45,7 +45,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 #RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \
 #	&& docker-php-ext-install gd mysqli opcache
 
-RUN curl -fsSLR https://wordpress.org/${WORDPRESS_VERSION}.tar.gz | tar xz -C /var/www/html/ --strip-components=1 \
+RUN curl -fsSL https://wordpress.org/${WORDPRESS_VERSION}.tar.gz | tar xz -C /var/www/html/ --strip-components=1 \
 	&& mv /var/www/html/index.html /var/www/html/index.html.bak \
 	&& chown www-data:www-data -R /var/www/html/ \
 # https://wp-cli.org/docs/installing/
@@ -67,4 +67,8 @@ EXPOSE 80 443
 
 #ADD https://raw.githubusercontent.com/docker-library/wordpress/master/apache/docker-entrypoint.sh  /usr/local/bin/
 #ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["/sbin/my_init"]
+
+#ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["/usr/sbin/apache2ctl"]

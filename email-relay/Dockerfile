@@ -37,5 +37,6 @@ RUN sed -i'' -e "s/__POSTFIX_HOSTNAME__/${POSTFIX_HOSTNAME}/" /etc/postfix/main.
 
 EXPOSE 25
 
+# AFAIK postfix needs syslog
 CMD ["/sbin/my_init"]
 # /usr/lib/postfix/master
