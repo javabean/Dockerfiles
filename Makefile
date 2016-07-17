@@ -16,11 +16,11 @@ DOCKER_MACHINE_VERSION = v0.7.0
 #COMPOSE_PROJECT_NAME = `basename`
 #COMPOSE_FILE = docker-compose_1.yml:docker-compose_2.yml
 
-UBUNTU_VERSION ?= 15.10
+UBUNTU_VERSION ?= 16.04
 
 # Would have been much easier with Debian's redirector httpredir.debian.org...
-#APT_MIRROR = mirrors.online.net
-APT_MIRROR = cz.archive.ubuntu.com
+#APT_MIRROR ?= mirrors.online.net
+APT_MIRROR ?= cz.archive.ubuntu.com
 
 MYSQL_VERSION = 5.6
 
@@ -29,7 +29,7 @@ MYSQL_VERSION = 5.6
 ########################################################################
 
 
-docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay owncloud redis-owncloud memcached-owncloud mysql prestashop joomla openvpn wordpress web-accelerator
+docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay owncloud redis-owncloud memcached-owncloud mysql prestashop joomla wordpress openvpn web-accelerator
 .PHONY: $(docker_compose_build)
 
 
@@ -43,7 +43,7 @@ export
 .PHONY: pull
 pull:
 	docker pull ubuntu:$(UBUNTU_VERSION)
-	docker pull quay.io/letsencrypt/letsencrypt
+	#docker pull quay.io/letsencrypt/letsencrypt
 
 .PHONY: build
 build: $(docker_compose_build)

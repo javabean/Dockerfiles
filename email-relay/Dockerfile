@@ -18,7 +18,9 @@ RUN apt-get update \
 # disable chroot for postfix smtp daemon
 # http://www.postfix.org/INSTALL.html#hamlet
 #	&& ln -nf /etc/services /var/spool/postfix/etc/services \
-	&& sed -i'.bak' -e 's/^\(smtp\s*unix\s*-\s*-\s*\)-\(\s*-\s*-\s*smtp\)/\1n\2/' -e 's/^\(relay\s*unix\s*-\s*-\s*\)-\(\s*-\s*-\s*smtp\)/\1n\2/'  /etc/postfix/master.cf \
+#	&& sed -i'.bak' -e 's/^\(smtp\s*unix\s*-\s*-\s*\)-\(\s*-\s*-\s*smtp\)/\1n\2/' -e 's/^\(relay\s*unix\s*-\s*-\s*\)-\(\s*-\s*-\s*smtp\)/\1n\2/'  /etc/postfix/master.cf \
+#	&& sed -i'.bak' -e 's/^\(smtp\s*unix\s*-\s*-\s*\)y\(\s*-\s*-\s*smtp\)/\1n\2/' -e 's/^\(relay\s*unix\s*-\s*-\s*\)y\(\s*-\s*-\s*smtp\)/\1n\2/'  /etc/postfix/master.cf \
+	&& postconf -F smtp/unix/chroot=n relay/unix/chroot=n \
 	&& echo 'Include /etc/opendkim-add.conf' >> /etc/opendkim.conf \
 	&& mkdir -p /var/run/opendkim /var/spool/postfix/var/run/opendkim \
 	&& chown opendkim: /var/run/opendkim /var/spool/postfix/var/run/opendkim \

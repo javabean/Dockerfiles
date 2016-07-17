@@ -34,10 +34,11 @@ baseimage
 	mysql
 	email-relay
 	dnsmasq
-	unbound
+	unbound	(requires dnsmasq)
 	memcached
 	redis
-	openvpn
+	openvpn	(requires dnsmasq, ziproxy)
+	ziproxy
 	letsencrypt*
 * = not done yet
 

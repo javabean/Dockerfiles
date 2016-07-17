@@ -37,7 +37,7 @@ RUN LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/php \
 #	&& docker-php-ext-enable apcu redis memcached
 
 # PHP configuration
-RUN sed -i'.bak' -e 's%\(upload_max_filesize\) = 2M%\1 = 8M%' \
+RUN sed -i'.bak' -e 's%\(upload_max_filesize\) = .*M%\1 = 8M%' \
 	-e 's%\(session.cookie_httponly\) =.*%\1 = On%' \
 	-e 's%\(session.hash_function\) = 0%\1 = 1%' \
 	  /etc/php/5.6/apache2/php.ini

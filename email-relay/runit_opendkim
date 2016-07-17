@@ -1,6 +1,6 @@
 #!/bin/sh
 
-chown opendkim: /opt/email-relay/dkim/keys/*/*.private
+chown -R opendkim:postfix /opt/email-relay/dkim
 
 #exec /sbin/setuser opendkim /usr/sbin/opendkim -f -x /etc/opendkim.conf
 #exec chpst -u opendkim /usr/sbin/opendkim -f -x /etc/opendkim.conf
