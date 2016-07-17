@@ -1,10 +1,13 @@
-#!/bin/sh
+#!/bin/bash
+set -e
 
 getIP() {
 	# Try to detect a NATed connection
 	IP=$(curl -fsSL ipv4.icanhazip.com)
 	#IP=$(curl -fsSL http://myip.enix.org/REMOTE_ADDR)
 }
+
+execOpenVPN() {
 
 if [ ! -d /etc/openvpn/easy-rsa ]; then
 	cd /etc/openvpn
@@ -225,8 +228,9 @@ fi
 
 
 # enable IP forwarding
-echo 1 > /proc/sys/net/ipv4/ip_forward
-sysctl -w net.ipv4.ip_forward=1
+# disabled in Docker since: Read-only file system
+#echo 1 > /proc/sys/net/ipv4/ip_forward
+#sysctl -w net.ipv4.ip_forward=1
 #sysctl -w net.ipv6.conf.default.forwarding=1
 #  Enabling this option disables Stateless Address Autoconfiguration
 #  based on Router Advertisements for this host
@@ -238,8 +242,9 @@ sysctl -w net.ipv4.ip_forward=1
 #confusing clients).
 # When using "client-to-client", OpenVPN routes the traffic itself without
 # involving the TUN/TAP interface so no ICMP redirects are sent
-echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects
-sysctl -w net.ipv4.conf.all.send_redirects=0
+# disabled in Docker since: Read-only file system
+#echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects
+#sysctl -w net.ipv4.conf.all.send_redirects=0
 
 
 #OpenVPN requires TUN/TAP driver support in the kernel. You'll also need a 
@@ -295,4 +300,24 @@ iptables -C FORWARD -i tun+ -j ACCEPT || {
 
 mkdir -p /run/openvpn
 
-exec openvpn --writepid /run/openvpn/server.pid --cd /etc/openvpn --config /etc/openvpn/server.conf ${OPENVPN_OPTS}
+exec /usr/sbin/openvpn --writepid /run/openvpn/server.pid --cd /etc/openvpn --config /etc/openvpn/server.conf ${OPENVPN_OPTS}
+
+}
+
+
+
+
+# this if will check if the first argument is a flag
+# but only works if all arguments require a hyphenated flag
+# -v; -SL; -f arg; etc will work, but not arg1 arg2
+if [ "${1:0:1}" = '-' ]; then
+    set -- openvpn "$@"
+fi
+
+# check for the expected command
+if [ "$1" = 'openvpn' -o "$1" = '/usr/sbin/openvpn' ]; then
+	execOpenVPN
+fi
+
+# else default to run whatever the user wanted like "bash"
+exec "$@"

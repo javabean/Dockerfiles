@@ -1,17 +1,13 @@
 FROM cedrik/baseimage:latest
 MAINTAINER Cédrik LIME
 
-RUN mkdir -p /etc/service/openvpn
-#RUN ln -sf /bin/sv /etc/init.d/openvpn
-COPY runit_openvpn /etc/service/openvpn/run
-#COPY runit_openvpn /etc/my_init.d/openvpn
-
 COPY 60-ipsec.conf /etc/sysctl.d/
+COPY docker-entrypoint.sh  /usr/local/bin/
 COPY newClient.sh revokeClient.sh openvpn-status.sh  /usr/local/bin/
 
 ARG EASYRSA_VERSION=3.0.1
 
-#RUN curl -fsSSL https://swupdate.openvpn.net/repos/repo-public.gpg | apt-key add - \
+#RUN curl -fsSL https://swupdate.openvpn.net/repos/repo-public.gpg | apt-key add - \
 #	&& echo "deb http://swupdate.openvpn.net/apt <osrelease> main" > /etc/apt/sources.list.d/swupdate.openvpn.net.list
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 		openvpn openssl liblzo2-2 iptables kmod ca-certificates bridge-utils \
@@ -23,6 +19,10 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 
 EXPOSE 1194/tcp 1194/udp
 
-#ENTRYPOINT ["/entrypoint.sh"]
 #CMD ["openvpn", "--cd /etc/openvpn", "--config server.conf"]
-CMD ["/sbin/my_init"]
+
+#ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+CMD ["/usr/sbin/openvpn"]
