@@ -22,6 +22,7 @@ services:
     cpu_shares: 1024
     mem_limit: 128m
     memswap_limit: 192m
+#    memory-swappiness: "10"
 #    read_only: true
     restart: none
 
@@ -45,8 +46,9 @@ services:
     - tomcat:tomcat
     - owncloud:owncloud
     - prestashop:prestashop
-    - joomla:joomla
+    #- joomla:joomla
     - wordpress:wordpress
+    - transmission:transmission
     volumes:
 #    - /opt/http-proxy/mods-available:/opt/http-proxy/mods-available:ro
     - /opt/http-proxy/mods-enabled:/opt/http-proxy/mods-enabled:ro
@@ -67,6 +69,7 @@ services:
 #    - prestashop-front
 #    - joomla-front
 #    - wordpress-front
+#    - transmission
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
@@ -100,7 +103,7 @@ services:
     - tomcat-back
     mem_limit: 1024m
     memswap_limit: 1024m
-#    memory-swappiness: "10"
+#    memory-swappiness: "1"
     read_only: false
     restart: on-failure:2
 
@@ -676,6 +679,31 @@ services:
 
 ########################################################################
 
+  transmission:
+    extends:
+      service: base-service
+    build:
+      context: transmission
+    container_name: transmission
+    expose:
+    - "9091"
+    ports:
+    - "51413:51413/tcp"
+    - "51413:51413/udp"
+    volumes:
+    - /srv/transmission:/var/lib/transmission-daemon
+    networks:
+    - default
+    - transmission
+    cpu_shares: 64
+    mem_limit: 256m
+    memswap_limit: 384m
+#    blkio-weight: 10
+    read_only: true
+    restart: none
+
+########################################################################
+
   letsencrypt:
     extends:
       service: base-service
@@ -752,6 +780,8 @@ networks:
   wordpress-back:
     driver: bridge
   dovecot:
+    driver: bridge
+  transmission:
     driver: bridge
   vpn:
     driver: bridge

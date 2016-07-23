@@ -29,7 +29,7 @@ MYSQL_VERSION = 5.6
 ########################################################################
 
 
-docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay owncloud redis-owncloud memcached-owncloud mysql prestashop joomla wordpress openvpn web-accelerator
+docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay owncloud redis-owncloud memcached-owncloud mysql prestashop joomla wordpress openvpn web-accelerator transmission
 .PHONY: $(docker_compose_build)
 
 
@@ -153,7 +153,8 @@ mkdirs:
 	/opt/openvpn                                  /srv/logs/openvpn \
 	                                              /srv/logs/ziproxy \
 	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt
-	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/prestashop/acme-challenge/.well-known/acme-challenge  /srv/joomla/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known
+	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/prestashop/acme-challenge/.well-known/acme-challenge  /srv/joomla/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known \
+	  /srv/transmission
 
 	sudo chmod g-rw,o-rwx /opt/http-proxy/tls
 	#sudo chown root:ssl-cert /opt/http-proxy/tls
@@ -165,6 +166,7 @@ mkdirs:
 	if ls -A /opt/dovecot/*.pem > /dev/null 2>&1; then sudo chmod 0400 /opt/dovecot/*.pem; fi
 	sudo chown -R mail:mail /srv/dovecot
 	sudo chown root: /opt/email-relay
+	sudo chown 105:107 /srv/transmission
 
 ########################################################################
 

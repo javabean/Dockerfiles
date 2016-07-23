@@ -39,6 +39,7 @@ baseimage
 	redis
 	openvpn	(requires dnsmasq, ziproxy)
 	ziproxy
+	transmission
 	letsencrypt*
 * = not done yet
 
