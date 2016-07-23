@@ -29,7 +29,7 @@ MYSQL_VERSION = 5.6
 ########################################################################
 
 
-docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay owncloud redis-owncloud memcached-owncloud mysql prestashop joomla wordpress openvpn web-accelerator transmission
+docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay owncloud redis-owncloud memcached-owncloud mysql prestashop joomla wordpress openvpn web-accelerator transmission netdata
 .PHONY: $(docker_compose_build)
 
 
@@ -154,7 +154,8 @@ mkdirs:
 	                                              /srv/logs/ziproxy \
 	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt
 	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/prestashop/acme-challenge/.well-known/acme-challenge  /srv/joomla/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known \
-	  /srv/transmission
+	  /srv/transmission \
+	/opt/netdata
 
 	sudo chmod g-rw,o-rwx /opt/http-proxy/tls
 	#sudo chown root:ssl-cert /opt/http-proxy/tls
@@ -167,6 +168,7 @@ mkdirs:
 	sudo chown -R mail:mail /srv/dovecot
 	sudo chown root: /opt/email-relay
 	sudo chown 105:107 /srv/transmission
+	sudo chown 999:999 /opt/netdata
 
 ########################################################################
 
