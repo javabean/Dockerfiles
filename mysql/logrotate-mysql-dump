@@ -24,20 +24,20 @@
 		fi
 
 		# TODO: MySQL 5.7: replace mysqldump with
-		# 	mysqlpump -u "${CRON_MYSQL_USER}" "${CRON_MYSQL_PASSWORD}" --single-transaction [--users] --exclude-databases=mysql,test --compress-output=[LZ4|ZLIB] --default-parallelism=0 --skip-watch-progress [--all-databases | --databases db1 db2] > /srv/dump.sql.[lz4|zlib]
+		# 	nice mysqlpump -u "${CRON_MYSQL_USER}" "${CRON_MYSQL_PASSWORD}" --single-transaction [--users] --exclude-databases=mysql,test --compress-output=[LZ4|ZLIB] --default-parallelism=0 --skip-watch-progress [--all-databases | --databases db1 db2] > /srv/dump.sql.[lz4|zlib]
 		# (to decompress:
 		# 	lz4_decompress input_file output_file	|	lz4 -d input_file output_file
 		# 	zlib_decompress input_file output_file	|	openssl zlib -d < input_file > output_file
 		# )
 		if [ -z "$MYSQL_DATABASE" ]; then
-			mysqldump -u "${CRON_MYSQL_USER}" "${CRON_MYSQL_PASSWORD}" --single-transaction --all-databases | gzip > /srv/dump.sql.gz || true
+			nice mysqldump -u "${CRON_MYSQL_USER}" "${CRON_MYSQL_PASSWORD}" --single-transaction --all-databases | gzip > /srv/dump.sql.gz || true
 			# dump all databases in separate files
 			# mysqlshow -u "${CRON_MYSQL_USER}" "${CRON_MYSQL_PASSWORD}"
 			for db in `mysql -u "${CRON_MYSQL_USER}" "${CRON_MYSQL_PASSWORD}" --batch --silent --skip-column-names -e "show databases" | grep -v -i -e information_schema -e performance_schema -e ndbinfo -e sys -e mysql -e test`; do
-				mysqldump -u "${CRON_MYSQL_USER}" "${CRON_MYSQL_PASSWORD}" --single-transaction --databases "${db}" | gzip > "/srv/dump-${db}.sql.gz" || true
+				nice mysqldump -u "${CRON_MYSQL_USER}" "${CRON_MYSQL_PASSWORD}" --single-transaction --databases "${db}" | gzip > "/srv/dump-${db}.sql.gz" || true
 			done
 		else
-			mysqldump -u "${CRON_MYSQL_USER}" "${CRON_MYSQL_PASSWORD}" --single-transaction --databases "${MYSQL_DATABASE}" | gzip > /srv/dump.sql.gz || true
+			nice mysqldump -u "${CRON_MYSQL_USER}" "${CRON_MYSQL_PASSWORD}" --single-transaction --databases "${MYSQL_DATABASE}" | gzip > /srv/dump.sql.gz || true
 		fi
 	endscript
 }
