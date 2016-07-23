@@ -22,6 +22,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 		-e 's/^\(ServerSignature On\)/#\1/' \
 		-e 's/^\(#Header set X-Frame-Options.*\)$/\1\nHeader setifempty X-Frame-Options: "sameorigin"\nHeader setifempty Content-Security-Policy: "frame-ancestors 'self' example.com *.example.net ; object-src 'none' ; plugin-types 'none' ; connect-src 'self' * ;"/' \
 		/etc/apache2/conf-available/security.conf \
+	&& echo "\n\n\n# https://httpoxy.org\nRequestHeader unset Proxy early\n" >> /etc/apache2/conf-available/security.conf \
 #	&& sed -i'.bak' -e 's/SSLProtocol all$/SSLProtocol all -SSLv3/' /etc/apache2/mods-available/ssl.conf \
 	&& mkdir -p /var/www/html/.well-known/acme-challenge && chown -R www-data: /var/www/html/.well-known \
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
