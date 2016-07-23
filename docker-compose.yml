@@ -40,7 +40,6 @@ services:
 #    - tomcat
 #    - owncloud
 #    - prestashop
-#    - joomla
 #    - wordpress
     links:
     - tomcat:tomcat
@@ -49,6 +48,7 @@ services:
     #- joomla:joomla
     - wordpress:wordpress
     - transmission:transmission
+    - netdata:netdata
     volumes:
 #    - /opt/http-proxy/mods-available:/opt/http-proxy/mods-available:ro
     - /opt/http-proxy/mods-enabled:/opt/http-proxy/mods-enabled:ro
@@ -61,15 +61,16 @@ services:
 #    - /opt/letsencrypt:/opt/http-proxy/tls:ro
     - /srv/http-proxy:/var/www:ro
     - /srv/logs/http-proxy:/var/log
-#    networks:
-#    # "default" needed to get connectivity from outside(!)
-#    - default
-#    - tomcat-front
-#    - owncloud-front
-#    - prestashop-front
-#    - joomla-front
-#    - wordpress-front
-#    - transmission
+    networks:
+    # "default" needed to get connectivity from outside(!)
+    - default
+    - tomcat-front
+    - owncloud-front
+    - prestashop-front
+    - joomla-front
+    - wordpress-front
+    - transmission
+    - netdata
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
@@ -84,7 +85,7 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=7.0.69
+      - TOMCAT_VERSION=7.0.70
     container_name: tomcat
     expose:
     - "8080"
@@ -97,8 +98,7 @@ services:
     - /opt/tomcat:/opt/tomcat
     - /srv/logs/tomcat:/var/log
     networks:
-    - default
-#    - tomcat-front
+    - tomcat-front
     - tomcat-back-internal
     - tomcat-back
     mem_limit: 1024m
@@ -121,6 +121,8 @@ services:
     expose:
     - "80"
     - "443"
+    #environment:
+    #- SERVER_NAME=https://www.example.com
 #    depends_on:
 #    - redis-owncloud
 #    - email-relay
@@ -137,8 +139,7 @@ services:
     - /srv/owncloud:/srv/owncloud
     - /srv/logs/owncloud:/var/log
     networks:
-    - default
-#    - owncloud-front
+    - owncloud-front
     - owncloud-back-internal
     - owncloud-back
     mem_limit: 384m
@@ -208,8 +209,7 @@ services:
 #    - /srv/prestashop/admin-backups:/var/www/html/${PS_FOLDER_ADMIN}/backups/
     - /srv/logs/prestashop:/var/log
     networks:
-    - default
-#    - prestashop-front
+    - prestashop-front
     - prestashop-back-internal
     - prestashop-back
     mem_limit: 384m
@@ -247,8 +247,7 @@ services:
     - /srv/logs/joomla:/var/log
     - /srv/joomla:/var/www/html
     networks:
-    - default
-#    - joomla-front
+    - joomla-front
     - joomla-back-internal
     - joomla-back
     mem_limit: 384m
@@ -300,8 +299,7 @@ services:
     - /srv/wordpress/wp-includes-languages:/var/www/html/wp-includes/languages
     - /srv/logs/wordpress:/var/log
     networks:
-    - default
-#    - wordpress-front
+    - wordpress-front
     - wordpress-back-internal
     - wordpress-back
     mem_limit: 384m
@@ -693,7 +691,6 @@ services:
     volumes:
     - /srv/transmission:/var/lib/transmission-daemon
     networks:
-    - default
     - transmission
     cpu_shares: 64
     mem_limit: 256m
@@ -734,8 +731,34 @@ services:
 
 ########################################################################
 
+  netdata:
+    extends:
+      service: base-service
+    build: netdata
+    container_name: netdata
+    expose:
+    - "19999"
+    volumes:
+    - /proc:/mnt/proc:ro
+    - /sys:/mnt/sys:ro
+    - /opt/netdata:/etc/netdata:ro
+    #- /srv/logs/netdata:/var/log
+    cap_add:
+    - SYS_PTRACE
+    networks:
+    - netdata
+    cpu_shares: 128
+    mem_limit: 128m
+    memswap_limit: 192m
+    read_only: false
+    restart: unless-stopped
+
+########################################################################
+########################################################################
+
 #volumes:
 
+########################################################################
 ########################################################################
 
 networks:
@@ -782,6 +805,8 @@ networks:
   dovecot:
     driver: bridge
   transmission:
+    driver: bridge
+  netdata:
     driver: bridge
   vpn:
     driver: bridge
