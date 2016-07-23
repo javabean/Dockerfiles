@@ -35,6 +35,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 	#&& sed -i'.bak' -e 's@\(RewriteEngine on\)$@\1\n  RewriteCond "%{REQUEST_URI}" !"^\.well-known/acme-challenge/.+"\n@' /var/www/owncloud/.htaccess \
 	&& sed -i'.bak' -e 's@\(RewriteEngine on\)$@\1\n  RewriteRule "^\.well-known/acme-challenge/" - [L]@' /var/www/owncloud/.htaccess \
 	&& for m in "remoteip rewrite headers env dir mime"; do a2enmod $m; done \
+	&& a2dissite 000-default \
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh \
 # PHP configuration
