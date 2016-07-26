@@ -152,7 +152,7 @@ mkdirs:
                                                   /srv/logs/wordpress/apache2 \
 	/opt/openvpn                                  /srv/logs/openvpn \
 	                                              /srv/logs/ziproxy \
-	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt
+	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt \
 	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/prestashop/acme-challenge/.well-known/acme-challenge  /srv/joomla/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known \
 	  /srv/transmission \
 	/opt/netdata
@@ -161,8 +161,8 @@ mkdirs:
 	#sudo chown root:ssl-cert /opt/http-proxy/tls
 	sudo chown -R root: /opt/http-proxy/tls
 	sudo chown -R 8080:8080 /opt/tomcat
-	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/prestashop /srv/joomla /srv/wordpress
 	if [ ! -f /srv/joomla/configuration.php ]; then touch /srv/joomla/configuration.php; chown www-data: /srv/joomla/configuration.php; fi
+	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/prestashop /srv/joomla /srv/wordpress
 	# if [ "$(ls -A /opt/dovecot/*.pem)" ]; then
 	if ls -A /opt/dovecot/*.pem > /dev/null 2>&1; then sudo chmod 0400 /opt/dovecot/*.pem; fi
 	sudo chown -R mail:mail /srv/dovecot

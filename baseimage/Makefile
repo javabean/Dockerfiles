@@ -1,5 +1,5 @@
 NAME = cedrik/baseimage
-VERSION = 0.9.18.1
+VERSION = 0.9.19.1
 
 .PHONY: all build test tag_latest release ssh
 
