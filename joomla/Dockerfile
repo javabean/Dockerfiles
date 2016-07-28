@@ -1,6 +1,6 @@
-#FROM joomal:3.4-apache
-#FROM php:5.6-apache
-FROM cedrik/php5-base:latest
+#FROM joomla:3.6-apache
+#FROM php:7.0-apache
+FROM cedrik/php7-base:latest
 MAINTAINER Cédrik LIME
 
 # https://hub.docker.com/_/joomla/
@@ -10,14 +10,15 @@ MAINTAINER Cédrik LIME
 # https://docs.joomla.org/Cache
 
 ############### FIXME  change version here! ###############
-ARG JOOMLA_VERSION=3.4.8
+ARG JOOMLA_VERSION=3.6.0
 
 COPY joomla.conf /etc/apache2/conf-enabled/
 COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-	libpng12-0 libjpeg62 libjpeg-turbo8 zip unzip mysql-client php5.6-gd php5.6-mysql \
-	php5.6-apcu \
+	libpng12-0 libjpeg62 libjpeg-turbo8 zip unzip php7.0-gd php7.0-mysql \
+	#php7.0-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
+	php7.0-apcu \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& for m in "rewrite"; do a2enmod $m; done \
 	# PHP configuration
@@ -25,7 +26,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 		-e 's%\(memory_limit\) = .*M%\1 = 64M%' \
 		-e 's%\(upload_max_filesize\) = .*M%\1 = 8M%' \
 		-e 's%\(output_buffering\) = .*%\1 = Off%' \
-		/etc/php/5.6/apache2/php.ini
+		/etc/php/7.0/apache2/php.ini
 
 # Install PHP extensions
 #RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \

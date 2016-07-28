@@ -1,7 +1,7 @@
 What? (purpose)
 ===============
 
-Base Apache + PHP 5.6 image (via mod-php5, not php-fmp)
+Base Apache + PHP 7.0 image (via mod-php7, not php-fmp)
 
 
 Who? (dependencies)
@@ -13,7 +13,7 @@ Who? (dependencies)
 How? (usage)
 ============
 
-Dockerfile: FROM cedrik/php5-base:latest
+Dockerfile: FROM cedrik/php7-base:latest
 
 
 Where? (volumes)

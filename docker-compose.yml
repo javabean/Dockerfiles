@@ -47,7 +47,7 @@ services:
     - prestashop:prestashop
     #- joomla:joomla
     - wordpress:wordpress
-    - transmission:transmission
+    #- transmission:transmission
     - netdata:netdata
     volumes:
 #    - /opt/http-proxy/mods-available:/opt/http-proxy/mods-available:ro
@@ -156,7 +156,7 @@ services:
     build:
       context: prestashop
       args:
-      - PRESTASHOP_VERSION=1.6.0.14
+      - PRESTASHOP_VERSION=1.6.1.6
     container_name: prestashop
     expose:
     - "80"
@@ -222,11 +222,11 @@ services:
   joomla:
     extends:
       service: base-service
-#    image: joomla:3.4-apache
+#    image: joomla:3.6-apache
     build:
       context: joomla
       args:
-      - JOOMLA_VERSION=3.4.8
+      - JOOMLA_VERSION=3.6.0
     container_name: joomla
     expose:
     - "80"
@@ -693,8 +693,8 @@ services:
     networks:
     - transmission
     cpu_shares: 64
-    mem_limit: 256m
-    memswap_limit: 384m
+    mem_limit: 128m
+    memswap_limit: 192m
 #    blkio-weight: 10
     read_only: true
     restart: none

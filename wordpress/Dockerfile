@@ -1,6 +1,6 @@
 #FROM wordpress:latest
-#FROM php:5.6-apache
-FROM cedrik/php5-base:latest
+#FROM php:7.0-apache
+FROM cedrik/php7-base:latest
 MAINTAINER Cédrik LIME
 
 # https://hub.docker.com/_/wordpress/
@@ -9,27 +9,28 @@ MAINTAINER Cédrik LIME
 # http://codex.wordpress.org/Hardening_WordPress
 
 ############### FIXME  change version here! ###############
-#ARG WORDPRESS_VERSION=wordpress-4.5.2
+#ARG WORDPRESS_VERSION=wordpress-4.5.3
 ARG WORDPRESS_VERSION=latest
 
 COPY wordpress.conf /etc/apache2/conf-enabled/
 COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-	mysql-client \
-	libpng12-0 libjpeg62 libjpeg-turbo8 php5.6-gd php5.6-mysql \
-	php5.6-curl libxml2 php5.6-mcrypt openssl php5.6-soap \
-	php5.6-json php5.6-intl \
-	php5.6-memcache php5.6-memcached \
-	php5.6-apcu \
+	#php7.0-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
+	libpng12-0 libjpeg62 libjpeg-turbo8 php7.0-gd php7.0-mysql \
+	php7.0-curl libxml2 php7.0-mcrypt openssl php7.0-soap \
+	php7.0-json php7.0-intl \
+	php7.0-memcache php7.0-memcached \
+	php7.0-apcu \
 	sudo \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& for m in "rewrite expires headers mime"; do a2enmod $m; done \
 	# PHP configuration
 	&& sed -i'.bak' \
-		-e 's%\(memory_limit\) = .*M%\1 = 64M%' \
+		# WP_MEMORY_LIMIT/64M for user area, WP_MAX_MEMORY_LIMIT/256M for admin tasks
+		-e 's%\(memory_limit\) = .*M%\1 = 256M%' \
 		-e 's%\(upload_max_filesize\) = .*M%\1 = 8M%' \
-		/etc/php/5.6/apache2/php.ini
+		/etc/php/7.0/apache2/php.ini
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php

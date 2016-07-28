@@ -29,7 +29,7 @@ MYSQL_VERSION = 5.6
 ########################################################################
 
 
-docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay owncloud redis-owncloud memcached-owncloud mysql prestashop joomla wordpress openvpn web-accelerator transmission netdata
+docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay mysql owncloud redis-owncloud memcached-owncloud prestashop joomla wordpress openvpn web-accelerator transmission netdata
 .PHONY: $(docker_compose_build)
 
 
@@ -60,6 +60,10 @@ httpd-base: baseimage
 php5-base: httpd-base
 	docker build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php5-base --rm php5-base
 
+.PHONY: php7-base
+php7-base: httpd-base
+	docker build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php7-base --rm php7-base
+
 .PHONY: java
 java: baseimage
 	docker build -t cedrik/java --rm java
@@ -70,7 +74,8 @@ $(docker_compose_build): baseimage
 
 tomcat: java
 http-proxy: httpd-base
-owncloud prestashop: php5-base
+prestashop: php5-base
+owncloud joomla wordpress: php7-base
 owncloud: memcached-owncloud redis-owncloud email-relay
 prestashop: mysql
 joomla: mysql email-relay

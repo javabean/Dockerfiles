@@ -1,4 +1,4 @@
-#FROM php:5.6-apache
+#FROM php:7.0-apache
 FROM cedrik/httpd-base:latest
 MAINTAINER Cédrik LIME
 
@@ -15,14 +15,14 @@ RUN echo "deb http://repo.mysql.com/apt/ubuntu/ `lsb_release --codename | cut -f
 RUN LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/php \
 	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	curl bzip2 openssl file \
-	libapache2-mod-php5.6 libapache2-mod-bw libapache2-mod-rpaf \
+	libapache2-mod-php7.0 libapache2-mod-bw libapache2-mod-rpaf \
 #	libapache2-mod-security2 \
-	php5.6-gd php5.6-json php5.6-curl php5.6-intl php5.6-mcrypt php5.6-imagick \
-	php5.6 php5.6-cli php5.6-readline php5.6-sqlite3 \
-	php5.6-apcu php5.6-memcache php5.6-memcached \
-	php5.6-bz2 php5.6-mbstring php5.6-soap php5.6-xml php5.6-zip \
-#	php5.6-fpm php5.6-ldap \
-	php5.6-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
+	php7.0-gd php7.0-json php7.0-curl php7.0-intl php7.0-mcrypt  php7.0-imagick \
+	php7.0 php7.0-cli php7.0-readline php7.0-sqlite3 \
+	php7.0-apcu php7.0-memcache php7.0-memcached \
+	php7.0-bz2 php7.0-mbstring php7.0-soap php7.0-xml php7.0-zip \
+#	php7.0-fpm php7.0-ldap \
+	php7.0-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& a2dismod mpm_event && a2enmod mpm_prefork \
 	&& a2dismod -f deflate \
@@ -42,7 +42,7 @@ RUN LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/php \
 RUN sed -i'.bak' -e 's%\(upload_max_filesize\) = .*M%\1 = 8M%' \
 	-e 's%\(session.cookie_httponly\) =.*%\1 = On%' \
 	-e 's%\(session.hash_function\) = 0%\1 = 1%' \
-	  /etc/php/5.6/apache2/php.ini
+	  /etc/php/7.0/apache2/php.ini
 
 #VOLUME /var/www/html
 #VOLUME ["/var/log"]
