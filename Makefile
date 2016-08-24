@@ -7,11 +7,11 @@ unexport IMG_VERSION = 0.9.18.1
 # see also docker-compose's .env
 ########################################################################
 
-DOCKER_APT_VERSION = 1.11.*
+DOCKER_APT_VERSION = 1.12.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.7.1
+DOCKER_COMPOSE_VERSION = 1.8.0
 # url fragment
-DOCKER_MACHINE_VERSION = v0.7.0
+DOCKER_MACHINE_VERSION = v0.8.1
 
 #COMPOSE_PROJECT_NAME = `basename`
 #COMPOSE_FILE = docker-compose_1.yml:docker-compose_2.yml
@@ -84,7 +84,7 @@ joomla: mysql email-relay
 
 .PHONY: tag_latest
 tag_latest:
-	docker tag -f $(IMG_NAME):$(IMG_VERSION) $(IMG_NAME):latest
+	docker tag $(IMG_NAME):$(IMG_VERSION) $(IMG_NAME):latest
 
 ########################################################################
 
@@ -96,6 +96,11 @@ stats:
 ip:
 	@#docker inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(filter-out $@,$(MAKECMDGOALS))
 	docker inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(NAME)
+
+.PHONY: health
+health:
+	@# Print out the text of the last 5 checks
+	docker inspect -f '{{ range .State.Health.Log }}{{ println "======\nStart:" .Start }}{{ .Output }}{{end}}' $(NAME)
 
 #%:
 #	@:
@@ -191,11 +196,13 @@ install-docker:
 install-docker-rpi:
 	if [ ! -f /etc/apt/sources.list.d/Hypriot_Schatzkiste.list ]; then \
 		sudo apt-get install apt-transport-https \
-		sudo curl -RL -o /etc/apt/sources.list.d/Hypriot_Schatzkiste.list "https://packagecloud.io/install/repositories/Hypriot/Schatzkiste/config_file.list?os=raspbian&dist=8&source=script" \
+		sudo curl -fRL -o /etc/apt/sources.list.d/Hypriot_Schatzkiste.list "https://packagecloud.io/install/repositories/Hypriot/Schatzkiste/config_file.list?os=raspbian&dist=8&source=script" \
 		curl -fsSL https://packagecloud.io/Hypriot/Schatzkiste/gpgkey | sudo apt-key add - \
 		sudo usermod -aG docker `whoami`; \
-	fi \
-	sudo apt-get update && sudo apt-get install docker-hypriot=$(DOCKER_APT_VERSION); \
+	fi
+#	echo "overlay" | sudo tee -a /etc/modules \
+	sudo apt-get update && sudo apt-get install docker-hypriot=$(DOCKER_APT_VERSION)
+	sudo systemctl enable docker
 
 .PHONY: install-docker-compose
 install-docker-compose:
@@ -209,7 +216,7 @@ install-docker-compose:
 install-docker-compose-rpi:
 	if [ ! -f /etc/apt/sources.list.d/Hypriot_Schatzkiste.list ]; then \
 		sudo apt-get install apt-transport-https \
-		sudo curl -RL -o /etc/apt/sources.list.d/Hypriot_Schatzkiste.list "https://packagecloud.io/install/repositories/Hypriot/Schatzkiste/config_file.list?os=raspbian&dist=8&source=script" \
+		sudo curl -fRL -o /etc/apt/sources.list.d/Hypriot_Schatzkiste.list "https://packagecloud.io/install/repositories/Hypriot/Schatzkiste/config_file.list?os=raspbian&dist=8&source=script" \
 		curl -fsSL https://packagecloud.io/Hypriot/Schatzkiste/gpgkey | sudo apt-key add - \
 		sudo usermod -aG docker `whoami`; \
 	fi \
