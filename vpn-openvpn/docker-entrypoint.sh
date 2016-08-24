@@ -129,9 +129,9 @@ opt-verify
 ;auth SHA1    # default
 ;auth SHA256
 # openvpn --show-ciphers
-;cipher BF-CBC        # Blowfish (default)
+;cipher BF-CBC        # Blowfish (default; do not use: Sweet32)
 cipher AES-128-CBC   # AES cipher algorithm is well-suited for the ARM processor
-;cipher DES-EDE3-CBC  # Triple-DES
+;cipher DES-EDE3-CBC  # Triple-DES (do not use: Sweet32)
 # openvpn --show-engines
 ;engine [engine-name]
 
@@ -202,9 +202,9 @@ key-direction 1 # since tls-auth is inline
 ;auth SHA1    # default
 ;auth SHA256
 # openvpn --show-ciphers
-;cipher BF-CBC        # Blowfish (default)
+;cipher BF-CBC        # Blowfish (default; do not use: Sweet32)
 cipher AES-128-CBC   # AES cipher algorithm is well-suited for the ARM processor
-;cipher DES-EDE3-CBC  # Triple-DES
+;cipher DES-EDE3-CBC  # Triple-DES (do not use: Sweet32)
 # common false alarm on WiFi networks
 mute-replay-warnings
 
