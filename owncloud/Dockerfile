@@ -1,6 +1,6 @@
 #FROM owncloud:latest
 #FROM php:7.0-apache
-FROM cedrik/php5-base:latest
+FROM cedrik/php7-base:latest
 MAINTAINER Cédrik LIME
 
 # see https://github.com/docker-library/owncloud/blob/master/9.0/apache/Dockerfile

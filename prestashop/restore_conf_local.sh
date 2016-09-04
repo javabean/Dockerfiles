@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 
+/usr/local/bin/wait_for.sh mysqladmin --silent --wait=9 --connect_timeout 10 -h "${DB_SERVER:-mysql}" -u "${DB_USER:-prestashop}" -p"${DB_PASSWD:-prestashop}" ping
+
 # copy backup of conf dirs if mounted volume is empty
 
 for d in override \

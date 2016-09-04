@@ -11,3 +11,5 @@ ln -s /usr/bin/vim.tiny /usr/bin/vim
 
 ## This tool runs a command as another user and sets $HOME.
 cp /bd_build/bin/setuser /sbin/setuser
+
+cp -a /bd_build/bin/wait_for.sh /usr/local/bin/

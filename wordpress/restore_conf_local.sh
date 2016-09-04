@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+/usr/local/bin/wait_for.sh mysqladmin --silent --wait=9 --connect_timeout 10 -h "${WORDPRESS_DB_HOST:-mysql}" -u "${WORDPRESS_DB_USER:-wordpress}" -p"${WORDPRESS_DB_PASSWORD:-wordpress}" ping
+
 # copy backup of conf dirs if mounted volume is empty
 
 # if [ ! "$(ls -U "/var/www/html/wp-content/")" ]; then

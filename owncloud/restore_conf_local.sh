@@ -16,3 +16,5 @@ fi
 if [ ! -z "${SERVER_NAME}" ]; then
 	sed -i'' -e "s%^\(\s*\)#*\(.*\)__SERVER_NAME__\(.*\)$%\1\2${SERVER_NAME}\3%g" /etc/apache2/conf-enabled/owncloud.conf
 fi
+
+#/usr/local/bin/wait_for.sh mysqladmin --silent --wait=9 --connect_timeout 10 -h "${OC_DB_HOST:-mysql}" -u "${OC_DB_USER:-owncloud}" -p"${OC_DB_PASSWORD:-owncloud}" ping
