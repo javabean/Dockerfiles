@@ -30,6 +30,7 @@ baseimage
 			prestashop	(requires mysql, email-relay[, memcached])
 			joomla 		(requires mysql, email-relay[, memcached])
 			wordpress	(requires mysql, email-relay[, memcached])
+			dokuwiki	(requires email-relay)
 			wallabag*
 	mysql
 	email-relay
@@ -71,6 +72,9 @@ Joomla: online upgrade before upgrading Docker image
 	https://docs.joomla.org/Portal:Upgrading_Versions
 
 WordPress: online upgrade before upgrading Docker image
+
+DokuWiki: online upgrade before upgrading Docker image
+	http://www.dokuwiki.org/plugin:upgrade
 
 mysql/Dockerfile:
 		version upgrades: http://dev.mysql.com/doc/refman/5.7/en/mysql-upgrade.html

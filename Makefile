@@ -29,7 +29,7 @@ MYSQL_VERSION = 5.6
 ########################################################################
 
 
-docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay mysql owncloud redis-owncloud memcached-owncloud prestashop joomla wordpress openvpn web-accelerator transmission netdata
+docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay mysql owncloud redis-owncloud memcached-owncloud prestashop joomla wordpress dokuwiki openvpn web-accelerator transmission netdata
 .PHONY: $(docker_compose_build)
 
 
@@ -75,10 +75,10 @@ $(docker_compose_build): baseimage
 tomcat: java
 http-proxy: httpd-base
 prestashop: php5-base
-owncloud joomla wordpress: php7-base
-owncloud: memcached-owncloud redis-owncloud email-relay
-prestashop: mysql
-joomla: mysql email-relay
+owncloud joomla wordpress dokuwiki: php7-base
+owncloud: memcached-owncloud redis-owncloud
+owncloud joomla wordpress prestashop: mysql email-relay
+dokuwiki: email-relay
 
 ########################################################################
 
@@ -116,6 +116,7 @@ new-certificates:
 		-w /srv/owncloud/acme-challenge -d oc.cedrik.fr \
 		-w /srv/prestashop/acme-challenge -d boutique.vingt-citadelles.fr -d boutique.piacercanto.org \
 		-w /srv/joomla -d beta.piacercanto.org \
+		-w /srv/dokuwiki/acme-challenge -d wiki.cedrik.fr \
 		-w /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT -d www.cedrik.fr -d cedrik.fr -d wpad.cedrik.fr
 
 .PHONY: renew-certificates
@@ -158,12 +159,14 @@ mkdirs:
 	/opt/dovecot           /srv/dovecot           /srv/logs/dovecot \
 	/opt/email-relay/dkim/keys \
 		                   /srv/joomla            /srv/logs/joomla/apache2 \
+      /srv/dokuwiki/conf  /srv/dokuwiki/lib/plugins  /srv/dokuwiki/data \
+                                                  /srv/logs/dokuwiki/apache2 \
       /srv/wordpress/wp-content  /srv/wordpress/wp-includes-languages \
                                                   /srv/logs/wordpress/apache2 \
 	/opt/openvpn                                  /srv/logs/openvpn \
 	                                              /srv/logs/ziproxy \
 	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt \
-	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/prestashop/acme-challenge/.well-known/acme-challenge  /srv/joomla/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known \
+	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/prestashop/acme-challenge/.well-known/acme-challenge  /srv/joomla/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known /srv/dokuwiki/acme-challenge/.well-known \
 	  /srv/transmission \
 	/opt/netdata
 
@@ -172,7 +175,7 @@ mkdirs:
 	sudo chown -R root: /opt/http-proxy/tls
 	sudo chown -R 8080:8080 /opt/tomcat
 	if [ ! -f /srv/joomla/configuration.php ]; then touch /srv/joomla/configuration.php; chown www-data: /srv/joomla/configuration.php; fi
-	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/prestashop /srv/joomla /srv/wordpress
+	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/prestashop /srv/joomla /srv/wordpress /srv/dokuwiki
 	# if [ "$(ls -A /opt/dovecot/*.pem)" ]; then
 	if ls -A /opt/dovecot/*.pem > /dev/null 2>&1; then sudo chmod 0400 /opt/dovecot/*.pem; fi
 	sudo chown -R mail:mail /srv/dovecot

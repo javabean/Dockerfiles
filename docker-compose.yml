@@ -7,12 +7,12 @@ services:
 
   base-service:
     build: .
-     # default tmpfs opts: rw,noexec,nosuid,nodev,size=65536k / 50%
+    # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
 #    tmpfs:
 #    - /run:rw,nosuid,noexec,relatime,size=32768k,mode=755
 #    - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
-#    - /var/log:rw,noexec,nosuid,nodev,size=65536k
-#    - /tmp
+#    - /var/log
+#    - /tmp:rw,nosuid,nodev,noexec,size=65536k,mode=1777,strictatime
 #   shm_size: 64M
     logging:
       driver: "json-file"
@@ -41,12 +41,14 @@ services:
 #    - owncloud
 #    - prestashop
 #    - wordpress
+#    - dokuwiki
     links:
     - tomcat:tomcat
     - owncloud:owncloud
     - prestashop:prestashop
     #- joomla:joomla
     - wordpress:wordpress
+    - dokuwiki:dokuwiki
     #- transmission:transmission
     - netdata:netdata
     volumes:
@@ -69,6 +71,7 @@ services:
     - prestashop-front
     - joomla-front
     - wordpress-front
+    - dokuwiki-front
     - transmission
     - netdata
     cpu_shares: 256
@@ -309,6 +312,37 @@ services:
 
 ########################################################################
 
+  dokuwiki:
+    extends:
+      service: base-service
+    build:
+      context: dokuwiki
+      args:
+      - DOKUWIKI_VERSION=stable
+    container_name: dokuwiki
+    expose:
+    - "80"
+    - "443"
+#    depends_on:
+#    - email-relay
+    links:
+    - email-relay:email-relay
+    volumes:
+    - /srv/dokuwiki/acme-challenge/.well-known:/var/www/html/.well-known
+    - /srv/dokuwiki/conf:/var/www/html/conf
+    - /srv/dokuwiki/lib/plugins:/var/www/html/lib/plugins
+    - /srv/dokuwiki/data:/var/www/html/data
+    - /srv/logs/dokuwiki:/var/log
+    networks:
+    - dokuwiki-front
+    - dokuwiki-back
+    mem_limit: 384m
+    memswap_limit: 512m
+    read_only: false
+    restart: on-failure:5
+
+########################################################################
+
   email-relay:
     extends:
       service: base-service
@@ -328,6 +362,7 @@ services:
     - prestashop-back
     - joomla-back
     - wordpress-back
+    - dokuwiki-back
     logging:
       driver: "none"
     cpu_shares: 128
@@ -801,6 +836,10 @@ networks:
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
   wordpress-back:
+    driver: bridge
+  dokuwiki-front:
+    driver: bridge
+  dokuwiki-back:
     driver: bridge
   dovecot:
     driver: bridge
