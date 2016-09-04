@@ -1,7 +1,7 @@
 #!/bin/sh
 
-mkdir -p /var/log/mysql
-chown mysql:adm /var/log/mysql
+mkdir -p /var/log/mysql /var/run/mysqld
+chown mysql:adm /var/log/mysql /var/run/mysqld
 
 # https://dev.mysql.com/doc/refman/5.7/en/server-parameters.html
 
