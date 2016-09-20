@@ -2,9 +2,10 @@
 $AUTOCONFIG = array(
   "directory"     => "/srv/owncloud/data",
 
-  "dbtype"        => "sqlite",
-  "dbname"        => "owncloud",
-  "dbtableprefix" => "",
+//  "dbtype"        => "sqlite",
+//  "dbname"        => "owncloud",
+//  "dbtableprefix" => "",
+
 //  'dbtype' => 'mysql',
 //  'dbhost' => 'mysql';
 //  'dbname' => 'owncloud';
