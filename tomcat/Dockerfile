@@ -14,7 +14,7 @@ COPY runit_tomcat /etc/service/tomcat/run
 COPY docker-entrypoint.sh  /usr/local/bin/
 
 ############### FIXME  change version here! ###############
-ARG TOMCAT_VERSION=7.0.69
+ARG TOMCAT_VERSION=7.0.72
 
 # Create "tomcat" user
 RUN	if ! getent group "tomcat" > /dev/null 2>&1 ; then \
@@ -40,7 +40,7 @@ RUN	if ! getent group "tomcat" > /dev/null 2>&1 ; then \
 		&& chmod 700 /etc/authbind/byuid/$TOMCAT_UID ; \
 	fi
 
-RUN curl -fsSL http://www.eu.apache.org/dist/tomcat/tomcat-7/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | tar xz -C /usr/local/ \
+RUN curl -fsSL http://archive.apache.org/dist/tomcat/tomcat-7/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | tar xz -C /usr/local/ \
 	&& ln -s /usr/local/apache-tomcat-* /usr/local/tomcat \
 	&& rm -r /usr/local/tomcat/webapps/docs /usr/local/tomcat/webapps/examples
 
@@ -50,7 +50,7 @@ EXPOSE 8080 8443
 
 USER tomcat
 
-#ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/local/bin/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
 #ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 

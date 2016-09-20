@@ -22,7 +22,7 @@ USER debian-transmission
 
 EXPOSE 9091 51413/tcp 51413/udp
 
-#ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/local/bin/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
 #ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 

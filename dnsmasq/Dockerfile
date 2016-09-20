@@ -18,7 +18,7 @@ RUN mkdir -p /opt/dnsmasq/dnsmasq.d \
 
 EXPOSE 53/tcp 53/udp
 
-#ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/local/bin/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
 #ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 

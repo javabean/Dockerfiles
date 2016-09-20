@@ -7,6 +7,8 @@ MAINTAINER Cédrik LIME
 ############### FIXME  change version here! ###############
 #ARG DOKUWIKI_VERSION=2016-06-26a
 ARG DOKUWIKI_VERSION=stable
+# Languages to keep (delete all others)
+ARG STRIP_LANGS_KEEP=
 
 
 COPY dokuwiki.conf /etc/apache2/conf-enabled/
@@ -67,7 +69,7 @@ RUN curl -fsSL https://download.dokuwiki.org/src/dokuwiki/dokuwiki-${DOKUWIKI_VE
 	&& chmod +x /var/www/html/bin/*.php \
 	&& find /var/www/html -name '_dummy' -delete \
 	&& rm /var/www/html/README /var/www/html/COPYING \
-#	&& /var/www/html/bin/striplangs.php -k en,fr \
+	&& if [ ! -z $STRIP_LANGS_KEEP ]; then /var/www/html/bin/striplangs.php -k "${STRIP_LANGS_KEEP}" ; fi \
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh
 
@@ -79,7 +81,7 @@ RUN curl -fsSL https://download.dokuwiki.org/src/dokuwiki/dokuwiki-${DOKUWIKI_VE
 
 EXPOSE 80 443
 
-#ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/local/bin/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
 #ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/usr/sbin/apache2ctl"]

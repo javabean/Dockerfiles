@@ -7,7 +7,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 	&& curl -fsSLR -o /tmp/kickstart.sh "https://raw.githubusercontent.com/firehol/netdata-demo-site/master/install-required-packages.sh" \
 	&& bash /tmp/kickstart.sh netdata \
 #	&& bash /tmp/kickstart.sh netdata-all \
-	&& git clone https://github.com/firehol/netdata.git /usr/src/netdata.git \
+	&& git clone --depth=1 https://github.com/firehol/netdata.git /usr/src/netdata.git \
 	&& cd /usr/src/netdata.git \
 	&& ./netdata-installer.sh --dont-wait --dont-start-it \
 	&& cd - \
@@ -24,7 +24,10 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 		-e 's/^\(\s*\)#*\s*\(memory mode \) = .*/\1\2 = ram/' \
 		-e 's/^\(\s*\)#*\s*\(multi threaded web server \) = .*/\1\2 = no/' \
 		/etc/netdata/netdata.conf \
-	&& tar czf /etc/netdata.tgz -C /etc netdata
+	&& tar czf /etc/netdata.tgz -C /etc netdata \
+	&& ln -sf /dev/null /var/log/netdata/access.log \
+	&& ln -sf /dev/null /var/log/netdata/debug.log \
+	&& ln -sf /dev/stderr /var/log/netdata/error.log
 
 #VOLUME ["/etc/netdata" "/var/log/netdata"]
 
@@ -32,7 +35,7 @@ USER netdata
 
 EXPOSE 19999
 
-#ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/local/bin/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
 #ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 

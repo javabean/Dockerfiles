@@ -15,10 +15,11 @@ COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/
 COPY GeoIP.conf /etc/
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-	libmcrypt4 libjpeg62 libjpeg-turbo8 libpng12-0 libfreetype6 libxml2 mysql-client wget curl unzip xz-utils \
-	php5.6-mysql php5.6-curl libxml2 php5.6-mcrypt php5.6-gd openssl php5.6-soap gzip \
+	#php5.6-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* wget curl unzip xz-utils \
+	libmcrypt4 libjpeg62 libjpeg-turbo8 libpng12-0 libfreetype6 libxml2 wget curl unzip xz-utils \
+	php5.6-curl libxml2 php5.6-mcrypt php5.6-gd openssl php5.6-soap gzip \
 	curl wget openssl unzip libmcrypt4 \
-	php5.6-gd php5.6-curl php5.6-mcrypt php5.6-mysql \
+	php5.6-gd php5.6-curl php5.6-mcrypt \
 	php5.6-json php5.6-intl php5.6-imagick \
 	php5.6-memcache php5.6-memcached \
 	php5.6-apcu \
@@ -63,7 +64,7 @@ EXPOSE 80 443
 #ADD https://raw.githubusercontent.com/PrestaShop/docker/master/config_files/docker_run.sh  /
 #ENTRYPOINT ["/docker_run.sh"]
 
-#ENTRYPOINT ["/usr/local/bin/dumb-init", "/usr/local/bin/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
 #ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/usr/sbin/apache2ctl"]
