@@ -1,7 +1,11 @@
 FROM ubuntu:16.04
+#FROM armhf/ubuntu:16.04
 MAINTAINER Cédrik LIME <info@cedrik.fr>
 
 ARG APT_MIRROR=fr.archive.ubuntu.com
+#ARG APT_MIRROR=ports.ubuntu.com/ubuntu-ports
+
+#ENV CONTAINERPILOT=file:///usr/local/etc/containerpilot.json
 
 ADD . /bd_build
 
@@ -10,8 +14,11 @@ RUN /bd_build/prepare.sh && \
 	/bd_build/utilities.sh && \
 	/bd_build/cleanup.sh
 
+#VOLUME ["/var/log"]
+
 #ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/docker-entrypoint.sh"]
-#ENTRYPOINT ["/usr/local/bin/dumb-init", "/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/dumb-init", "--", "/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/bin/containerpilot", "--", "/docker-entrypoint.sh"]
 #ENTRYPOINT ["/docker-entrypoint.sh"]
 
 CMD ["/sbin/my_init"]

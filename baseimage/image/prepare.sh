@@ -11,7 +11,10 @@ mkdir -p /etc/container_environment
 echo -n no > /etc/container_environment/INITRD
 
 # Switch to local mirror
+# x86
 sed -i "s%http://archive.ubuntu.com%http://${APT_MIRROR:-archive.ubuntu.com}%g" /etc/apt/sources.list
+# arm
+sed -i "s%http://ports.ubuntu.com/ubuntu-ports%http://${APT_MIRROR:-ports.ubuntu.com/ubuntu-ports}%g" /etc/apt/sources.list
 
 ## Enable Ubuntu Universe and Multiverse.
 sed -i 's/^#\s*\(deb.*universe\)$/\1/g' /etc/apt/sources.list
@@ -38,7 +41,7 @@ $minimal_apt_get_install apt-utils
 $minimal_apt_get_install apt-transport-https ca-certificates
 
 ## Install add-apt-repository
-$minimal_apt_get_install software-properties-common
+#$minimal_apt_get_install software-properties-common
 
 ## Upgrade all packages.
 #apt-get dist-upgrade -y --no-install-recommends
