@@ -1,5 +1,4 @@
 #!/bin/sh
 
-#exec /sbin/setuser postfix /usr/lib/postfix/sbin/master
-#exec chpst -u postfix /usr/lib/postfix/sbin/master
+#exec gosu postfix /usr/lib/postfix/sbin/master
 exec /usr/lib/postfix/sbin/master

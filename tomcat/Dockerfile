@@ -35,9 +35,16 @@ RUN	if ! getent group "tomcat" > /dev/null 2>&1 ; then \
 			&& chmod 755 /etc/authbind \
 			&& chmod 755 /etc/authbind/byuid ; \
 		fi \
-		&& echo '0.0.0.0/0:1,1023' > /etc/authbind/byuid/$TOMCAT_UID \
-		&& chown tomcat:tomcat /etc/authbind/byuid/$TOMCAT_UID \
-		&& chmod 700 /etc/authbind/byuid/$TOMCAT_UID ; \
+		if [ ! -d "/etc/authbind/byport" ]; then \
+			mkdir -p /etc/authbind/byport \
+			&& chmod 755 /etc/authbind \
+			&& chmod 755 /etc/authbind/byport ; \
+		fi \
+		&& echo "0.0.0.0/0,80-80" > /etc/authbind/byuid/$TOMCAT_UID \
+		&& echo "0.0.0.0/0,443-443" >> /etc/authbind/byuid/$TOMCAT_UID \
+		&& touch /etc/authbind/byport/80 /etc/authbind/byport/443 \
+		&& chown tomcat:tomcat /etc/authbind/byuid/$TOMCAT_UID /etc/authbind/byport/80 /etc/authbind/byport/443 \
+		&& chmod 700 /etc/authbind/byuid/$TOMCAT_UID /etc/authbind/byport/80 /etc/authbind/byport/443 ; \
 	fi
 
 RUN curl -fsSL http://archive.apache.org/dist/tomcat/tomcat-7/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | tar xz -C /usr/local/ \
@@ -57,5 +64,3 @@ ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint
 # Can not use env var here...
 #CMD ["$CATALINA_HOME/bin/catalina.sh", "run"]
 CMD ["run"]
-
-#CMD ["/sbin/my_init"]

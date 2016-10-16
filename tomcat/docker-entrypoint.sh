@@ -10,8 +10,12 @@ fi
 
 # check for the expected command
 if [ "$1" = "$CATALINA_HOME/bin/catalina.sh" ]; then
-	#exec /sbin/setuser tomcat $CATALINA_HOME/bin/catalina.sh run >> "$CATALINA_BASE/logs/catalina.out" 2>&1
-	exec "$@" >> "$CATALINA_BASE/logs/catalina.out" 2>&1
+	#exec gosu tomcat "$@" >> "$CATALINA_BASE/logs/catalina.out" 2>&1
+	if [ -x /usr/bin/authbind ]; then
+		exec /usr/bin/authbind --deep "$@" >> "$CATALINA_BASE/logs/catalina.out" 2>&1
+	else
+		exec "$@" >> "$CATALINA_BASE/logs/catalina.out" 2>&1
+	fi
 fi
 
 # else default to run whatever the user wanted like "bash"
