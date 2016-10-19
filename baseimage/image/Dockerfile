@@ -16,9 +16,9 @@ RUN /bd_build/prepare.sh && \
 
 #VOLUME ["/var/log"]
 
-#ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/docker-entrypoint.sh"]
-#ENTRYPOINT ["/usr/local/bin/dumb-init", "--", "/docker-entrypoint.sh"]
-#ENTRYPOINT ["/usr/local/bin/containerpilot", "--", "/docker-entrypoint.sh"]
-#ENTRYPOINT ["/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/sbin/tini", "-g", "--", "/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/sbin/dumb-init", "--", "/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/sbin/containerpilot", "--", "/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/docker-entrypoint.sh"]
 
 CMD ["/sbin/my_init"]

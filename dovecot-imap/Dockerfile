@@ -27,8 +27,6 @@ EXPOSE 143 993 4190
 #ENTRYPOINT /usr/sbin/dovecot
 #CMD ["-F", "-c", "/etc/dovecot/dovecot.conf"]
 
-#ENTRYPOINT ["/usr/local/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
-ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
-#ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/sbin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 
 CMD ["/usr/sbin/dovecot"]

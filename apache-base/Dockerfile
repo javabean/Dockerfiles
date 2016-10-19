@@ -38,9 +38,7 @@ EXPOSE 80 443
 
 #CMD ["/usr/sbin/apache2", "-DFOREGROUND", "-k", "start"]
 
-#ENTRYPOINT ["/usr/local/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
-#ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
-#ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+#ENTRYPOINT ["/usr/local/sbin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 #CMD ["/usr/sbin/apache2ctl"]
 
 CMD ["/sbin/my_init"]

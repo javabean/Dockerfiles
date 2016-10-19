@@ -57,9 +57,7 @@ EXPOSE 8080 8443
 
 USER tomcat
 
-#ENTRYPOINT ["/usr/local/bin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
-ENTRYPOINT ["/usr/local/bin/tini", "-g", "--", "/usr/local/bin/docker-entrypoint.sh"]
-#ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/sbin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 
 # Can not use env var here...
 #CMD ["$CATALINA_HOME/bin/catalina.sh", "run"]

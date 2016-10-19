@@ -5,6 +5,7 @@ set -x
 
 ## Install init process.
 cp -a /bd_build/bin/my_init /sbin/
+cp -a /bd_build/bin/docker-init.sh /usr/local/sbin/
 mkdir -p /etc/my_init.d
 mkdir -p /etc/container_environment
 touch /etc/container_environment.sh
@@ -18,30 +19,30 @@ if [ "`dpkg --print-architecture | awk -F- '{ print $NF }'`" = "amd64" ]; then
 if [ -z "${TINI_VERSION}" -o "${TINI_VERSION}" = "latest" ]; then
 	TAG_NAME="$(curl -fsSL https://api.github.com/repos/krallin/tini/releases/latest | jq --raw-output '.tag_name')"
 	echo "Downloading Tini $TAG_NAME"
-	curl -o /usr/local/bin/tini -fsSLR $(curl -fsSL https://api.github.com/repos/krallin/tini/releases/latest | jq --raw-output '.assets[] | select(.name == "tini") | .browser_download_url')
+	curl -o /usr/local/sbin/tini -fsSLR $(curl -fsSL https://api.github.com/repos/krallin/tini/releases/latest | jq --raw-output '.assets[] | select(.name == "tini") | .browser_download_url')
 else
-	#curl -o /usr/local/bin/tini -fsSLR https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static
-	curl -o /usr/local/bin/tini -fsSLR https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini
+	#curl -o /usr/local/sbin/tini -fsSLR https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static
+	curl -o /usr/local/sbin/tini -fsSLR https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini
 fi
-chmod +x /usr/local/bin/tini*
+chmod +x /usr/local/sbin/tini*
 if [ -z "${DUMB_INIT_VERSION}" -o "${DUMB_INIT_VERSION}" = "latest" ]; then
 	TAG_NAME="$(curl -fsSL https://api.github.com/repos/Yelp/dumb-init/releases/latest | jq --raw-output '.tag_name')"
 	echo "Downloading dumb-init $TAG_NAME"
-	curl -o /usr/local/bin/dumb-init -fsSLR $(curl -fsSL https://api.github.com/repos/Yelp/dumb-init/releases/latest | jq --raw-output ".assets[] | select(.name == \"dumb-init_${TAG_NAME:1}_amd64\") | .browser_download_url")
+	curl -o /usr/local/sbin/dumb-init -fsSLR $(curl -fsSL https://api.github.com/repos/Yelp/dumb-init/releases/latest | jq --raw-output ".assets[] | select(.name == \"dumb-init_${TAG_NAME:1}_amd64\") | .browser_download_url")
 else
-	curl -o /usr/local/bin/dumb-init -fsSLR https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_amd64
+	curl -o /usr/local/sbin/dumb-init -fsSLR https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_amd64
 fi
-chmod +x /usr/local/bin/dumb-init
+chmod +x /usr/local/sbin/dumb-init
 #if [ -z "${CONTAINERPILOT_VERSION}" -o "${CONTAINERPILOT_VERSION}" = "latest" ]; then
 #	TAG_NAME="$(curl -fsSL https://api.github.com/repos/joyent/containerpilot/releases/latest | jq --raw-output '.tag_name')"
 #	echo "Downloading ContainerPilot $TAG_NAME"
-#	curl -fsSL $(curl -fsSL https://api.github.com/repos/joyent/containerpilot/releases/latest | jq --raw-output ".assets[] | select(.name == \"containerpilot-${TAG_NAME}.tar.gz\") | .browser_download_url") | tar xz -C /usr/local/bin
+#	curl -fsSL $(curl -fsSL https://api.github.com/repos/joyent/containerpilot/releases/latest | jq --raw-output ".assets[] | select(.name == \"containerpilot-${TAG_NAME}.tar.gz\") | .browser_download_url") | tar xz -C /usr/local/sbin
 #else
-#	curl -fsSL https://github.com/joyent/containerpilot/releases/download/${CONTAINERPILOT_VERSION}/containerpilot-${CONTAINERPILOT_VERSION}.tar.gz | tar xz -C /usr/local/bin
+#	curl -fsSL https://github.com/joyent/containerpilot/releases/download/${CONTAINERPILOT_VERSION}/containerpilot-${CONTAINERPILOT_VERSION}.tar.gz | tar xz -C /usr/local/sbin
 #fi
 
 elif [ "`dpkg --print-architecture | awk -F- '{ print $NF }'`" = "armhf" ]; then
-	cp -a /bd_build/bin/dumb-init.armhf  /usr/local/bin/dumb-init
+	cp -a /bd_build/bin/dumb-init.armhf  /usr/local/sbin/dumb-init
 else
 	echo "ERROR: unknown architecture: `dpkg --print-architecture | awk -F- '{ print $NF }'`"
 	exit 1
