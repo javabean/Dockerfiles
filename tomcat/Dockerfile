@@ -14,7 +14,7 @@ COPY runit_tomcat /etc/service/tomcat/run
 COPY docker-entrypoint.sh  /usr/local/bin/
 
 ############### FIXME  change version here! ###############
-ARG TOMCAT_VERSION=7.0.72
+ARG TOMCAT_VERSION=7.0.73
 
 # Create "tomcat" user
 RUN	if ! getent group "tomcat" > /dev/null 2>&1 ; then \
@@ -35,7 +35,7 @@ RUN	if ! getent group "tomcat" > /dev/null 2>&1 ; then \
 			&& chmod 755 /etc/authbind \
 			&& chmod 755 /etc/authbind/byuid ; \
 		fi \
-		if [ ! -d "/etc/authbind/byport" ]; then \
+		&& if [ ! -d "/etc/authbind/byport" ]; then \
 			mkdir -p /etc/authbind/byport \
 			&& chmod 755 /etc/authbind \
 			&& chmod 755 /etc/authbind/byport ; \
@@ -57,8 +57,7 @@ EXPOSE 8080 8443
 
 USER tomcat
 
-ENTRYPOINT ["/usr/local/sbin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
-
+ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
 # Can not use env var here...
 #CMD ["$CATALINA_HOME/bin/catalina.sh", "run"]
 CMD ["run"]

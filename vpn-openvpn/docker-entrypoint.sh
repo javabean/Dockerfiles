@@ -90,6 +90,7 @@ verb 4
 # Silence repeating messages.
 mute 20
 ;status openvpn-status.log # Can also send SIGUSR2 to output connection statistics to log file or syslog
+;compress lz4
 comp-lzo
 # https://github.com/OpenVPN/openvpn/blob/master/doc/management-notes.txt
 management localhost 7505 # use telnet!
@@ -102,10 +103,12 @@ server 10.8.0.0 255.255.255.0
 push "sndbuf 0"
 push "rcvbuf 0"
 # force all traffic through VPN
+;push "redirect-gateway autolocal def1 ipv6 bypass-dhcp"
 push "redirect-gateway autolocal def1 bypass-dhcp"
+;push "compress lz4"
 push "comp-lzo"
-push "dhcp-option PROXY_HTTP 172.31.31.28 3128"
-#push "dhcp-option PROXY_HTTPS 172.31.31.28 3128"
+push "dhcp-option PROXY_HTTP 172.31.53.28 3128"
+#push "dhcp-option PROXY_HTTPS 172.31.53.28 3128"
 #push "dhcp-option PROXY_BYPASS example1.tld example2.tld example3.tld"
 #push "dhcp-option PROXY_AUTO_CONFIG_URL https://www.cedrik.fr/proxy.pac"
 EOF
@@ -132,6 +135,8 @@ opt-verify
 ;cipher BF-CBC        # Blowfish (default; do not use: Sweet32)
 cipher AES-128-CBC   # AES cipher algorithm is well-suited for the ARM processor
 ;cipher DES-EDE3-CBC  # Triple-DES (do not use: Sweet32)
+;cipher AES-128-GCM
+;cipher AES-256-GCM
 # openvpn --show-engines
 ;engine [engine-name]
 
@@ -145,6 +150,8 @@ key server.key  # This file should be kept secret
 ;tls-version-min 1.2 or-highest
 ;tls-version-min 1.2
 # openvpn --show-tls
+;tls-cipher TLS-DHE-RSA-WITH-AES-128-GCM-SHA256
+;tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384
 ;tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256:TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256:TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-CBC-SHA256
 tls-exit
 tls-auth ta.key 0 # This file is secret
@@ -174,6 +181,7 @@ resolv-retry infinite
 nobind
 dev tun
 # force all traffic through VPN; pushed from server
+;redirect-gateway autolocal def1 ipv6 bypass-dhcp
 ;redirect-gateway autolocal def1 bypass-dhcp
 ;tun-mtu 12000 # default 1500
 ;fragment 0
@@ -188,6 +196,7 @@ persist-key
 verb 2
 # Silence repeating messages
 mute 20
+;compress lz4
 comp-lzo
 
 # Server Mode
@@ -205,6 +214,8 @@ key-direction 1 # since tls-auth is inline
 ;cipher BF-CBC        # Blowfish (default; do not use: Sweet32)
 cipher AES-128-CBC   # AES cipher algorithm is well-suited for the ARM processor
 ;cipher DES-EDE3-CBC  # Triple-DES (do not use: Sweet32)
+;cipher AES-128-GCM
+;cipher AES-256-GCM
 # common false alarm on WiFi networks
 mute-replay-warnings
 
@@ -217,6 +228,8 @@ mute-replay-warnings
 ;tls-version-min 1.2 or-highest
 ;tls-version-min 1.2
 # openvpn --show-tls
+;tls-cipher TLS-DHE-RSA-WITH-AES-128-GCM-SHA256
+;tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384
 ;tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256:TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256:TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-CBC-SHA256
 tls-exit
 ;tls-auth ta.key 1
@@ -300,7 +313,7 @@ iptables -C FORWARD -i tun+ -j ACCEPT || {
 
 mkdir -p /run/openvpn
 
-exec /usr/sbin/openvpn --writepid /run/openvpn/server.pid --cd /etc/openvpn --config /etc/openvpn/server.conf ${OPENVPN_OPTS}
+exec "$@" --writepid /run/openvpn/server.pid --cd /etc/openvpn --config /etc/openvpn/server.conf ${OPENVPN_OPTS}
 
 }
 
@@ -316,7 +329,7 @@ fi
 
 # check for the expected command
 if [ "$1" = 'openvpn' -o "$1" = '/usr/sbin/openvpn' ]; then
-	execOpenVPN
+	execOpenVPN "$@"
 fi
 
 # else default to run whatever the user wanted like "bash"

@@ -21,4 +21,4 @@ RUN /bd_build/prepare.sh && \
 #ENTRYPOINT ["/usr/local/sbin/containerpilot", "--", "/docker-entrypoint.sh"]
 #ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/docker-entrypoint.sh"]
 
-CMD ["/sbin/my_init"]
+ENTRYPOINT ["/usr/local/sbin/docker-init.sh"]

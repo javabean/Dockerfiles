@@ -24,9 +24,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 
 EXPOSE 143 993 4190
 
-#ENTRYPOINT /usr/sbin/dovecot
+#ENTRYPOINT ["/usr/sbin/dovecot"]
 #CMD ["-F", "-c", "/etc/dovecot/dovecot.conf"]
 
-ENTRYPOINT ["/usr/local/sbin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
-
+ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/usr/sbin/dovecot"]

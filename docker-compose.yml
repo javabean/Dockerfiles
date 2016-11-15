@@ -7,12 +7,18 @@ services:
 
   base-service:
     build: .
+    environment:
+    - ENABLE_SYSLOG=1
+    - ENABLE_CRON=1
+    #- ENABLE_CONSUL=1
     # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
-#    tmpfs:
-#    - /run:rw,nosuid,noexec,relatime,size=32768k,mode=755
-#    - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
+    tmpfs:
+    - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
+    - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
 #    - /var/log
-#    - /tmp:rw,nosuid,nodev,noexec,size=65536k,mode=1777,strictatime
+    - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
+    # mount work dir for runit
+    - /var/lib/runit-sv:rw,suid,nodev,exec,size=1024k
 #   shm_size: 64M
     logging:
       driver: "json-file"
@@ -25,6 +31,54 @@ services:
 #    memory-swappiness: "10"
 #    read_only: true
     restart: none
+
+########################################################################
+
+  consul:
+    extends:
+      service: base-service
+    build:
+      context: consul
+      args:
+      - CONSUL_VERSION=0.7.1
+    container_name: consul
+    expose:
+    - "8300"
+    - "8301"
+    - "8301/udp"
+    - "8302"
+    - "8302/udp"
+    - "8400"
+    - "8500"
+    - "8600"
+    - "8600/udp"
+    - "53"
+    - "53/udp"
+#    environment:
+    # See https://www.consul.io/docs/agent/options.html
+#    - CONSUL_OPTS=-dev
+#    - CONSUL_OPTS=-bootstrap-expect 1 -datacenter dc1
+    volumes:
+    - /opt/consul/config:/usr/local/etc/consul:ro
+    - /srv/consul/data:/srv/consul/data
+#    - /lib/modules:/lib/modules:ro
+#    cap_add:
+#    - NET_ADMIN
+#    networks:
+#    - tomcat-back-internal
+#    - owncloud-back-internal
+#    - prestashop-back-internal
+#    - joomla-back-internal
+#    - wordpress-back-internal
+#    - dokuwiki-back-internal
+#    - tiddlywiki-back-internal
+#    - transmission
+#    - netdata
+#    - vpn
+    mem_limit: 128m
+    memswap_limit: 192m
+    read_only: true
+    restart: always
 
 ########################################################################
 
@@ -42,13 +96,15 @@ services:
 #    - prestashop
 #    - wordpress
 #    - dokuwiki
+#    - tiddlywiki
     links:
     - tomcat:tomcat
     - owncloud:owncloud
     - prestashop:prestashop
     #- joomla:joomla
     - wordpress:wordpress
-    - dokuwiki:dokuwiki
+    #- dokuwiki:dokuwiki
+    - tiddlywiki:tiddlywiki
     #- transmission:transmission
     - netdata:netdata
     volumes:
@@ -72,6 +128,7 @@ services:
     - joomla-front
     - wordpress-front
     - dokuwiki-front
+    - tiddlywiki-front
     - transmission
     - netdata
     cpu_shares: 256
@@ -88,7 +145,7 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=7.0.70
+      - TOMCAT_VERSION=7.0.73
     container_name: tomcat
     expose:
     - "8080"
@@ -107,7 +164,7 @@ services:
     mem_limit: 1024m
     memswap_limit: 1024m
 #    memory-swappiness: "1"
-    read_only: false
+    read_only: true
     restart: on-failure:2
 
 ########################################################################
@@ -159,7 +216,7 @@ services:
     build:
       context: prestashop
       args:
-      - PRESTASHOP_VERSION=1.6.1.6
+      - PRESTASHOP_VERSION=1.6.1.9
     container_name: prestashop
     expose:
     - "80"
@@ -229,7 +286,7 @@ services:
     build:
       context: joomla
       args:
-      - JOOMLA_VERSION=3.6.0
+      - JOOMLA_VERSION=3.6.4
     container_name: joomla
     expose:
     - "80"
@@ -319,6 +376,8 @@ services:
       context: dokuwiki
       args:
       - DOKUWIKI_VERSION=stable
+      # Languages to keep (delete all others)
+      #- STRIP_LANGS_KEEP=en,fr
     container_name: dokuwiki
     expose:
     - "80"
@@ -339,6 +398,31 @@ services:
     mem_limit: 384m
     memswap_limit: 512m
     read_only: false
+    restart: on-failure:5
+
+########################################################################
+
+  tiddlywiki:
+    extends:
+      service: base-service
+    build:
+      context: tiddlywiki
+    container_name: tiddlywiki
+    expose:
+    - "8080"
+    environment:
+    - WIKI_FOLDER=wiki
+    - PORT=8080
+    - USERNAME=
+    - PASSWORD=
+    - PATHPREFIX=
+    volumes:
+    - /srv/tiddlywiki:/srv
+    networks:
+    - tiddlywiki-front
+    mem_limit: 384m
+    memswap_limit: 512m
+    read_only: true
     restart: on-failure:5
 
 ########################################################################
@@ -559,9 +643,12 @@ services:
     - "53/udp"
     ports:
     # also publish service on gateway IP since docker-compose 1.6 can't assign a fixed IP to this container
-    - "172.31.1.254:53:53/udp"
+    - "172.31.53.254:53:53/udp"
     environment:
     - DNSMASQ_EXTRA_OPTS=--log-facility=- --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --cache-size=300 --rebind-domain-ok=/plex.direct/gestionbbox.lan/
+    tmpfs:
+    # we need to write the Consul configuration file according to env vars
+    - /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
     volumes:
     - /opt/dnsmasq:/opt/dnsmasq:ro
     - /opt/dnsmasq/dnsmasq.d:/etc/dnsmasq.d:ro
@@ -586,8 +673,8 @@ services:
     build: unbound
     container_name: unbound
 #    ports:
-#    - "53:53/tcp"
-#    - "53:53/udp"
+#    - "192.0.2.1:53:53/tcp"
+#    - "192.0.2.1:53:53/udp"
 #    environment:
 #    - ROOT_TRUST_ANCHOR_UPDATE=
     depends_on:
@@ -621,7 +708,7 @@ services:
 #    - /srv/logs/ziproxy:/var/log
     networks:
       vpn:
-        ipv4_address: 172.31.31.28
+        ipv4_address: 172.31.53.28
     cpu_shares: 128
     mem_limit: 128m
     memswap_limit: 192m
@@ -669,7 +756,7 @@ services:
 #    - "1194/tcp:1194/tcp"
     environment:
 #    - DNS_USE_RESOLVCONF=true
-#    - DNS_EXTRA_SERVER_1=172.31.1.254
+#    - DNS_EXTRA_SERVER_1=172.31.53.254
     - DNS_EXTRA_SERVER_1=172.31.53.53
 #    - DNS_EXTRA_SERVER_2=8.8.4.4
     - EASYRSA_REQ_COUNTRY=US
@@ -693,7 +780,7 @@ services:
     dns:
     - 172.31.53.53
     # use service on gateway IP since docker-compose 1.6 can't assign a fixed IP to dns container
-#    - 172.31.1.254
+#    - 172.31.53.254
     volumes:
     - /opt/openvpn:/etc/openvpn
     - /lib/modules:/lib/modules:ro
@@ -804,56 +891,126 @@ networks:
 #      com.docker.network.enable_ipv6: "false"
   tomcat-front:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.1.0/24
   tomcat-back-internal:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.29.1.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
   tomcat-back:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.30.1.0/24
   owncloud-front:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.2.0/24
   owncloud-back-internal:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.29.2.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
   owncloud-back:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.30.2.0/24
   prestashop-front:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.3.0/24
   prestashop-back-internal:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.29.3.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
   prestashop-back:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.30.3.0/24
   joomla-front:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.4.0/24
   joomla-back-internal:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.29.4.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
   joomla-back:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.30.4.0/24
   wordpress-front:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.5.0/24
   wordpress-back-internal:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.29.5.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
   wordpress-back:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.30.5.0/24
   dokuwiki-front:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.6.0/24
   dokuwiki-back:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.30.6.0/24
+  tiddlywiki-front:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.7.0/24
   dovecot:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.8.0/24
   transmission:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.9.0/24
   netdata:
     driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.10.0/24
   vpn:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.0.0/16
-        ip_range: 172.31.1.0/24
-        gateway: 172.31.1.254
+      - subnet: 172.31.53.0/24
+        ip_range: 172.31.53.0/24
+        gateway: 172.31.53.254
 # defining aux addresses prevents from assigning them to containers
 #        aux_addresses:
 #          dns: 172.31.53.53

@@ -13,7 +13,7 @@ else
 	exit 1
 fi
 
-$minimal_apt_get_install curl ca-certificates unzip authbind
+$minimal_apt_get_install curl ca-certificates unzip authbind libcap2-bin
 
 # Create "consul" user
 if ! getent group "consul" > /dev/null 2>&1 ; then
@@ -28,14 +28,10 @@ fi
 CONSUL_UID="`id -u consul`"
 if [ ! -f "/etc/authbind/byuid/$CONSUL_UID" ]; then
 	if [ ! -d "/etc/authbind/byuid" ]; then
-		mkdir -p /etc/authbind/byuid
-		chmod 755 /etc/authbind
-		chmod 755 /etc/authbind/byuid
+		mkdir -p --mode=755 /etc/authbind/byuid
 	fi
 	if [ ! -d "/etc/authbind/byport" ]; then
-		mkdir -p /etc/authbind/byport
-		chmod 755 /etc/authbind
-		chmod 755 /etc/authbind/byport
+		mkdir -p --mode=755 /etc/authbind/byport
 	fi
 	echo "0.0.0.0/0,53-53" > /etc/authbind/byuid/$CONSUL_UID
 	touch /etc/authbind/byport/53
@@ -54,16 +50,21 @@ curl -fsSL -o /tmp/consul-template.zip https://releases.hashicorp.com/consul-tem
 unzip -q -d /usr/local/bin /tmp/consul-template.zip
 rm /tmp/consul-template.zip
 
-mkdir -p /srv/consul/data /usr/local/etc/consul /usr/local/etc/consul-template
-chown -R consul:consul /srv/consul /usr/local/etc/consul  /usr/local/etc/consul-template
+# If requested, set the capability to bind to privileged ports before
+# we drop to the non-root user. Note that this doesn't work with all
+# storage drivers (it won't work with AUFS).
+# An alternative would be to use authbind, which unfortunately does not work in Docker...
+setcap 'cap_net_bind_service=+ep' /usr/local/bin/consul
 
-for f in /bd_build/services/consul/consul_*.json; do
-	BASE_NAME=$(basename "$f")
-	cp -a "$f" "/usr/local/etc/consul/${BASE_NAME#consul_}"
-done
-for f in /bd_build/services/consul/consul-template_*.json; do
-	BASE_NAME=$(basename "$f")
-	cp -a "$f" "/usr/local/etc/consul-template/${BASE_NAME#consul-template_}"
-done
+mkdir -p /srv/consul /tmp/consul/data /usr/local/etc/consul.d
+ln -s /tmp/consul/data /srv/consul/
+
+# default configuration
+cp -a /bd_build/services/consul/consul-default.json /usr/local/etc/consul.json
+cp -a /bd_build/services/consul/consul-template-default.json /usr/local/etc/consul-template.json
+chown -R consul:consul /srv/consul /tmp/consul /usr/local/etc/consul*  /usr/local/etc/consul-template*
 cp -a /bd_build/services/consul/consul-entrypoint.sh /usr/local/bin/consul.sh
 cp -a /bd_build/services/consul/consul-template-entrypoint.sh /usr/local/bin/consul-template.sh
+# runit
+mkdir /etc/service/consul
+cp -a /bd_build/services/consul/consul.runit /etc/service/consul/run

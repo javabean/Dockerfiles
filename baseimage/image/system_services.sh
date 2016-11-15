@@ -14,17 +14,10 @@ chmod 700 /etc/container_environment
 
 $minimal_apt_get_install curl ca-certificates tar unzip jq authbind
 
-if [ "`dpkg --print-architecture | awk -F- '{ print $NF }'`" = "amd64" ]; then
+ARCH=$(dpkg --print-architecture | awk -F- '{ print $NF }')
 
-if [ -z "${TINI_VERSION}" -o "${TINI_VERSION}" = "latest" ]; then
-	TAG_NAME="$(curl -fsSL https://api.github.com/repos/krallin/tini/releases/latest | jq --raw-output '.tag_name')"
-	echo "Downloading Tini $TAG_NAME"
-	curl -o /usr/local/sbin/tini -fsSLR $(curl -fsSL https://api.github.com/repos/krallin/tini/releases/latest | jq --raw-output '.assets[] | select(.name == "tini") | .browser_download_url')
-else
-	#curl -o /usr/local/sbin/tini -fsSLR https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static
-	curl -o /usr/local/sbin/tini -fsSLR https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini
-fi
-chmod +x /usr/local/sbin/tini*
+if [ "${ARCH}" = "amd64" ]; then
+
 if [ -z "${DUMB_INIT_VERSION}" -o "${DUMB_INIT_VERSION}" = "latest" ]; then
 	TAG_NAME="$(curl -fsSL https://api.github.com/repos/Yelp/dumb-init/releases/latest | jq --raw-output '.tag_name')"
 	echo "Downloading dumb-init $TAG_NAME"
@@ -33,20 +26,23 @@ else
 	curl -o /usr/local/sbin/dumb-init -fsSLR https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_amd64
 fi
 chmod +x /usr/local/sbin/dumb-init
-#if [ -z "${CONTAINERPILOT_VERSION}" -o "${CONTAINERPILOT_VERSION}" = "latest" ]; then
-#	TAG_NAME="$(curl -fsSL https://api.github.com/repos/joyent/containerpilot/releases/latest | jq --raw-output '.tag_name')"
-#	echo "Downloading ContainerPilot $TAG_NAME"
-#	curl -fsSL $(curl -fsSL https://api.github.com/repos/joyent/containerpilot/releases/latest | jq --raw-output ".assets[] | select(.name == \"containerpilot-${TAG_NAME}.tar.gz\") | .browser_download_url") | tar xz -C /usr/local/sbin
-#else
-#	curl -fsSL https://github.com/joyent/containerpilot/releases/download/${CONTAINERPILOT_VERSION}/containerpilot-${CONTAINERPILOT_VERSION}.tar.gz | tar xz -C /usr/local/sbin
-#fi
 
-elif [ "`dpkg --print-architecture | awk -F- '{ print $NF }'`" = "armhf" ]; then
+elif [ "${ARCH}" = "armhf" ]; then
 	cp -a /bd_build/bin/dumb-init.armhf  /usr/local/sbin/dumb-init
 else
-	echo "ERROR: unknown architecture: `dpkg --print-architecture | awk -F- '{ print $NF }'`"
+	echo "ERROR: unknown architecture: ${ARCH}"
 	exit 1
 fi
+
+if [ -z "${TINI_VERSION}" -o "${TINI_VERSION}" = "latest" ]; then
+	TAG_NAME="$(curl -fsSL https://api.github.com/repos/krallin/tini/releases/latest | jq --raw-output '.tag_name')"
+	echo "Downloading Tini $TAG_NAME"
+	curl -o /usr/local/sbin/tini -fsSLR $(curl -fsSL https://api.github.com/repos/krallin/tini/releases/latest | jq --raw-output '.assets[] | select(.name == "tini-${ARCH}") | .browser_download_url')
+else
+	#curl -o /usr/local/sbin/tini -fsSLR https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static-${ARCH}
+	curl -o /usr/local/sbin/tini -fsSLR https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-${ARCH}
+fi
+chmod +x /usr/local/sbin/tini*
 
 groupadd -g 8377 docker_env
 chown :docker_env /etc/container_environment.sh /etc/container_environment.json

@@ -9,9 +9,9 @@ unexport IMG_VERSION = 0.9.18.1
 
 DOCKER_APT_VERSION = 1.12.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.8.0
+DOCKER_COMPOSE_VERSION = 1.8.1
 # url fragment
-DOCKER_MACHINE_VERSION = v0.8.1
+DOCKER_MACHINE_VERSION = v0.8.2
 
 #COMPOSE_PROJECT_NAME = `basename`
 #COMPOSE_FILE = docker-compose_1.yml:docker-compose_2.yml
@@ -21,6 +21,8 @@ UBUNTU_VERSION ?= 16.04
 # Would have been much easier with Debian's redirector httpredir.debian.org...
 #APT_MIRROR ?= mirrors.online.net
 APT_MIRROR ?= cz.archive.ubuntu.com
+# arm
+#APT_MIRROR=ports.ubuntu.com/ubuntu-ports
 
 MYSQL_VERSION = 5.6
 
@@ -29,7 +31,7 @@ MYSQL_VERSION = 5.6
 ########################################################################
 
 
-docker_compose_build = http-proxy tomcat dovecot dnsmasq unbound email-relay mysql owncloud redis-owncloud memcached-owncloud prestashop joomla wordpress dokuwiki openvpn web-accelerator transmission netdata
+docker_compose_build = consul http-proxy tomcat dovecot dnsmasq unbound email-relay mysql owncloud redis-owncloud memcached-owncloud prestashop joomla wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission netdata
 .PHONY: $(docker_compose_build)
 
 
@@ -109,7 +111,7 @@ health:
 
 .PHONY: new-certificates
 new-certificates:
-	# --dry-run --test-cert
+	# --quiet --dry-run --test-cert
 	docker-compose run --rm letsencrypt --authenticators certonly --non-interactive --dry-run \
 		--webroot \
 		-w /srv/http-proxy/polycarpe -d polycarpe.fr -d www.polycarpe.fr \
@@ -121,7 +123,8 @@ new-certificates:
 
 .PHONY: renew-certificates
 renew-certificates:
-	# --dry-run --test-cert
+	# --quiet --dry-run --test-cert
+	# --pre-hook "service nginx stop" --post-hook "docker restart http-proxy"
 	docker-compose run --rm letsencrypt --authenticators renew --non-interactive --keep-until-expiring
 
 ########################################################################
@@ -133,6 +136,7 @@ clean:
 	docker ps --no-trunc -a -q -f "status=exited" | xargs --no-run-if-empty docker rm --volumes=false
 	# remove untagged images
 	docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi
+	# remove unused networks
 	docker network ls --filter type=custom --no-trunc -q | xargs --no-run-if-empty docker network rm
 
 .PHONY: distclean
@@ -146,6 +150,7 @@ distclean: clean
 .PHONY: mkdirs
 mkdirs:
 	mkdir -p -m 0775 \
+	/opt/consul/config     /srv/consul/data \
 	/opt/http-proxy/conf-available /opt/http-proxy/conf-enabled /opt/http-proxy/conf-include /opt/http-proxy/mods-available /opt/http-proxy/mods-enabled /opt/http-proxy/sites-available /opt/http-proxy/sites-enabled /opt/http-proxy/tls \
 	                       /srv/http-proxy        /srv/logs/http-proxy/apache2 \
 	/opt/tomcat                                   /srv/logs/tomcat \
@@ -161,6 +166,7 @@ mkdirs:
 		                   /srv/joomla            /srv/logs/joomla/apache2 \
       /srv/dokuwiki/conf  /srv/dokuwiki/lib/plugins  /srv/dokuwiki/data \
                                                   /srv/logs/dokuwiki/apache2 \
+      /srv/tiddlywiki  \
       /srv/wordpress/wp-content  /srv/wordpress/wp-includes-languages \
                                                   /srv/logs/wordpress/apache2 \
 	/opt/openvpn                                  /srv/logs/openvpn \
@@ -170,12 +176,13 @@ mkdirs:
 	  /srv/transmission \
 	/opt/netdata
 
+	sudo chown -R 8300:8300 /opt/consul /srv/consul
 	sudo chmod g-rw,o-rwx /opt/http-proxy/tls
 	#sudo chown root:ssl-cert /opt/http-proxy/tls
 	sudo chown -R root: /opt/http-proxy/tls
 	sudo chown -R 8080:8080 /opt/tomcat
 	if [ ! -f /srv/joomla/configuration.php ]; then touch /srv/joomla/configuration.php; chown www-data: /srv/joomla/configuration.php; fi
-	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/prestashop /srv/joomla /srv/wordpress /srv/dokuwiki
+	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/prestashop /srv/joomla /srv/wordpress /srv/dokuwiki /srv/tiddlywiki
 	# if [ "$(ls -A /opt/dovecot/*.pem)" ]; then
 	if ls -A /opt/dovecot/*.pem > /dev/null 2>&1; then sudo chmod 0400 /opt/dovecot/*.pem; fi
 	sudo chown -R mail:mail /srv/dovecot
@@ -219,7 +226,7 @@ install-docker-compose:
 install-docker-compose-rpi:
 	if [ ! -f /etc/apt/sources.list.d/Hypriot_Schatzkiste.list ]; then \
 		sudo apt-get install apt-transport-https \
-		sudo curl -fRL -o /etc/apt/sources.list.d/Hypriot_Schatzkiste.list "https://packagecloud.io/install/repositories/Hypriot/Schatzkiste/config_file.list?os=raspbian&dist=8&source=script" \
+		sudo curl -fsSLR -o /etc/apt/sources.list.d/Hypriot_Schatzkiste.list "https://packagecloud.io/install/repositories/Hypriot/Schatzkiste/config_file.list?os=raspbian&dist=8&source=script" \
 		curl -fsSL https://packagecloud.io/Hypriot/Schatzkiste/gpgkey | sudo apt-key add - \
 		sudo usermod -aG docker `whoami`; \
 	fi \
@@ -247,5 +254,5 @@ install: install-docker-compose install-docker mkdirs
 .PHONY: uninstall
 uninstall: distclean
 	rm /usr/local/bin/docker-* /etc/bash_completion.d/docker-*
-	apt-get purge -y docker-engine docker-hypriot docker-compose
+	apt-get purge -y docker-engine docker-hypriot docker-compose docker-machine
 	echo "Left over: config & data dirs: /opt /srv"

@@ -74,4 +74,4 @@ RUN echo "53  *  *  *  * php -f /var/www/owncloud/cron.php > /dev/null 2>&1" | c
 
 EXPOSE 80 443
 
-CMD ["/sbin/my_init"]
+ENTRYPOINT ["/usr/local/sbin/docker-init.sh"]

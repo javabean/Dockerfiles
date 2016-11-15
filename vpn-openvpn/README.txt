@@ -20,3 +20,8 @@ sysctl -w net.ipv4.conf.all.send_redirects=0
 
 
 Known issue: no separation between CA management and vpn server
+
+
+Credits:
+https://github.com/Nyr/openvpn-install
+https://github.com/Angristan/OpenVPN-install

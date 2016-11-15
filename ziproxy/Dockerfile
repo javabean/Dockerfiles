@@ -28,6 +28,5 @@ RUN apt-get update \
 
 EXPOSE 3128
 
-ENTRYPOINT ["/usr/local/sbin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
-
+ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/usr/bin/ziproxy"]

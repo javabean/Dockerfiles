@@ -38,5 +38,5 @@ RUN sed -i'' -e "s/__POSTFIX_HOSTNAME__/${POSTFIX_HOSTNAME}/" /etc/postfix/main.
 EXPOSE 25
 
 # AFAIK postfix needs syslog
-CMD ["/sbin/my_init"]
+ENTRYPOINT ["/usr/local/sbin/docker-init.sh"]
 # /usr/lib/postfix/master

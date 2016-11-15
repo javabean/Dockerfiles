@@ -31,7 +31,7 @@ baseimage
 			joomla 		(requires mysql, email-relay[, memcached])
 			wordpress	(requires mysql, email-relay[, memcached])
 			dokuwiki	(requires email-relay)
-			wallabag*
+	tiddlywiki
 	mysql
 	email-relay
 	dnsmasq
@@ -41,6 +41,7 @@ baseimage
 	openvpn	(requires dnsmasq, ziproxy)
 	ziproxy
 	transmission
+	netdata
 	letsencrypt*
 * = not done yet
 
@@ -56,6 +57,7 @@ Makefile: adjust ${*} vars
 docker-compose.override.yml: adjust ${*} vars
 
 baseimage/image/Dockerfile: FROM: check and adjust guest OS version (e.g. 16.04)
+baseimage/image/buildconfig
 
 .env : check and adjust MYSQL_VERSION
 
@@ -75,6 +77,8 @@ WordPress: online upgrade before upgrading Docker image
 
 DokuWiki: online upgrade before upgrading Docker image
 	http://www.dokuwiki.org/plugin:upgrade
+
+TiddlyWiki: update your installed plugins, themes & languages after upgrading Docker image
 
 mysql/Dockerfile:
 		version upgrades: http://dev.mysql.com/doc/refman/5.7/en/mysql-upgrade.html

@@ -4,7 +4,7 @@ MAINTAINER Cédrik LIME
 
 COPY docker-entrypoint.sh  /usr/local/bin/
 
-ARG MEMCACHED_VERSION=1.4.31
+ARG MEMCACHED_VERSION=1.4.33
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends memcached curl \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
@@ -18,6 +18,5 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 
 EXPOSE 11211
 
-ENTRYPOINT ["/usr/local/sbin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
-
+ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/usr/bin/memcached"]

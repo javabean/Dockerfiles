@@ -4,7 +4,7 @@ NUMBEROFCLIENTS=$(tail -n +2 easy-rsa/pki/index.txt | grep -c "^V")
 if [ "$NUMBEROFCLIENTS" = '0' ]; then
 	echo ""
 	echo "You have no existing clients!"
-	exit 5
+	exit 6
 fi
 echo ""
 echo "Select the existing client certificate you want to revoke"

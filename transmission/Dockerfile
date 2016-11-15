@@ -22,6 +22,5 @@ USER debian-transmission
 
 EXPOSE 9091 51413/tcp 51413/udp
 
-ENTRYPOINT ["/usr/local/sbin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
-
+ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/usr/bin/transmission-daemon"]

@@ -65,4 +65,5 @@ RUN crontab -u www-data -l | { cat; \
 
 #ENTRYPOINT ["/entrypoint.sh"]
 #CMD ["apache2-foreground"]
-CMD ["/sbin/my_init"]
+
+ENTRYPOINT ["/usr/local/sbin/docker-init.sh"]
