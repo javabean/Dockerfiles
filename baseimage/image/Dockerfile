@@ -1,6 +1,7 @@
 FROM ubuntu:16.04
 #FROM armhf/ubuntu:16.04
-MAINTAINER Cédrik LIME <info@cedrik.fr>
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Cédrik LIME"
 
 ARG APT_MIRROR=fr.archive.ubuntu.com
 #ARG APT_MIRROR=ports.ubuntu.com/ubuntu-ports

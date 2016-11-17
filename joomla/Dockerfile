@@ -1,7 +1,8 @@
 #FROM joomla:3.6-apache
 #FROM php:7.0-apache
 FROM cedrik/php7-base:latest
-MAINTAINER Cédrik LIME
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Cédrik LIME"
 
 # https://hub.docker.com/_/joomla/
 # https://docs.joomla.org/J3.x:Installing_Joomla
@@ -10,7 +11,7 @@ MAINTAINER Cédrik LIME
 # https://docs.joomla.org/Cache
 
 ############### FIXME  change version here! ###############
-ARG JOOMLA_VERSION=3.6.0
+ARG JOOMLA_VERSION=3.6.4
 
 COPY joomla.conf /etc/apache2/conf-enabled/
 COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/

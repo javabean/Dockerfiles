@@ -1,9 +1,10 @@
 FROM cedrik/baseimage:latest
-MAINTAINER Cédrik LIME
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Cédrik LIME"
 
 COPY docker-entrypoint.sh backup_conf.sh restore_conf.sh  /usr/local/bin/
 
-RUN mkdir -p /opt/dnsmasq/dnsmasq.d \
+RUN mkdir -p /opt/dnsmasq \
 	&& touch /opt/dnsmasq/hosts /opt/dnsmasq/resolv.conf \
 	&& apt-get update \
 	&& DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dnsmasq dns-root-data \
@@ -18,6 +19,5 @@ RUN mkdir -p /opt/dnsmasq/dnsmasq.d \
 
 EXPOSE 53/tcp 53/udp
 
-ENTRYPOINT ["/usr/local/sbin/dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
-
+ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["/usr/sbin/dnsmasq"]

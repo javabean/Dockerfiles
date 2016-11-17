@@ -1,5 +1,6 @@
 FROM cedrik/baseimage:latest
-MAINTAINER Cédrik LIME
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Cédrik LIME"
 
 COPY docker-entrypoint.sh backup_conf.sh restore_conf.sh  /usr/local/bin/
 

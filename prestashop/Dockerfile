@@ -1,7 +1,8 @@
 #FROM prestashop/prestashop:1.6
 #FROM php:5.6-apache
 FROM cedrik/php5-base:latest
-MAINTAINER Cédrik LIME
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Cédrik LIME"
 
 # https://hub.docker.com/r/prestashop/prestashop/
 # http://doc.prestashop.com/display/PS16/Getting+Started

@@ -1,6 +1,7 @@
 #FROM ubuntu:latest
 FROM cedrik/baseimage:latest
-MAINTAINER Cédrik LIME
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Cédrik LIME"
 
 ENV TRANSMISSION_HOME=/var/lib/transmission-daemon
 

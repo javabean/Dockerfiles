@@ -1,5 +1,6 @@
 FROM cedrik/java:latest
-MAINTAINER Cédrik LIME
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Cédrik LIME"
 
 ENV CATALINA_HOME=/usr/local/tomcat
 #ENV CATALINA_BASE=...

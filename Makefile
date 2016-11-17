@@ -131,16 +131,29 @@ renew-certificates:
 
 .PHONY: clean
 clean:
+	# See also Docker 1.13 `docker system df [-v]` / `docker system prune -f` == `docker container prune -f && docker volume prune -f && docker image prune -f && docker network prune -f`
 	# remove stopped containers
 	# WARNING: be aware if you use data-only container, it will remove them also if you set "--volumes=true"
 	docker ps --no-trunc -a -q -f "status=exited" | xargs --no-run-if-empty docker rm --volumes=false
+	# remove all unused volumes
+	#docker volume ls -q | xargs --no-run-if-empty docker volume rm
+	# remove local volumes
+	#docker volume ls | awk '/^local/ { print $2 }' | xargs --no-run-if-empty docker volume rm
 	# remove untagged images
 	docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi
+	# delete and untag every image that is not a container
+	# a little more heinous since "<none>" is the repo/tag for dangling images
+	# sort is not necessary but is nice if you add a -tn1 to xargs so you can see each rm line
+	#docker images | awk 'NR>1 { if ($1 == "<none>") print $3; else print $1":"$2 }' | sort | xargs --no-run-if-empty docker rmi
 	# remove unused networks
 	docker network ls --filter type=custom --no-trunc -q | xargs --no-run-if-empty docker network rm
 
+.PHONY: prune
+prune: clean
+
 .PHONY: distclean
 distclean: clean
+	# See also Docker 1.13 `docker image prune -a -f`
 	# docker rmi "cedrik/*" "*_*"
 	docker images --no-trunc -q "*_*" | xargs --no-run-if-empty docker rmi
 	docker images --no-trunc -q "cedrik/*" | xargs --no-run-if-empty docker rmi

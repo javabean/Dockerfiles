@@ -1,5 +1,6 @@
 FROM cedrik/baseimage:latest
-MAINTAINER Cédrik LIME
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Cédrik LIME"
 
 #RUN echo "Apachai Hopachai" > /etc/container_environment/MY_NAME
 

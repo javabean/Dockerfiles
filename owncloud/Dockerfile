@@ -1,9 +1,10 @@
 #FROM owncloud:latest
 #FROM php:7.0-apache
 FROM cedrik/php7-base:latest
-MAINTAINER Cédrik LIME
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Cédrik LIME"
 
-# see https://github.com/docker-library/owncloud/blob/master/9.0/apache/Dockerfile
+# see https://github.com/docker-library/owncloud/blob/master/9.1/apache/Dockerfile
 # https://doc.owncloud.org/server/9.1/admin_manual/installation/source_installation.html#prerequisites
 # https://doc.owncloud.org/server/9.1/admin_manual/configuration_server/performance_tuning.html
 

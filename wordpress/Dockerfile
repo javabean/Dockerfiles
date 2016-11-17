@@ -1,7 +1,8 @@
 #FROM wordpress:latest
 #FROM php:7.0-apache
 FROM cedrik/php7-base:latest
-MAINTAINER Cédrik LIME
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Cédrik LIME"
 
 # https://hub.docker.com/_/wordpress/
 # https://codex.wordpress.org/Editing_wp-config.php

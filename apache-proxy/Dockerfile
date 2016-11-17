@@ -1,5 +1,6 @@
 FROM cedrik/httpd-base:latest
-MAINTAINER Cédrik LIME
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Cédrik LIME"
 
 COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/
 

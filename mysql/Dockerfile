@@ -1,6 +1,7 @@
 #FROM mysql/mysql-server:5.7
 FROM cedrik/baseimage:latest
-MAINTAINER Cédrik LIME
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Cédrik LIME"
 
 # http://dev.mysql.com/doc/mysql-apt-repo-quick-guide/en/
 
@@ -57,4 +58,4 @@ EXPOSE 3306
 
 #ENTRYPOINT ["/entrypoint.sh"]
 #CMD ["mysqld"]
-CMD ["/sbin/my_init"]
+ENTRYPOINT ["/usr/local/sbin/docker-init.sh"]

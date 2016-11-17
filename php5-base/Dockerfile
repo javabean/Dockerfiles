@@ -1,6 +1,7 @@
 #FROM php:5.6-apache
 FROM cedrik/httpd-base:latest
-MAINTAINER Cédrik LIME
+LABEL org.label-schema.schema-version="1.0" \
+      org.label-schema.vendor="Cédrik LIME"
 
 ############### FIXME  change depending on base OS / version! ###############
 ARG MYSQL_VERSION=5.6
@@ -48,5 +49,3 @@ RUN sed -i'.bak' -e 's%\(upload_max_filesize\) = .*M%\1 = 8M%' \
 #VOLUME ["/var/log"]
 
 EXPOSE 80 443
-
-CMD ["/sbin/my_init"]
