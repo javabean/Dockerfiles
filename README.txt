@@ -20,6 +20,7 @@ As much as I would like to separate all services, there is only a single MySQL c
 
 Images hierarchy:
 baseimage
+	consul
 	dovecot
 	java
 		tomcat

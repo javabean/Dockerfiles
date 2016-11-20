@@ -57,6 +57,7 @@ rm /tmp/consul-template.zip
 setcap 'cap_net_bind_service=+ep' /usr/local/bin/consul
 
 mkdir -p /srv/consul /tmp/consul/data /usr/local/etc/consul.d
+# In a read-only container, only /tmp is writable; no effect if /srv/consul/data is docker-mounted
 ln -s /tmp/consul/data /srv/consul/
 
 # default configuration
