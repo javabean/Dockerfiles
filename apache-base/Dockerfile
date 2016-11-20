@@ -4,7 +4,6 @@ LABEL org.label-schema.schema-version="1.0" \
 
 #RUN echo "Apachai Hopachai" > /etc/container_environment/MY_NAME
 
-RUN mkdir -p /etc/service/apache2
 #RUN ln -sf /bin/sv /etc/init.d/apache2
 COPY runit_apache2 /etc/service/apache2/run
 #COPY runit_apache2 /etc/my_init.d/apache2

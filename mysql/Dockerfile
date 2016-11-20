@@ -11,7 +11,6 @@ ARG MYSQL_VERSION=5.6
 ENV MYSQL_ALLOW_EMPTY_PASSWORD=yes
 RUN echo "yes" > /etc/container_environment/MYSQL_ALLOW_EMPTY_PASSWORD
 
-RUN mkdir -p /etc/service/mysql
 #RUN ln -sf /bin/sv /etc/init.d/mysql
 COPY runit_mysql /etc/service/mysql/run
 #COPY runit_mysql /etc/my_init.d/mysql

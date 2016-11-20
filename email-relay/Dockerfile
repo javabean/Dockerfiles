@@ -2,7 +2,6 @@ FROM cedrik/baseimage:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
-RUN mkdir -p /etc/service/postfix /etc/service/opendkim
 #RUN ln -sf /bin/sv /etc/init.d/postfix
 #RUN ln -sf /bin/sv /etc/init.d/opendkim
 COPY runit_postfix /etc/service/postfix/run

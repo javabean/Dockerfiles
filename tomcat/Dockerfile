@@ -7,7 +7,6 @@ ENV CATALINA_HOME=/usr/local/tomcat
 RUN echo "/usr/local/tomcat" > /etc/container_environment/CATALINA_HOME
 #RUN echo "..." > /etc/container_environment/CATALINA_BASE
 
-RUN mkdir -p /etc/service/tomcat /opt/tomcat
 #RUN ln -sf /bin/sv /etc/init.d/tomcat
 COPY runit_tomcat /etc/service/tomcat/run
 #COPY runit_tomcat /etc/my_init.d/tomcat
@@ -26,7 +25,6 @@ RUN	if ! getent group "tomcat" > /dev/null 2>&1 ; then \
 		&& usermod -L tomcat \
 		&& usermod -a -G docker_env tomcat ; \
 	fi \
-#	&& chown -R tomcat:adm /srv/logs/tomcat
 \
 # Authorize user "tomcat" to open privileged ports via authbind.
 	&& TOMCAT_UID="`id -u tomcat`" \
@@ -50,7 +48,9 @@ RUN	if ! getent group "tomcat" > /dev/null 2>&1 ; then \
 
 RUN curl -fsSL http://archive.apache.org/dist/tomcat/tomcat-7/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | tar xz -C /usr/local/ \
 	&& ln -s /usr/local/apache-tomcat-* /usr/local/tomcat \
-	&& rm -r /usr/local/tomcat/webapps/docs /usr/local/tomcat/webapps/examples
+	&& rm -r /usr/local/tomcat/webapps/docs /usr/local/tomcat/webapps/examples \
+	&& mkdir -p /opt/tomcat && chown tomcat: /opt/tomcat
+#	&& chown -R tomcat:adm /srv/logs/tomcat
 
 #VOLUME ["/var/log"]
 
