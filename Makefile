@@ -1,5 +1,5 @@
 unexport IMG_NAME = cedrik/baseimage
-unexport IMG_VERSION = 0.9.18.1
+unexport IMG_VERSION = 0.9.19.1
 
 
 ########################################################################
@@ -9,7 +9,7 @@ unexport IMG_VERSION = 0.9.18.1
 
 DOCKER_APT_VERSION = 1.12.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.8.1
+DOCKER_COMPOSE_VERSION = 1.9.0
 # url fragment
 DOCKER_MACHINE_VERSION = v0.8.2
 
@@ -22,7 +22,9 @@ UBUNTU_VERSION ?= 16.04
 #APT_MIRROR ?= mirrors.online.net
 APT_MIRROR ?= cz.archive.ubuntu.com
 # arm
-#APT_MIRROR=ports.ubuntu.com/ubuntu-ports
+#APT_MIRROR ?= ports.ubuntu.com/ubuntu-ports
+#APT_MIRROR ?= ftp.tu-chemnitz.de/pub/linux/ubuntu-ports
+#APT_MIRROR ?= mirror.unej.ac.id/ubuntu
 
 MYSQL_VERSION = 5.6
 
