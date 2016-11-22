@@ -3,6 +3,8 @@ LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
 COPY docker-entrypoint.sh backup_conf.sh restore_conf.sh  /usr/local/bin/
+COPY runit_dnsmasq /etc/service/dnsmasq/run
+COPY consul.json.ctmpl /opt/dnsmasq/
 
 RUN mkdir -p /opt/dnsmasq \
 	&& touch /opt/dnsmasq/hosts /opt/dnsmasq/resolv.conf \
