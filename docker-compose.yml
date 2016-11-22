@@ -281,7 +281,7 @@ services:
 #    - /srv/prestashop/config/smarty.config.inc.php:/var/www/html/config/smarty.config.inc.php
     #- /srv/prestashop/translations/myTranslation:/var/www/html/translations/myTranslation
     - /srv/prestashop/translations/fr:/var/www/html/translations/fr
-#    - /srv/prestashop/admin-backups:/var/www/html/${PS_FOLDER_ADMIN:-admin}/backups/
+#    - /srv/prestashop/admin-backups:/var/www/html/${PS_FOLDER_ADMIN}/backups/
     - /srv/logs/prestashop:/var/log
     networks:
     - prestashop-front
@@ -481,7 +481,7 @@ services:
       context: mysql
       args:
       #- MYSQL_VERSION=5.6
-      - MYSQL_VERSION=${MYSQL_VERSION:-5.7}
+      - MYSQL_VERSION=${MYSQL_VERSION}
     container_name: mysql
     expose:
     - "3306"
