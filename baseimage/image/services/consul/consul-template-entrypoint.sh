@@ -14,7 +14,7 @@ CONSUL_TEMPLATE_ARGS="-once -pid-file= -reload-signal= -dump-signal= -kill-signa
 
 # check for the expected command
 if [ "$1" = 'consul-template' -o "$1" = '/usr/local/bin/consul-template' ]; then
-	# CONSUL_TEMPLATE_OPTS= -template="in:out(:command)" -exec="..." -exec-kill-signal="SIGTERM" -exec-kill-timeout="30s" -exec-reload-signal=""
+	# CONSUL_TEMPLATE_OPTS="-template=in:out(:command) -exec=... -exec-kill-signal=SIGTERM -exec-kill-timeout=30s -exec-reload-signal="
 	if [ -x /usr/bin/authbind ]; then
 		exec /usr/bin/authbind --deep "$@" ${CONSUL_TEMPLATE_ARGS} ${CONSUL_TEMPLATE_OPTS}
 	else

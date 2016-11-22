@@ -1,3 +1,5 @@
+%YAML 1.2
+---
 # https://docs.docker.com/compose/compose-file/
 # https://hub.docker.com/explore/
 
@@ -5,8 +7,19 @@ version: "2"
 
 services:
 
+  dummy-service-for-yaml-reference:
+    build: .
+    links: &consul_link
+    - consul:consul
+
   base-service:
     build: .
+    expose:
+    # Consul agent ports
+    - "8301"
+    - "8301/udp"
+    #- "8400"
+    #- "8500"
     environment:
     - ENABLE_SYSLOG=1
     - ENABLE_CRON=1
@@ -19,6 +32,8 @@ services:
     - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
     # mount work dir for runit
     - /var/lib/runit-sv:rw,suid,nodev,exec,size=1024k
+    # mount work dir for consul
+#    - /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
 #   shm_size: 64M
     logging:
       driver: "json-file"
@@ -645,16 +660,16 @@ services:
     # also publish service on gateway IP since docker-compose 1.6 can't assign a fixed IP to this container
     - "172.31.53.254:53:53/udp"
     environment:
+    - CONSUL_NO_DNS_53=1
     - DNSMASQ_EXTRA_OPTS=--log-facility=- --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --cache-size=300 --rebind-domain-ok=/plex.direct/gestionbbox.lan/
-    tmpfs:
-    # we need to write the Consul configuration file according to env vars
-    - /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
+#    links: *consul_link
     volumes:
     - /opt/dnsmasq:/opt/dnsmasq:ro
     - /opt/dnsmasq/dnsmasq.d:/etc/dnsmasq.d:ro
 #    - /srv/logs/dnsmasq:/var/log
-#    tmpfs:
-#    - /var/log
+    tmpfs:
+    # we need to write the Consul configuration file according to env vars
+    - /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
     cap_add:
     - NET_ADMIN
     #- NET_RAW already in base capabilities: https://github.com/docker/docker/blob/master/daemon/execdriver/native/template/default_template_linux.go#L16-L29
@@ -679,13 +694,15 @@ services:
 #    - ROOT_TRUST_ANCHOR_UPDATE=
     depends_on:
     - dnsmasq
+#    links: *consul_link
     dns:
     - 172.31.53.53
     volumes:
     - /opt/unbound:/etc/unbound/unbound.conf.d:ro
 #    - /srv/logs/unbound:/var/log
-#    tmpfs:
-#    - /var/log
+    tmpfs:
+    # we need to write the Consul configuration file according to env vars
+    - /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
     networks:
     - vpn
     cpu_shares: 128
@@ -1014,3 +1031,4 @@ networks:
 # defining aux addresses prevents from assigning them to containers
 #        aux_addresses:
 #          dns: 172.31.53.53
+...

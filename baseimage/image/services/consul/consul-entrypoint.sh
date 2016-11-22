@@ -17,7 +17,7 @@ CONSUL_CONFIG_DIR=/usr/local/etc/consul.d
 #CONSUL_UI_DIR=/usr/local/share/consul/ui
 
 CONSUL_DNS=
-if [ -x /usr/bin/authbind ]; then
+if [ -z "$CONSUL_NO_DNS_53" ] && [ -x /usr/bin/authbind ]; then
 	CONSUL_DNS="-dns-port=53"
 else
 	CONSUL_DNS="-dns-port=8600"
