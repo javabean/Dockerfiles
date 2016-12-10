@@ -33,7 +33,10 @@ start_runit() {
 	# see http://smarden.org/runit/faq.html#readonlyfs
 	
 	# /run is noexec, so mount a tmpfs at ${RUNIT_SV_DIR}
-	cp -a /etc/service/* ${RUNIT_SV_DIR}
+	if [ ! -d "${RUNIT_SV_DIR}" ]; then
+		mkdir -p "${RUNIT_SV_DIR}"
+	fi
+	cp -a /etc/service/* "${RUNIT_SV_DIR}"
 	
 	[ -z "$ENABLE_SYSLOG" ] && rm -rf ${RUNIT_SV_DIR}/syslog-ng ${RUNIT_SV_DIR}/syslog-forwarder
 	[ -z "$ENABLE_SSH" ] && rm -rf ${RUNIT_SV_DIR}/sshd
