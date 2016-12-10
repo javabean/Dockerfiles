@@ -20,7 +20,8 @@ if [ "$1" = 'dnsmasq' -o "$1" = '/usr/sbin/dnsmasq' ]; then
 	export CONSUL_TEMPLATE_OPTS
 	# wait for local Consul agent
 	#wait_for.sh -n "Consul" -- curl -fsS -o /dev/null http://127.0.0.1:8500/
-	#exec consul-template.sh -exec="$@ ${DNSMASQ_ARGS} ${DNSMASQ_EXTRA_OPTS}" -exec-kill-timeout="5s" -template="/opt/dnsmasq/consul.json.ctmpl:/usr/local/etc/consul.d/dnsmasq.json:consul reload"
+	#-log-level=debug|info|warn|err
+	#exec consul-template.sh -log-level=info -exec="$@ ${DNSMASQ_ARGS} ${DNSMASQ_EXTRA_OPTS}" -exec-kill-timeout="5s" -template="/opt/dnsmasq/consul.json.ctmpl:/usr/local/etc/consul.d/dnsmasq.json:consul reload"
 	exec "$@" ${DNSMASQ_ARGS} ${DNSMASQ_EXTRA_OPTS}
 fi
 
