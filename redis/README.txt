@@ -22,10 +22,10 @@ docker-compose [up -d|stop|start] redis
 Where? (volumes)
 ================
 
-Mount /var/lib/redis/ if you wish to use persistence feature:
+Mount /var/lib/redis/ if you wish to use persistence feature, or run this image r/o:
 
-#    volumes:
-#    - /srv/redis:/var/lib/redis
+    volumes:
+    - /srv/redis:/var/lib/redis
 #    - /srv/logs/redis:/var/log
 
 

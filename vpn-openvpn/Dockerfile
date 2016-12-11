@@ -17,7 +17,13 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 		openvpn openssl liblzo2-2 iptables kmod ca-certificates bridge-utils \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& curl -fsSL https://github.com/OpenVPN/easy-rsa/releases/download/${EASYRSA_VERSION}/EasyRSA-${EASYRSA_VERSION}.tgz | tar xz -C /usr/local/ \
-	&& ln -s /usr/local/EasyRSA-* /usr/local/easy-rsa
+	&& ln -s /usr/local/EasyRSA-* /usr/local/easy-rsa \
+# OpenVPN requires TUN/TAP driver support in the kernel. You'll also need a 
+# tun device file. If it's not present on your system, you may create one
+# with these commands (as root):
+	&& if [ ! -d /dev/net ]; then mkdir -p /dev/net; fi \
+	&& if [ ! -c /dev/net/tun ]; then mknod /dev/net/tun c 10 200; fi
+
 
 #VOLUME ["/etc/openvpn", "/var/log"]
 

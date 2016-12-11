@@ -1,7 +1,7 @@
 GENERAL PRINCIPLES
 ==================
 
-Docker stack for all my online services.
+Docker stack for all my online services. Or my travel from pet to cattle.
 "Docker stack" here means infrastructure, (almost) not applications configuration!
 No Swarm / Kubernetes / Fleet / Mesos / Consul / etcd / registrator / confd / ...; this stack is small enough for a single host.
 Base image loosely based on phusion's baseimage-docker.

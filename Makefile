@@ -170,6 +170,7 @@ mkdirs:
 	                       /srv/http-proxy        /srv/logs/http-proxy/apache2 \
 	/opt/tomcat                                   /srv/logs/tomcat \
 	/opt/owncloud/config /opt/owncloud/apps  /srv/owncloud/data     /srv/logs/owncloud/apache2 \
+	                                              /src/redis-owncloud \
 	/opt/prestashop                               /srv/logs/prestashop/apache2 \
 	  /srv/prestashop/override /srv/prestashop/mails /srv/prestashop/img /srv/prestashop/modules /srv/prestashop/download /srv/prestashop/upload /srv/prestashop/config \
 	/opt/mysql/docker-entrypoint-initdb.d         /srv/logs/mysql/mysql \
@@ -204,6 +205,7 @@ mkdirs:
 	sudo chown root: /opt/email-relay
 	sudo chown 105:107 /srv/transmission
 	sudo chown 999:999 /opt/netdata
+	sudo chown 105:107 /srv/redis*
 
 ########################################################################
 

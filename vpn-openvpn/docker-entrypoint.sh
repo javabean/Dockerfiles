@@ -260,9 +260,9 @@ fi
 #sysctl -w net.ipv4.conf.all.send_redirects=0
 
 
-#OpenVPN requires TUN/TAP driver support in the kernel. You'll also need a 
-#tun device file. If it's not present on your system, you may create one
-#with these commands (as root):
+# OpenVPN requires TUN/TAP driver support in the kernel. You'll also need a 
+# tun device file. If it's not present on your system, you may create one
+# with these commands (as root):
 [ -d /dev/net ] || mkdir -p /dev/net
 [ -c /dev/net/tun ] || mknod /dev/net/tun c 10 200
 if [ ! -e /dev/net/tun ]; then
