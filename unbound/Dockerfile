@@ -6,8 +6,18 @@ COPY docker-entrypoint.sh backup_conf.sh restore_conf.sh  /usr/local/bin/
 
 RUN apt-get update \
 	&& DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unbound unbound-anchor dns-root-data \
-	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-#	&& curl -fsSL https://github.com/javabean/dnsmasq-antispy/archive/master.tar.gz | tar xz -C /etc/dnsmasq.d/ --strip-components=1
+	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+#	&& curl -fsSL https://github.com/javabean/dnsmasq-antispy/archive/master.tar.gz | tar xz -C /etc/dnsmasq.d/ --strip-components=1 \
+	&& if ! [ -f /etc/unbound/icannbundle.pem ]; then \
+		curl -fsSL -o /etc/unbound/icannbundle.pem https://data.iana.org/root-anchors/icannbundle.pem ; \
+	fi \
+	&& if ! [ -f /var/lib/unbound/root.key ]; then \
+		unbound-anchor -a /var/lib/unbound/root.key -v 2>&1 ; \
+		chown unbound:unbound /var/lib/unbound/root.key ; \
+	fi \
+	&& if ! [ -f /etc/unbound/unbound_server.pem -o -f /etc/unbound/unbound_control.pem ]; then \
+		unbound-control-setup ; \
+	fi
 
 COPY unbound-docker.conf /etc/unbound/unbound.conf.d/
 

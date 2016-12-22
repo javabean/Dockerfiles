@@ -12,13 +12,7 @@ fi
 if [ "$1" = 'unbound' -o "$1" = '/usr/sbin/unbound' ]; then
 	# copy backup of conf dirs if mounted volume is empty
 	/usr/local/bin/restore_conf.sh
-	if ${ROOT_TRUST_ANCHOR_UPDATE:-true}; then
-		unbound-anchor -a ${ROOT_TRUST_ANCHOR_FILE:-/var/lib/unbound/root.key} -v 2>&1 \
-			&& chown unbound:unbound ${ROOT_TRUST_ANCHOR_FILE:-/var/lib/unbound/root.key}
-	fi
-	if ! [ -f /etc/unbound/unbound_server.pem -o -f /etc/unbound/unbound_control.pem ]; then
-		unbound-control-setup
-	fi
+	unbound-checkconf
 	exec "$@" -c /etc/unbound/unbound.conf
 fi
 

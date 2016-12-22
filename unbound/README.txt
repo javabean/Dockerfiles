@@ -51,10 +51,7 @@ build-time
 runtime
 -------
 
-If you want to disable automatic dns root data at startup:
-
-    environment:
-    - ROOT_TRUST_ANCHOR_UPDATE=
+(none)
 
 
 Upgrading version

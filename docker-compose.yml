@@ -55,7 +55,7 @@ services:
     build:
       context: consul
       args:
-      - CONSUL_VERSION=0.7.1
+      - CONSUL_VERSION=0.7.2
     container_name: consul
     expose:
     - "8300"
@@ -689,8 +689,6 @@ services:
 #    ports:
 #    - "192.0.2.1:53:53/tcp"
 #    - "192.0.2.1:53:53/udp"
-#    environment:
-#    - ROOT_TRUST_ANCHOR_UPDATE=
     depends_on:
     - dnsmasq
 #    links: *consul_link
@@ -702,12 +700,14 @@ services:
     tmpfs:
     # we need to write the Consul configuration file according to env vars
     - /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
+    # for unbound autotrust file
+    - /var/lib/unbound:rw,nosuid,nodev,noexec,size=128k
     networks:
     - vpn
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
-    read_only: false
+    read_only: true
     restart: always
 
 ########################################################################
