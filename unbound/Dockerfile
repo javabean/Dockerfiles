@@ -19,7 +19,7 @@ RUN apt-get update \
 		unbound-control-setup ; \
 	fi
 
-COPY unbound-docker.conf /etc/unbound/unbound.conf.d/
+COPY *.conf /etc/unbound/unbound.conf.d/
 
 # copy conf dirs to enable populating empty volumes (see runit_unbound)
 RUN /usr/local/bin/backup_conf.sh
