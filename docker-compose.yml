@@ -54,8 +54,6 @@ services:
       service: base-service
     build:
       context: consul
-      args:
-      - CONSUL_VERSION=0.7.2
     container_name: consul
     expose:
     - "8300"
@@ -287,7 +285,7 @@ services:
     - prestashop-front
     - prestashop-back-internal
     - prestashop-back
-    mem_limit: 384m
+    mem_limit: 448m
     memswap_limit: 512m
     read_only: false
     restart: unless-stopped
@@ -301,7 +299,7 @@ services:
     build:
       context: joomla
       args:
-      - JOOMLA_VERSION=3.6.4
+      - JOOMLA_VERSION=3.6.5
     container_name: joomla
     expose:
     - "80"
@@ -339,6 +337,7 @@ services:
     build:
       context: wordpress
       args:
+      #- WORDPRESS_VERSION=wordpress-4.6.1
       - WORDPRESS_VERSION=latest
     container_name: wordpress
     expose:
@@ -377,7 +376,7 @@ services:
     - wordpress-front
     - wordpress-back-internal
     - wordpress-back
-    mem_limit: 384m
+    mem_limit: 448m
     memswap_limit: 512m
     read_only: false
     restart: on-failure:5
@@ -390,6 +389,7 @@ services:
     build:
       context: dokuwiki
       args:
+      #- DOKUWIKI_VERSION=2016-06-26a
       - DOKUWIKI_VERSION=stable
       # Languages to keep (delete all others)
       #- STRIP_LANGS_KEEP=en,fr

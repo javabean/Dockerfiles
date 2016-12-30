@@ -7,9 +7,6 @@ LABEL org.label-schema.schema-version="1.0" \
 # https://hub.docker.com/_/consul/
 # https://github.com/hashicorp/docker-consul
 
-############### FIXME  change version here! ###############
-ARG CONSUL_VERSION=0.7.1
-
 # Consul binary & user created in base image
 
 #COPY *.json /usr/local/etc/consul.d/

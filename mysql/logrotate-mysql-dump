@@ -3,7 +3,7 @@
 	missingok
 	ifempty
 	daily
-	rotate 9
+	rotate 15
 	dateext
 	extension .sql.gz
 	nocompress

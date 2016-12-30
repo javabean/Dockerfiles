@@ -11,7 +11,7 @@ LABEL org.label-schema.schema-version="1.0" \
 # https://docs.joomla.org/Cache
 
 ############### FIXME  change version here! ###############
-ARG JOOMLA_VERSION=3.6.4
+ARG JOOMLA_VERSION=3.6.5
 
 COPY joomla.conf /etc/apache2/conf-enabled/
 COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/

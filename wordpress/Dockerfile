@@ -10,7 +10,7 @@ LABEL org.label-schema.schema-version="1.0" \
 # http://codex.wordpress.org/Hardening_WordPress
 
 ############### FIXME  change version here! ###############
-#ARG WORDPRESS_VERSION=wordpress-4.5.3
+#ARG WORDPRESS_VERSION=wordpress-4.6.1
 ARG WORDPRESS_VERSION=latest
 
 COPY wordpress.conf /etc/apache2/conf-enabled/
