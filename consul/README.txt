@@ -13,7 +13,7 @@ Who? (dependencies)
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] consul
+	docker-compose [up -d|stop|start] consul
 
 
 Where? (volumes)
@@ -27,11 +27,12 @@ Where? (volumes)
 Where? (ports)
 ==============
 
-# 8300: Server RPC, used for communication between Consul clients and servers for internal request forwarding
-# 8301, 8302: Serf LAN and WAN (WAN is used only by Consul servers), used for gossip between Consul agents. LAN is within the datacenter and WAN is between just the Consul servers in all datacenters.
-# 8400: CLI
-# 8500: HTTP
-# 8600 or 53: DNS
+8300: Server RPC, used for communication between Consul clients and servers for internal request forwarding
+8301, 8302: Serf LAN and WAN (WAN is used only by Consul servers), used for gossip between Consul agents. LAN is within the datacenter and WAN is between just the Consul servers in all datacenters.
+8400: CLI
+8500: HTTP
+8600 or 53: DNS
+
     expose:
     - "8300"
     - "8301"
@@ -52,9 +53,7 @@ Environment variables
 build-time
 ----------
 
-    build:
-      args:
-      - CONSUL_VERSION=0.7.1
+(none)
 
 runtime
 -------

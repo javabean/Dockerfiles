@@ -16,7 +16,7 @@ Who? (dependencies)
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] redis
+	docker-compose [up -d|stop|start] redis
 
 
 Where? (volumes)
@@ -26,7 +26,7 @@ Mount /var/lib/redis/ if you wish to use persistence feature, or run this image 
 
     volumes:
     - /srv/redis:/var/lib/redis
-#    - /srv/logs/redis:/var/log
+    #- /srv/logs/redis:/var/log
 
 
 Where? (ports)

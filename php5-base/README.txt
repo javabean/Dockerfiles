@@ -13,7 +13,7 @@ Who? (dependencies)
 How? (usage)
 ============
 
-Dockerfile: FROM cedrik/php5-base:latest
+Dockerfile: `FROM cedrik/php5-base:latest`
 
 
 Where? (volumes)

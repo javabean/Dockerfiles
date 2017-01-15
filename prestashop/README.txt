@@ -12,14 +12,14 @@ Who? (dependencies)
 
     links:
     - mysql:mysql
-#    - memcached-prestashop:memcached
+    #- memcached-prestashop:memcached
     - email-relay:email-relay
 
 
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] prestashop
+	docker-compose [up -d|stop|start] prestashop
 
 Exposes APC cache statistics on URL "/$PS_FOLDER_ADMIN/apc.php"
 
@@ -51,13 +51,13 @@ To save your shop data, mount volumes in
     - /srv/prestashop/download:/var/www/html/download
     - /srv/prestashop/upload:/var/www/html/upload
     - /srv/prestashop/config:/var/www/html/config
-#    - /srv/prestashop/config/config.inc.php:/var/www/html/config/config.inc.php
-#    - /srv/prestashop/config/defines.inc.php:/var/www/html/config/defines.inc.php
-#    - /srv/prestashop/config/settings.inc.php:/var/www/html/config/settings.inc.php
-#    - /srv/prestashop/config/smarty.config.inc.php:/var/www/html/config/smarty.config.inc.php
+    #- /srv/prestashop/config/config.inc.php:/var/www/html/config/config.inc.php
+    #- /srv/prestashop/config/defines.inc.php:/var/www/html/config/defines.inc.php
+    #- /srv/prestashop/config/settings.inc.php:/var/www/html/config/settings.inc.php
+    #- /srv/prestashop/config/smarty.config.inc.php:/var/www/html/config/smarty.config.inc.php
     #- /srv/prestashop/translations/myTranslation:/var/www/html/translations/myTranslation
     - /srv/prestashop/translations/fr:/var/www/html/translations/fr
-#    - /srv/prestashop/admin-backups:/var/www/html/${PS_FOLDER_ADMIN}/backups/
+    #- /srv/prestashop/admin-backups:/var/www/html/${PS_FOLDER_ADMIN}/backups/
     - /srv/logs/prestashop:/var/log
 
 

@@ -13,7 +13,7 @@ Who? (dependencies)
 How? (usage)
 ============
 
-Dockerfile: FROM cedrik/java:latest
+Dockerfile: `FROM cedrik/java:latest`
 
 
 Where? (volumes)

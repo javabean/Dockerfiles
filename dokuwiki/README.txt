@@ -16,7 +16,7 @@ Who? (dependencies)
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] dokuwiki
+	docker-compose [up -d|stop|start] dokuwiki
 
 
 Where? (volumes)
@@ -51,7 +51,7 @@ build-time
 
     build:
       args:
-      - #DOKUWIKI_VERSION=2016-06-26a
+      #- DOKUWIKI_VERSION=2016-06-26a
       - DOKUWIKI_VERSION=latest
 
 runtime

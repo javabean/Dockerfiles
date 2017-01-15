@@ -13,7 +13,7 @@ Who? (dependencies)
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] netdata
+	docker-compose [up -d|stop|start] netdata
 
 
 Where? (volumes)

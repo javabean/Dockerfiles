@@ -15,7 +15,7 @@ Who? (dependencies)
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] mysql
+	docker-compose [up -d|stop|start] mysql
 
 Forces character set to UTF-8  
 Use MYSQL_CUSTOM_OPTS env to pass extra mysqld parameters
@@ -61,11 +61,11 @@ runtime
 
     environment:
     - MYSQL_ROOT_PASSWORD=
-#    - MYSQL_CUSTOM_OPTS=--table_open_cache=500 --max_connections=51
-#    - MYSQL_CUSTOM_OPTS=--key_buffer_size=4M --sort_buffer_size=128K --read_buffer_size=64K --net_buffer_length=8K
-#    - MYSQL_CUSTOM_OPTS=--innodb_buffer_pool_size=64M --innodb_log_buffer_size=8M
-#    - MYSQL_CUSTOM_OPTS=--default-storage-engine=MyISAM --default_tmp_storage_engine=MyISAM
-#    - MYSQL_CUSTOM_OPTS=--sql-mode=NO_ENGINE_SUBSTITUTION
+    #- MYSQL_CUSTOM_OPTS=--table_open_cache=500 --max_connections=51
+    #- MYSQL_CUSTOM_OPTS=--key_buffer_size=4M --sort_buffer_size=128K --read_buffer_size=64K --net_buffer_length=8K
+    #- MYSQL_CUSTOM_OPTS=--innodb_buffer_pool_size=64M --innodb_log_buffer_size=8M
+    #- MYSQL_CUSTOM_OPTS=--default-storage-engine=MyISAM --default_tmp_storage_engine=MyISAM
+    #- MYSQL_CUSTOM_OPTS=--sql-mode=NO_ENGINE_SUBSTITUTION
     # http://bugs.mysql.com/bug.php?id=68287
     # There are thresholds based on table_open_cache and table_definition_cache and max_connections and crossing the thresholds produces a big increase in RAM used. The thresholds work by first deciding if the server size is small, medium or large.
     # Small: all three are same as or less than defaults (2000, 400, 151). (max 52.6 megabytes RAM)

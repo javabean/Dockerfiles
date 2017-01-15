@@ -13,16 +13,11 @@ Who? (dependencies)
 How? (usage)
 ============
 
-Dockerfile: FROM cedrik/httpd-base:latest
+Dockerfile: `FROM cedrik/httpd-base:latest`
 
-Can run
-	/usr/local/bin/backup_conf_local.sh
-while building Docker image, if you call (in sub-image Dockerfile)
-	RUN /usr/local/bin/backup_conf.sh
+Can run `/usr/local/bin/backup_conf_local.sh` while building Docker image, if you call (in sub-image Dockerfile) `RUN /usr/local/bin/backup_conf.sh`
 
-Will run
-	/usr/local/bin/restore_conf_local.sh
-before starting Apache
+Will run `/usr/local/bin/restore_conf_local.sh` before starting Apache
 
 
 Where? (volumes)

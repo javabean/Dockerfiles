@@ -13,9 +13,9 @@ Who? (dependencies)
 How? (usage)
 ============
 
-Put configuration files in /etc/dnsmasq.d/*.conf (mount it as a volume!) or via $DNSMASQ_EXTRA_OPTS environment
+Put configuration files in `/etc/dnsmasq.d/*.conf` (mount it as a volume!) or via `$DNSMASQ_EXTRA_OPTS` environment
 
-docker-compose [up -d|stop|start] dnsmasq
+	docker-compose [up -d|stop|start] dnsmasq
 
 
 Where? (volumes)
@@ -24,7 +24,7 @@ Where? (volumes)
     volumes:
     - /opt/dnsmasq:/opt/dnsmasq:ro
     - /opt/dnsmasq/dnsmasq.d:/etc/dnsmasq.d:ro
-#    - /srv/logs/dnsmasq:/var/log
+    #- /srv/logs/dnsmasq:/var/log
 
 Tip: use https://github.com/javabean/dnsmasq-antispy :-)
 

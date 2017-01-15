@@ -17,14 +17,14 @@ Who? (dependencies)
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] web-accelerator
+	docker-compose [up -d|stop|start] web-accelerator
 
 
 Where? (volumes)
 ================
 
-#    volumes:
-#    - /srv/logs/ziproxy:/var/log
+    #volumes:
+    #- /srv/logs/ziproxy:/var/log
 
 
 Where? (ports)

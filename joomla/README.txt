@@ -9,14 +9,14 @@ Who? (dependencies)
 
     links:
     - mysql:mysql
-#    - memcached-joomla:memcached
+    #- memcached-joomla:memcached
     - email-relay:email-relay
 
 
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] joomla
+	docker-compose [up -d|stop|start] joomla
 
 
 Where? (volumes)
@@ -43,7 +43,7 @@ build-time
 
     build:
       args:
-      - JOOMLA_VERSION=3.4.8
+      - JOOMLA_VERSION=3.6.5
 
 runtime
 -------

@@ -13,7 +13,7 @@ Who? (dependencies)
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] dovecot
+	docker-compose [up -d|stop|start] dovecot
 
 First run will take a bit of time while generating DH parameters. Subsequent runs will be much faster.  
 You can mount a pre-computed /var/lib/dovecot/ssl-parameters.dat to avoid this.
@@ -36,17 +36,17 @@ Where? (ports)
 
     ports:
     # IMAP(s)
-#    - "143:143"
+    #- "143:143"
     - "993:993"
     # POP3(s)
-#    - "110:110"
-#    - "995:995"
+    #- "110:110"
+    #- "995:995"
     # SMTP / submission / SMTPs
-#    - "25:25"
-#    - "587:587"
-#    - "465:465"
+    #- "25:25"
+    #- "587:587"
+    #- "465:465"
     # Sieve
-#    - "4190:4190"
+    #- "4190:4190"
 
 
 Environment variables

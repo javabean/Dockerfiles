@@ -13,14 +13,14 @@ Who? (dependencies)
 
     links:
     - mysql:mysql
-#    - memcached-wordpress:memcached
+    #- memcached-wordpress:memcached
     - email-relay:email-relay
 
 
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] wordpress
+	docker-compose [up -d|stop|start] wordpress
 
 Exposes APC cache statistics on URL "/wp-admin/apc.php"
 

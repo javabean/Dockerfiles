@@ -8,8 +8,8 @@ Who? (dependencies)
 ===================
 
     links:
-#    - mysql:mysql
-#    - memcached-owncloud:memcached
+    #- mysql:mysql
+    #- memcached-owncloud:memcached
     - redis-owncloud:redis
     - email-relay:email-relay
 
@@ -17,9 +17,9 @@ Who? (dependencies)
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] owncloud
+	docker-compose [up -d|stop|start] owncloud
 
-Exposes APC cache statistics on URL "/apc.php"
+Exposes APC cache statistics on URL `/apc.php`
 
 
 Where? (volumes)

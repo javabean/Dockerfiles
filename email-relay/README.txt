@@ -16,12 +16,13 @@ Who? (dependencies)
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] email-relay
+	docker-compose [up -d|stop|start] email-relay
 
 See http://www.opendkim.org/opendkim-README for key generation & configuration; in short:
-	* opendkim-genkey -r -s SELECTOR [-t] -D /opt/email-relay/dkim/keys/example.net/ --domain=example.net
-	* add example.net configuration in /opt/email-relay/dkim/SigningTable and /opt/email-relay/dkim/KeyTable
-	* publish /opt/email-relay/dkim/keys/example.net/SELECTOR.txt in SELECTOR._domainkey.example.net DNS TXT record
+
+	* `opendkim-genkey -r -s SELECTOR [-t] -D /opt/email-relay/dkim/keys/example.net/ --domain=example.net`
+	* add example.net configuration in `/opt/email-relay/dkim/SigningTable` and `/opt/email-relay/dkim/KeyTable`
+	* publish `/opt/email-relay/dkim/keys/example.net/SELECTOR.txt` in `SELECTOR._domainkey.example.net` DNS TXT record
 
 
 Where? (volumes)
@@ -35,7 +36,7 @@ Put configuration (mount volumes) in:
 
     volumes:
     - /opt/email-relay:/opt/email-relay:ro
-#    - /srv/logs/email-relay:/var/log
+    #- /srv/logs/email-relay:/var/log
 
 
 Where? (ports)

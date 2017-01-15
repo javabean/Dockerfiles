@@ -19,7 +19,7 @@ How? (usage)
 Offers CATALINA_HOME in /usr/local/tomcat  
 Set CATALINA_BASE (e.g. /opt/tomcat/my-instance) before running!
 
-docker-compose [up -d|stop|start] tomcat
+	docker-compose [up -d|stop|start] tomcat
 
 
 Where? (volumes)
@@ -46,7 +46,7 @@ build-time
 
     build:
       args:
-      - TOMCAT_VERSION=7.0.69
+      - TOMCAT_VERSION=7.0.73
 
 runtime
 -------

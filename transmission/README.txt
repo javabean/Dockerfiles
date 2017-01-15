@@ -17,7 +17,7 @@ Who? (dependencies)
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] transmission
+	docker-compose [up -d|stop|start] transmission
 
 
 Where? (volumes)

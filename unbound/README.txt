@@ -16,12 +16,13 @@ Who? (dependencies)
 How? (usage)
 ============
 
+	docker-compose [up -d|stop|start] unbound
+
 Put configuration files in /etc/unbound/unbound.conf.d/*.conf (mount it as a volume!)  
 Make sure to specify in a configuration file
+
 	server:
 		do-daemonize: no
-
-docker-compose [up -d|stop|start] unbound
 
 
 Where? (volumes)
@@ -29,7 +30,7 @@ Where? (volumes)
 
     volumes:
     - /opt/unbound:/etc/unbound/unbound.conf.d:ro
-#    - /srv/logs/unbound:/var/log
+    #- /srv/logs/unbound:/var/log
 
 
 Where? (ports)

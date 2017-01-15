@@ -16,16 +16,16 @@ Who? (dependencies)
 How? (usage)
 ============
 
-docker-compose [up -d|stop|start] memcached
+	docker-compose [up -d|stop|start] memcached
 
-Some memcached utilities are in /usr/local/bin/
+Some memcached utilities are in `/usr/local/bin/`
 
 
 Where? (volumes)
 ================
 
-#    volumes:
-#    - /srv/logs/memcached:/var/log
+    #volumes:
+    #- /srv/logs/memcached:/var/log
 
 
 Where? (ports)
