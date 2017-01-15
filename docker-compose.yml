@@ -230,7 +230,7 @@ services:
     build:
       context: prestashop
       args:
-      - PRESTASHOP_VERSION=1.6.1.10
+      - PRESTASHOP_VERSION=1.6.1.11
     container_name: prestashop
     expose:
     - "80"

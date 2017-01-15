@@ -50,6 +50,12 @@ if [ ! -f /var/www/html/config/settings.inc.php  ]; then
 		echo "define('_PS_HOST_MODE_', true);" >> /var/www/html/config/defines.inc.php
 	fi
 
+	#if [ $PS_HANDLE_DYNAMIC_DOMAIN = 0 ]; then
+	#	rm /var/www/html/docker_updt_ps_domains.php
+	#else
+	#	sed -ie "s/DirectoryIndex\ index.php\ index.html/DirectoryIndex\ docker_updt_ps_domains.php\ index.php\ index.html/g" $APACHE_CONFDIR/conf-available/docker-php.conf
+	#fi
+
 	if [ $PS_INSTALL_AUTO = 1 ]; then
 		echo "\n* Installing PrestaShop, this may take a while...";
 

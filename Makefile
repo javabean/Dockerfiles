@@ -78,8 +78,7 @@ $(docker_compose_build): baseimage
 
 tomcat: java
 http-proxy: httpd-base
-prestashop: php5-base
-owncloud joomla wordpress dokuwiki: php7-base
+owncloud joomla wordpress prestashop dokuwiki: php7-base
 owncloud: memcached-owncloud redis-owncloud
 owncloud joomla wordpress prestashop: mysql email-relay
 dokuwiki: email-relay
@@ -233,6 +232,7 @@ install-docker-rpi:
 
 .PHONY: install-docker-compose
 install-docker-compose:
+	#pip install docker-compose
 	sudo curl -fsSLR -o /usr/local/bin/docker-compose https://github.com/docker/compose/releases/download/$(DOCKER_COMPOSE_VERSION)/docker-compose-`uname -s`-`uname -m`
 	sudo chmod +x /usr/local/bin/docker-compose
 	#sudo curl -fsSLR -o /etc/bash_completion.d/docker-compose https://raw.githubusercontent.com/docker/compose/$$(docker-compose version --short)/contrib/completion/bash/docker-compose
@@ -271,5 +271,6 @@ install: install-docker-compose install-docker mkdirs
 .PHONY: uninstall
 uninstall: distclean
 	rm /usr/local/bin/docker-* /etc/bash_completion.d/docker-*
+	#pip uninstall docker-compose
 	apt-get purge -y docker-engine docker-hypriot docker-compose docker-machine
 	echo "Left over: config & data dirs: /opt /srv"
