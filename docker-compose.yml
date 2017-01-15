@@ -3,7 +3,7 @@
 # https://docs.docker.com/compose/compose-file/
 # https://hub.docker.com/explore/
 
-version: "2"
+version: '2.1'
 
 services:
 
@@ -20,21 +20,21 @@ services:
     - "8301/udp"
     #- "8400"
     #- "8500"
-    environment:
-    - ENABLE_SYSLOG=1
-    - ENABLE_CRON=1
+    #environment:
+    #- ENABLE_SYSLOG=1
+    #- ENABLE_CRON=1
     #- ENABLE_CONSUL=1
     # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
     tmpfs:
     - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
     - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
-#    - /var/log
+    #- /var/log
     - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
     # mount work dir for runit
     - /var/lib/runit-sv:rw,suid,nodev,exec,size=1024k
     # mount work dir for consul
-#    - /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
-#   shm_size: 64M
+    #- /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
+    #shm_size: 64M
     logging:
       driver: "json-file"
       options:
@@ -43,8 +43,8 @@ services:
     cpu_shares: 1024
     mem_limit: 128m
     memswap_limit: 192m
-#    memory-swappiness: "10"
-#    read_only: true
+    #memory-swappiness: "10"
+    #read_only: true
     restart: none
 
 ########################################################################
@@ -54,7 +54,6 @@ services:
       service: base-service
     build:
       context: consul
-    container_name: consul
     expose:
     - "8300"
     - "8301"
@@ -69,25 +68,26 @@ services:
     - "53/udp"
     environment:
     # See https://www.consul.io/docs/agent/options.html
-#    - CONSUL_OPTS=-dev
+    #- CONSUL_OPTS=-dev
     - CONSUL_OPTS=-bootstrap-expect 1 -datacenter dc1
     volumes:
     - /opt/consul/config:/usr/local/etc/consul:ro
     - /srv/consul/data:/srv/consul/data
-#    - /lib/modules:/lib/modules:ro
-#    cap_add:
-#    - NET_ADMIN
-#    networks:
-#    - tomcat-back-internal
-#    - owncloud-back-internal
-#    - prestashop-back-internal
-#    - joomla-back-internal
-#    - wordpress-back-internal
-#    - dokuwiki-back-internal
-#    - tiddlywiki-back-internal
-#    - transmission
-#    - netdata
-#    - vpn
+    #- /lib/modules:/lib/modules:ro
+    #cap_add:
+    #- NET_ADMIN
+    networks:
+    # Consul can only work with 1 network interface... :-(
+    #- tomcat-back-internal
+    #- owncloud-back-internal
+    #- prestashop-back-internal
+    #- joomla-back-internal
+    #- wordpress-back-internal
+    #- dokuwiki-back-internal
+    #- tiddlywiki-back-internal
+    #- transmission
+    #- netdata
+    - vpn
     mem_limit: 128m
     memswap_limit: 192m
     read_only: true
@@ -103,13 +103,13 @@ services:
     ports:
     - "80:80"
     - "443:443"
-#    depends_on:
-#    - tomcat
-#    - owncloud
-#    - prestashop
-#    - wordpress
-#    - dokuwiki
-#    - tiddlywiki
+    #depends_on:
+    #- tomcat
+    #- owncloud
+    #- prestashop
+    #- wordpress
+    #- dokuwiki
+    #- tiddlywiki
     links:
     - tomcat:tomcat
     - owncloud:owncloud
@@ -121,15 +121,15 @@ services:
     #- transmission:transmission
     #- netdata:netdata
     volumes:
-#    - /opt/http-proxy/mods-available:/opt/http-proxy/mods-available:ro
+    #- /opt/http-proxy/mods-available:/opt/http-proxy/mods-available:ro
     - /opt/http-proxy/mods-enabled:/opt/http-proxy/mods-enabled:ro
-#    - /opt/http-proxy/conf-available:/opt/http-proxy/conf-available:ro
+    #- /opt/http-proxy/conf-available:/opt/http-proxy/conf-available:ro
     - /opt/http-proxy/conf-enabled:/opt/http-proxy/conf-enabled:ro
     - /opt/http-proxy/conf-include:/opt/http-proxy/conf-include:ro
-#    - /opt/http-proxy/sites-available:/opt/http-proxy/sites-available:ro
+    #- /opt/http-proxy/sites-available:/opt/http-proxy/sites-available:ro
     - /opt/http-proxy/sites-enabled:/opt/http-proxy/sites-enabled:ro
     - /opt/http-proxy/tls:/opt/http-proxy/tls:ro
-#    - /opt/letsencrypt:/opt/http-proxy/tls:ro
+    #- /opt/letsencrypt:/opt/http-proxy/tls:ro
     - /srv/http-proxy:/var/www:ro
     - /srv/logs/http-proxy:/var/log
     networks:
@@ -185,7 +185,7 @@ services:
   owncloud:
     extends:
       service: base-service
-#    image: owncloud:latest
+    #image: owncloud:latest
     build:
       context: owncloud
       args:
@@ -194,14 +194,15 @@ services:
     expose:
     - "80"
     - "443"
-    #environment:
+    environment:
+    - ENABLE_CRON=1
     #- SERVER_NAME=https://www.example.com
-#    depends_on:
-#    - redis-owncloud
-#    - email-relay
+    #depends_on:
+    #- redis-owncloud
+    #- email-relay
     links:
     - mysql:mysql
-#    - memcached-owncloud:memcached
+    #- memcached-owncloud:memcached
     - redis-owncloud:redis
     - email-relay:email-relay
     volumes:
@@ -225,7 +226,7 @@ services:
   prestashop:
     extends:
       service: base-service
-#    image: prestashop/prestashop:1.6
+    #image: prestashop/prestashop:1.6
     build:
       context: prestashop
       args:
@@ -252,12 +253,12 @@ services:
     - ADMIN_PASSWD=changeme
     - ADMIN_NEWSLETTER=0
     - ADMIN_SEND_EMAIL=1
-#    depends_on:
-#    - mysql
-#    - email-relay
+    #depends_on:
+    #- mysql
+    #- email-relay
     links:
     - mysql:mysql
-#    - memcached-prestashop:memcached
+    #- memcached-prestashop:memcached
     - email-relay:email-relay
     volumes:
     - /srv/prestashop/acme-challenge/.well-known:/var/www/html/.well-known
@@ -273,13 +274,13 @@ services:
     - /srv/prestashop/download:/var/www/html/download
     - /srv/prestashop/upload:/var/www/html/upload
     - /srv/prestashop/config:/var/www/html/config
-#    - /srv/prestashop/config/config.inc.php:/var/www/html/config/config.inc.php
-#    - /srv/prestashop/config/defines.inc.php:/var/www/html/config/defines.inc.php
-#    - /srv/prestashop/config/settings.inc.php:/var/www/html/config/settings.inc.php
-#    - /srv/prestashop/config/smarty.config.inc.php:/var/www/html/config/smarty.config.inc.php
+    #- /srv/prestashop/config/config.inc.php:/var/www/html/config/config.inc.php
+    #- /srv/prestashop/config/defines.inc.php:/var/www/html/config/defines.inc.php
+    #- /srv/prestashop/config/settings.inc.php:/var/www/html/config/settings.inc.php
+    #- /srv/prestashop/config/smarty.config.inc.php:/var/www/html/config/smarty.config.inc.php
     #- /srv/prestashop/translations/myTranslation:/var/www/html/translations/myTranslation
     - /srv/prestashop/translations/fr:/var/www/html/translations/fr
-#    - /srv/prestashop/admin-backups:/var/www/html/${PS_FOLDER_ADMIN}/backups/
+    #- /srv/prestashop/admin-backups:/var/www/html/${PS_FOLDER_ADMIN}/backups/
     - /srv/logs/prestashop:/var/log
     networks:
     - prestashop-front
@@ -295,7 +296,7 @@ services:
   joomla:
     extends:
       service: base-service
-#    image: joomla:3.6-apache
+    #image: joomla:3.6-apache
     build:
       context: joomla
       args:
@@ -304,17 +305,18 @@ services:
     expose:
     - "80"
     - "443"
-    #environment:
+    environment:
+    - ENABLE_CRON=1
     #- JOOMLA_DB_HOST=mysql
     #- JOOMLA_DB_USER=
     #- JOOMLA_DB_PASSWORD=
     #- JOOMLA_DB_NAME=
-#    depends_on:
-#    - mysql
-#    - email-relay
+    #depends_on:
+    #- mysql
+    #- email-relay
     links:
     - mysql:mysql
-#    - memcached-joomla:memcached
+    #- memcached-joomla:memcached
     - email-relay:email-relay
     volumes:
     - /srv/logs/joomla:/var/log
@@ -333,7 +335,7 @@ services:
   wordpress:
     extends:
       service: base-service
-#    image: wordpress:latest
+    #image: wordpress:latest
     build:
       context: wordpress
       args:
@@ -358,12 +360,12 @@ services:
     #- WORDPRESS_SECURE_AUTH_SALT=
     #- WORDPRESS_LOGGED_IN_SALT=
     #- WORDPRESS_NONCE_SALT=
-#    depends_on:
-#    - mysql
-#    - email-relay
+    #depends_on:
+    #- mysql
+    #- email-relay
     links:
     - mysql:mysql
-#    - memcached-wordpress:memcached
+    #- memcached-wordpress:memcached
     - email-relay:email-relay
     volumes:
     - /srv/wordpress/acme-challenge/.well-known:/var/www/html/.well-known
@@ -397,8 +399,8 @@ services:
     expose:
     - "80"
     - "443"
-#    depends_on:
-#    - email-relay
+    #depends_on:
+    #- email-relay
     links:
     - email-relay:email-relay
     volumes:
@@ -409,6 +411,7 @@ services:
     - /srv/logs/dokuwiki:/var/log
     networks:
     - dokuwiki-front
+    - dokuwiki-back-internal
     - dokuwiki-back
     mem_limit: 384m
     memswap_limit: 512m
@@ -452,9 +455,12 @@ services:
     container_name: email-relay
     expose:
     - "25"
+    environment:
+    - ENABLE_SYSLOG=1
+    - ENABLE_CRON=1
     volumes:
     - /opt/email-relay:/opt/email-relay:ro
-#    - /srv/logs/email-relay:/var/log
+    #- /srv/logs/email-relay:/var/log
     networks:
     - tomcat-back
     - owncloud-back
@@ -465,7 +471,7 @@ services:
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
-#    memory-swappiness: "10"
+    #memory-swappiness: "10"
     read_only: false
     restart: always
 
@@ -474,7 +480,7 @@ services:
   mysql:
     extends:
       service: base-service
-#    image: mysql:5.6
+    #image: mysql:5.6
     build:
       context: mysql
       args:
@@ -484,12 +490,13 @@ services:
     expose:
     - "3306"
     environment:
+    - ENABLE_CRON=1
     - MYSQL_ROOT_PASSWORD=
-#    - MYSQL_CUSTOM_OPTS=--table_open_cache=500 --max_connections=51
-#    - MYSQL_CUSTOM_OPTS=--key_buffer_size=4M --sort_buffer_size=128K --read_buffer_size=64K --net_buffer_length=8K
-#    - MYSQL_CUSTOM_OPTS=--innodb_buffer_pool_size=64M --innodb_log_buffer_size=8M
-#    - MYSQL_CUSTOM_OPTS=--default-storage-engine=MyISAM --default_tmp_storage_engine=MyISAM
-#    - MYSQL_CUSTOM_OPTS=--sql-mode=NO_ENGINE_SUBSTITUTION
+    #- MYSQL_CUSTOM_OPTS=--table_open_cache=500 --max_connections=51
+    #- MYSQL_CUSTOM_OPTS=--key_buffer_size=4M --sort_buffer_size=128K --read_buffer_size=64K --net_buffer_length=8K
+    #- MYSQL_CUSTOM_OPTS=--innodb_buffer_pool_size=64M --innodb_log_buffer_size=8M
+    #- MYSQL_CUSTOM_OPTS=--default-storage-engine=MyISAM --default_tmp_storage_engine=MyISAM
+    #- MYSQL_CUSTOM_OPTS=--sql-mode=NO_ENGINE_SUBSTITUTION
     # http://bugs.mysql.com/bug.php?id=68287
     # There are thresholds based on table_open_cache and table_definition_cache and max_connections and crossing the thresholds produces a big increase in RAM used. The thresholds work by first deciding if the server size is small, medium or large.
     # Small: all three are same as or less than defaults (2000, 400, 151). (max 52.6 megabytes RAM)
@@ -504,17 +511,17 @@ services:
     - /srv/mysql/backup:/srv
     - /srv/logs/mysql:/var/log
     networks:
-#    - tomcat-back-internal
+    #- tomcat-back-internal
     - owncloud-back-internal
     - prestashop-back-internal
     - joomla-back-internal
     - wordpress-back-internal
-#    ulimits:
-#      nproc: 65535
-#      nofile:
-#        soft: 20000
-#        hard: 40000
-    cpu_shares: 512
+    #ulimits:
+    #  nproc: 65535
+    #  nofile:
+    #    soft: 20000
+    #    hard: 40000
+    #cpu_shares: 512
     mem_limit: 448m
     memswap_limit: 512m
     read_only: false
@@ -525,17 +532,17 @@ services:
   memcached:
     extends:
       service: base-service
-#    image: memcached:1.4
+    #image: memcached:1.4
     build: memcached
     expose:
     - "11211/tcp"
     - "11211/udp"
     environment:
     - MEM_SIZE=64
-#    volumes:
-#    - /srv/logs/memcached:/var/log
-#    tmpfs:
-#    - /var/log
+    #volumes:
+    #- /srv/logs/memcached:/var/log
+    #tmpfs:
+    #- /var/log
     cpu_shares: 128
     mem_limit: 128m
     memswap_limit: 128m
@@ -583,17 +590,17 @@ services:
   redis:
     extends:
       service: base-service
-#    image: redis:3
+    #image: redis:3
     build: redis
     expose:
     - "6379"
     environment:
     - MAX_MEMORY=64mb
-#    volumes:
-#    - /srv/redis:/var/lib/redis
-#    - /srv/logs/redis:/var/log
-#    tmpfs:
-#    - /var/log
+    #volumes:
+    #- /srv/redis:/var/lib/redis
+    #- /srv/logs/redis:/var/log
+    #tmpfs:
+    #- /var/log
     cpu_shares: 128
     mem_limit: 128m
     memswap_limit: 128m
@@ -620,17 +627,17 @@ services:
     container_name: dovecot
     ports:
     # IMAP(s)
-#    - "143:143"
+    #- "143:143"
     - "993:993"
     # POP3(s)
-#    - "110:110"
-#    - "995:995"
+    #- "110:110"
+    #- "995:995"
     # SMTP / submission / SMTPs
-#    - "25:25"
-#    - "587:587"
-#    - "465:465"
+    #- "25:25"
+    #- "587:587"
+    #- "465:465"
     # Sieve
-#    - "4190:4190"
+    #- "4190:4190"
     volumes:
     - /opt/dovecot:/opt/dovecot:ro
     - /srv/dovecot:/srv/dovecot
@@ -646,39 +653,85 @@ services:
 ########################################################################
 
   # dnsmasq is our internal (since no ACL) DNS server
-  dnsmasq:
+  dnsmasq-base:
     extends:
       service: base-service
     build: dnsmasq
-    container_name: dnsmasq
+    # Can not use "command: [...]" since we need to start runit as main process (dnsmasq is started via runit)
+    #command: ["/usr/sbin/dnsmasq", "--log-facility=-", "--cache-size=150", "--no-hosts", "-H", "/opt/dnsmasq/hosts", "-r", "/opt/dnsmasq/resolv.conf", "--rebind-domain-ok=/plex.direct/gestionbbox.lan/"]
     expose:
     - "53/tcp"
     - "53/udp"
-    ports:
-    # also publish service on gateway IP since docker-compose 1.6 can't assign a fixed IP to this container
-    - "172.31.53.254:53:53/udp"
     environment:
+    - ENABLE_CONSUL=1
     - CONSUL_NO_DNS_53=1
-    - DNSMASQ_EXTRA_OPTS=--log-facility=- --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --cache-size=900 --rebind-domain-ok=/plex.direct/gestionbbox.lan/
-#    links: *consul_link
-    volumes:
-    - /opt/dnsmasq:/opt/dnsmasq:ro
-    - /opt/dnsmasq/dnsmasq.d:/etc/dnsmasq.d:ro
-#    - /srv/logs/dnsmasq:/var/log
+    # -log-facility=/dev/null
+    # --log-queries --log-facility=-
+    - DNSMASQ_EXTRA_OPTS=--cache-size=150 --log-facility=- --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
     tmpfs:
     # mount writable dir for consul (configuration file built according to env vars)
     - /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
     cap_add:
     - NET_ADMIN
     #- NET_RAW already in base capabilities: https://github.com/docker/docker/blob/master/daemon/execdriver/native/template/default_template_linux.go#L16-L29
+    cpu_shares: 128
+    mem_limit: 192m
+    memswap_limit: 256m
+    read_only: true
+    restart: always
+
+  # dnsmasq is our internal (since no ACL) DNS server
+  dnsmasq:
+    extends:
+      service: dnsmasq-base
+    ports:
+    # also publish service on gateway IP since docker-compose 1.6 can't assign a fixed IP to this container
+    - "172.31.53.254:53:53/udp"
+    environment:
+    - DNSMASQ_EXTRA_OPTS=--cache-size=900 --log-facility=/dev/null --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
+    depends_on:
+    #- dnsmasq-shalla
+    - dnsmasq-urlblacklist
+    links: *consul_link
+    volumes:
+    - /opt/dnsmasq:/opt/dnsmasq
+    - /opt/dnsmasq/dnsmasq.d:/etc/dnsmasq.d:ro
+    #- /srv/logs/dnsmasq:/var/log
     networks:
       vpn:
         ipv4_address: 172.31.53.53
-    cpu_shares: 128
     mem_limit: 96m
     memswap_limit: 128m
-    read_only: true
-    restart: always
+
+  dnsmasq-shalla:
+    extends:
+      service: dnsmasq-base
+    environment:
+    - CONSUL_TAG=shalla
+    - DNSMASQ_EXTRA_OPTS=--cache-size=50 --log-facility=/dev/null --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
+    depends_on:
+    - dnsmasq-urlblacklist
+    links: *consul_link
+    volumes:
+    - /opt/dnsmasq-shalla:/opt/dnsmasq
+    - /opt/dnsmasq-shalla/dnsmasq.d:/etc/dnsmasq.d:ro
+    #- /srv/logs/dnsmasq-shalla:/var/log
+    networks:
+    - vpn
+
+  dnsmasq-urlblacklist:
+    extends:
+      service: dnsmasq-base
+    environment:
+    - CONSUL_TAG=urlblacklist
+    - DNSMASQ_EXTRA_OPTS=--cache-size=50 --log-facility=/dev/null --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
+    links: *consul_link
+    volumes:
+    - /opt/dnsmasq-urlblacklist:/opt/dnsmasq
+    - /opt/dnsmasq-urlblacklist/dnsmasq.d:/etc/dnsmasq.d:ro
+#    - /srv/logs/dnsmasq-urlblacklist:/var/log
+    networks:
+    - vpn
 
   # Unbound is our external DNS gateway, with ACL
   unbound:
@@ -686,17 +739,20 @@ services:
       service: base-service
     build: unbound
     container_name: unbound
-#    ports:
-#    - "192.0.2.1:53:53/tcp"
-#    - "192.0.2.1:53:53/udp"
+    #ports:
+    #- "192.0.2.1:53:53/tcp"
+    #- "192.0.2.1:53:53/udp"
+    environment:
+    - ENABLE_CONSUL=1
+    - CONSUL_NO_DNS_53=1
     depends_on:
     - dnsmasq
-#    links: *consul_link
+    links: *consul_link
     dns:
     - 172.31.53.53
     volumes:
-    - /opt/unbound:/etc/unbound/unbound.conf.d:ro
-#    - /srv/logs/unbound:/var/log
+    - /opt/unbound:/etc/unbound/unbound.conf.d
+    #- /srv/logs/unbound:/var/log
     tmpfs:
     # we need to write the Consul configuration file according to env vars
     - /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
@@ -721,8 +777,8 @@ services:
     - "3128"
     dns:
     - 172.31.53.53
-#    volumes:
-#    - /srv/logs/ziproxy:/var/log
+    #volumes:
+    #- /srv/logs/ziproxy:/var/log
     networks:
       vpn:
         ipv4_address: 172.31.53.28
@@ -751,8 +807,8 @@ services:
     - /opt/pptp/chap-secrets:/etc/ppp/chap-secrets:ro
     - /lib/modules:/lib/modules:ro
     #- /srv/logs/pptp:/var/log
-#    tmpfs:
-#    - /var/log
+    #tmpfs:
+    #- /var/log
     network_mode: host
     cap_add:
     - NET_ADMIN
@@ -770,12 +826,15 @@ services:
     #  - "/dev/net/tun:/dev/net/tun:rwm"
     ports:
     - "1194/udp:1194/udp"
-#    - "1194/tcp:1194/tcp"
+    #- "1194/tcp:1194/tcp"
     environment:
-#    - DNS_USE_RESOLVCONF=true
-#    - DNS_EXTRA_SERVER_1=172.31.53.254
+    #- DNS_USE_RESOLVCONF=true
+    #- DNS_EXTRA_SERVER_1=172.31.53.254
     - DNS_EXTRA_SERVER_1=172.31.53.53
-#    - DNS_EXTRA_SERVER_2=8.8.4.4
+    #- DNS_EXTRA_SERVER_2=8.8.4.4
+    # OpenVPN extra options
+    #- OPENVPN_OPTS=
+    # See https://github.com/OpenVPN/easy-rsa/blob/master/doc/EasyRSA-Advanced.md
     - EASYRSA_REQ_COUNTRY=US
     - EASYRSA_REQ_PROVINCE=California
     - EASYRSA_REQ_CITY=San Francisco
@@ -789,23 +848,22 @@ services:
     #- EASYRSA_CERT_EXPIRE=3650
     #- EASYRSA_REQ_CN=ChangeMe
     #- EASYRSA_BATCH=
-    # OpenVPN extra options
-    #- OPENVPN_OPTS=
     depends_on:
     - dnsmasq
     - web-accelerator
     dns:
     - 172.31.53.53
     # use service on gateway IP since docker-compose 1.6 can't assign a fixed IP to dns container
-#    - 172.31.53.254
+    #- 172.31.53.254
     volumes:
     - /opt/openvpn:/etc/openvpn
+    # Required for `modprobe tun`
     - /lib/modules:/lib/modules:ro
     #- /srv/logs/openvpn:/var/log
     tmpfs:
     # required to have the container read-only
     - /dev/net:rw,nosuid,dev,noexec,relatime,size=16k
-#    - /var/log
+    #- /var/log
     cap_add:
     - NET_ADMIN
     networks:
@@ -836,7 +894,7 @@ services:
     cpu_shares: 64
     mem_limit: 128m
     memswap_limit: 192m
-#    blkio-weight: 10
+    #blkio-weight: 10
     read_only: true
     restart: none
 
@@ -849,9 +907,9 @@ services:
     #build: letsencrypt
     command: --authenticators
     container_name: letsencrypt
-#    ports:
-#    - "80:80"
-#    - "443:443"
+    #ports:
+    #- "80:80"
+    #- "443:443"
     volumes:
     - /opt/letsencrypt:/etc/letsencrypt
     - /srv/letsencrypt:/var/lib/letsencrypt
@@ -863,8 +921,8 @@ services:
     - /srv/joomla/acme-challenge:/srv/joomla/acme-challenge
     - /srv/wordpress/acme-challenge:/srv/wordpress/acme-challenge
     - /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known:/opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known
-#    networks:
-#    - default
+    #networks:
+    #- default
     logging:
       driver: "none"
     read_only: false
@@ -903,11 +961,11 @@ services:
 ########################################################################
 
 networks:
-#  default:
-#    driver_opts:
-#      com.docker.network.bridge.enable_icc: "false"
-#      com.docker.network.bridge.enable_ip_masquerade: "false"
-#      com.docker.network.enable_ipv6: "false"
+  #default:
+  #  driver_opts:
+  #    com.docker.network.bridge.enable_icc: "false"
+  #    com.docker.network.bridge.enable_ip_masquerade: "false"
+  #    com.docker.network.enable_ipv6: "false"
   tomcat-front:
     driver: bridge
     ipam:
@@ -920,6 +978,7 @@ networks:
       - subnet: 172.29.1.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
+    internal: true
   tomcat-back:
     driver: bridge
     ipam:
@@ -937,6 +996,7 @@ networks:
       - subnet: 172.29.2.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
+    internal: true
   owncloud-back:
     driver: bridge
     ipam:
@@ -954,6 +1014,7 @@ networks:
       - subnet: 172.29.3.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
+    internal: true
   prestashop-back:
     driver: bridge
     ipam:
@@ -971,6 +1032,7 @@ networks:
       - subnet: 172.29.4.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
+    internal: true
   joomla-back:
     driver: bridge
     ipam:
@@ -988,6 +1050,7 @@ networks:
       - subnet: 172.29.5.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
+    internal: true
   wordpress-back:
     driver: bridge
     ipam:
@@ -998,6 +1061,14 @@ networks:
     ipam:
       config:
       - subnet: 172.31.6.0/24
+  dokuwiki-back-internal:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.29.6.0/24
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+    internal: true
   dokuwiki-back:
     driver: bridge
     ipam:
@@ -1030,7 +1101,7 @@ networks:
       - subnet: 172.31.53.0/24
         ip_range: 172.31.53.0/24
         gateway: 172.31.53.254
-# defining aux addresses prevents from assigning them to containers
-#        aux_addresses:
-#          dns: 172.31.53.53
+        # defining aux addresses prevents from assigning them to containers
+        #aux_addresses:
+        #  dns: 172.31.53.53
 ...

@@ -8,7 +8,7 @@
 # auth:       number of authoritative queries answered
 # servers:    for each upstream server it gives the number of queries sent, and the number which resulted in an error
 for query in cachesize insertions evictions misses hits auth servers; do
-	echo $query
+	echo -e -n "${query}\t"
 	dig +short chaos txt "${query}.bind" 127.0.0.1
 done
 
