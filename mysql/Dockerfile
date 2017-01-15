@@ -31,7 +31,8 @@ COPY runit_mysql /etc/service/mysql/run
 #	&& gpg --export -a 5072E1F5 | apt-key add -
 RUN apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5
 
-RUN echo "deb http://repo.mysql.com/apt/ubuntu/ `lsb_release --codename | cut -f 2` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
+#RUN echo "deb http://repo.mysql.com/apt/ubuntu/ `lsb_release --codename | cut -f 2` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
+RUN echo "deb http://repo.mysql.com/apt/ubuntu/ trusty mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
 
 #RUN debconf-set-selections <<< 'mysql-server mysql-server/root_password password $MYSQL_ROOT_PASSWORD'
 #RUN echo mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASSWORD | debconf-set-selections
@@ -39,7 +40,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 	mysql-server=${MYSQL_VERSION}.* mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* mysql-utilities mysqltuner \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& usermod -a -G docker_env mysql \
-	&& sed -i'.bak' 's%\(bind-address\) = 127.0.0.1%\1 = *%'  /etc/mysql/mysql.conf.d/mysqld.cnf
+#	&& sed -i'.bak' 's%\(bind-address\) = 127.0.0.1%\1 = *%'  /etc/mysql/mysql.conf.d/mysqld.cnf
+	&& sed -i'.bak' 's%\(bind-address\) = 127.0.0.1%\1 = *%'  /etc/mysql/my.cnf
 
 ADD https://raw.githubusercontent.com/mysql/mysql-docker/mysql-server/${MYSQL_VERSION}/docker-entrypoint.sh  /entrypoint.sh
 RUN chmod +x /entrypoint.sh \
@@ -57,4 +59,5 @@ EXPOSE 3306
 
 #ENTRYPOINT ["/entrypoint.sh"]
 #CMD ["mysqld"]
+#CMD ["/sbin/my_init"]
 ENTRYPOINT ["/usr/local/sbin/docker-init.sh"]
