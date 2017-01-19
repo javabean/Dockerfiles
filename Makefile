@@ -82,6 +82,9 @@ owncloud joomla wordpress prestashop dokuwiki: php7-base
 owncloud: memcached-owncloud redis-owncloud
 owncloud joomla wordpress prestashop: mysql email-relay
 dokuwiki: email-relay
+openvpn: dnsmasq web-accelerator
+unbound: dnsmasq
+dnsmasq unbound: consul
 
 ########################################################################
 
@@ -103,6 +106,7 @@ ip:
 .PHONY: health
 health:
 	@# Print out the text of the last 5 checks
+	@#docker inspect --format='{{json .State.Health}}' $(NAME)
 	docker inspect -f '{{ range .State.Health.Log }}{{ println "======\nStart:" .Start }}{{ .Output }}{{end}}' $(NAME)
 
 #%:

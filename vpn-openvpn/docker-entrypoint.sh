@@ -89,7 +89,7 @@ group nogroup
 verb 4
 # Silence repeating messages.
 mute 20
-;status openvpn-status.log # Can also send SIGUSR2 to output connection statistics to log file or syslog
+;status /dev/stdout # Can also send SIGUSR2 to output connection statistics to log file or syslog
 ;compress lz4
 comp-lzo
 # https://github.com/OpenVPN/openvpn/blob/master/doc/management-notes.txt
@@ -249,10 +249,10 @@ fi
 #  based on Router Advertisements for this host
 #sysctl -w net.ipv6.conf.all.forwarding=1
 
-#If any of your VPNs uses "dev tun" and "topology subnet" but does not use
-#"client-to-client", OpenVPN's init.d script will disable all.send_redirects
-#(set it to 0) to avoid sending ICMP redirects trough the tun interfaces (and
-#confusing clients).
+# If any of your VPNs uses "dev tun" and "topology subnet" but does not use
+# "client-to-client", OpenVPN's init.d script will disable all.send_redirects
+# (set it to 0) to avoid sending ICMP redirects trough the tun interfaces (and
+# confusing clients).
 # When using "client-to-client", OpenVPN routes the traffic itself without
 # involving the TUN/TAP interface so no ICMP redirects are sent
 # disabled in Docker since: Read-only file system
