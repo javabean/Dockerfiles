@@ -14,7 +14,7 @@
       {
         "name": "unbound status",
 // Exit code 3 if not running (the  connection to the port is refused), 1 on error, 0 if running.
-        "script": "/bin/sh -c 'if [ `unbound-control -c /etc/unbound/unbound.conf -s 127.0.0.1 -q status` -eq 0 ]; then return 0; else return 2; fi'",
+        "script": "/bin/sh -c 'if [ unbound-control -c /etc/unbound/unbound.conf -s 127.0.0.1 -q status ]; then return 0; else return 2; fi'",
         "interval": "20s",
         "timeout": "1s",
         "deregister_critical_service_after": "35s"
