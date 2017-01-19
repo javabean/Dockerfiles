@@ -10,8 +10,9 @@ fi
 
 # check for the expected command
 if [ "$1" = 'dovecot' -o "$1" = '/usr/sbin/dovecot' ]; then
-    # If this wasn't so expensive at startup, we would:
-	#chown -R mail:mail /srv/dovecot
+	if [ "$(stat -c %u /srv/dovecot)" != "$(id -u mail)" ] || [ "$(stat -c %g /srv/dovecot)" != "$(id -g mail)" ]; then
+		chown -R mail:mail /srv/dovecot
+	fi
 
 	# Read-only file system...
 	#[ -e /opt/dovecot/local.conf ] && chown dovecot:dovecot /opt/dovecot/local.conf
