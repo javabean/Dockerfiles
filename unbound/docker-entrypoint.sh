@@ -21,7 +21,7 @@ if [ "$1" = 'unbound' -o "$1" = '/usr/sbin/unbound' ]; then
 		#CONSUL_TEMPLATE_OPTS=
 		#export CONSUL_TEMPLATE_OPTS
 		# wait for local Consul agent
-		wait_for.sh -n "Consul" -- curl -fsS -o /dev/null http://127.0.0.1:8500/
+		wait_for.sh -n "Consul" -- curl -fs -o /dev/null http://127.0.0.1:8500/
 		#-log-level=debug|info|warn|err
 		exec consul-template.sh -log-level=info -exec="$@ -c /etc/unbound/unbound.conf" -exec-kill-timeout="5s" -template="/etc/unbound/unbound.conf.d/forward-zone.conf.ctmpl:/etc/unbound/unbound.conf.d/forward-zone.conf:unbound-control -c /etc/unbound/unbound.conf -s 127.0.0.1 reload"
 	fi
