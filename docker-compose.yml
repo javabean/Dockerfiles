@@ -24,8 +24,8 @@ services:
     #- ENABLE_SYSLOG=1
     #- ENABLE_CRON=1
     #- ENABLE_CONSUL=1
-    # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
     tmpfs:
+    # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
     - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
     - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
     #- /var/log
@@ -471,7 +471,10 @@ services:
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
-    #memory-swappiness: "10"
+    # Can not switch to read_only: true
+    # mknod: /dev/xconsole: Read-only file system
+    # We would need somehow to:
+    # if [ ! -e /dev/xconsole ]; then  mknod -m 640 /dev/xconsole p  else  chmod 0640 /dev/xconsole  fi  chown root:adm /dev/xconsole
     read_only: false
     restart: always
 
@@ -524,7 +527,7 @@ services:
     #cpu_shares: 512
     mem_limit: 448m
     memswap_limit: 512m
-    read_only: false
+    read_only: true
     restart: unless-stopped
 
 ########################################################################
@@ -642,12 +645,15 @@ services:
     - /opt/dovecot:/opt/dovecot:ro
     - /srv/dovecot:/srv/dovecot
     - /srv/logs/dovecot:/var/log
+    tmpfs:
+    # this will have the side-effect of regenerating SSL parameters @ each startup
+    - /var/lib/dovecot:rw,nosuid,nodev,noexec,size=8k
     networks:
     - dovecot
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 256m
-    read_only: false
+    read_only: true
     restart: unless-stopped
 
 ########################################################################
@@ -868,6 +874,11 @@ services:
     - NET_ADMIN
     networks:
     - vpn
+    #sysctls:
+    #- net.ipv4.ip_forward=1
+    #- net.ipv4.conf.all.send_redirects=0
+    #- net.ipv6.conf.default.forwarding=1
+    #- net.ipv6.conf.all.forwarding=1
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
