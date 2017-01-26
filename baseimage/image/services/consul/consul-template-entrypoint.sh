@@ -10,7 +10,7 @@ fi
 
 CONSUL_TEMPLATE_CONFIG_FILE=/usr/local/etc/consul-template.json
 #-dedup -wait="5s:10s"
-CONSUL_TEMPLATE_ARGS="-pid-file= -reload-signal= -dump-signal= -kill-signal=SIGTERM -config=${CONSUL_TEMPLATE_CONFIG_FILE} -exec-splay=2s"
+CONSUL_TEMPLATE_ARGS="-pid-file=/run/consul-template.pid -reload-signal= -dump-signal= -kill-signal=SIGTERM -config=${CONSUL_TEMPLATE_CONFIG_FILE} -exec-splay=2s"
 
 # check for the expected command
 if [ "$1" = 'consul-template' -o "$1" = '/usr/local/bin/consul-template' ]; then

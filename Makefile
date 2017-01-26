@@ -9,9 +9,9 @@ unexport IMG_VERSION = 0.9.19.1
 
 DOCKER_APT_VERSION = 1.12.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.9.0
+DOCKER_COMPOSE_VERSION = 1.10.0
 # url fragment
-DOCKER_MACHINE_VERSION = v0.8.2
+DOCKER_MACHINE_VERSION = v0.9.0
 
 #COMPOSE_PROJECT_NAME = `basename`
 #COMPOSE_FILE = docker-compose_1.yml:docker-compose_2.yml

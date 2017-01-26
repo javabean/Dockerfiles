@@ -30,6 +30,8 @@ services:
     - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
     #- /var/log
     - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
+    # required for logrotate
+    - /var/lib/logrotate:rw,nosuid,nodev,noexec,relatime,size=16k
     # mount work dir for runit
     - /var/lib/runit-sv:rw,suid,nodev,exec,size=1024k
     # mount work dir for consul
@@ -158,7 +160,7 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=7.0.73
+      - TOMCAT_VERSION=7.0.75
     container_name: tomcat
     expose:
     - "8080"
@@ -189,6 +191,7 @@ services:
     build:
       context: owncloud
       args:
+      #- OWNCLOUD_VERSION=9.1
       - OWNCLOUD_VERSION=stable
     container_name: owncloud
     expose:
@@ -339,7 +342,7 @@ services:
     build:
       context: wordpress
       args:
-      #- WORDPRESS_VERSION=wordpress-4.6.1
+      #- WORDPRESS_VERSION=wordpress-4.7.2
       - WORDPRESS_VERSION=latest
     container_name: wordpress
     expose:
@@ -604,6 +607,9 @@ services:
     #- /srv/logs/redis:/var/log
     #tmpfs:
     #- /var/log
+    #sysctls:
+    #- vm.overcommit_memory=1
+    #- sys.kernel.mm.transparent_hugepage.enabled=never
     cpu_shares: 128
     mem_limit: 128m
     memswap_limit: 128m
@@ -796,33 +802,6 @@ services:
 
 ########################################################################
 
-  pptp:
-    extends:
-      service: base-service
-    build:
-      context: vpn-pptp
-      args:
-      - DNS_SERVER_1=172.31.53.53
-      - DNS_SERVER_2=8.8.4.4
-    container_name: pptp
-    ports:
-    - "1723:1723"
-    dns:
-    - 172.31.53.53
-    volumes:
-    - /opt/pptp/chap-secrets:/etc/ppp/chap-secrets:ro
-    - /lib/modules:/lib/modules:ro
-    #- /srv/logs/pptp:/var/log
-    #tmpfs:
-    #- /var/log
-    network_mode: host
-    cap_add:
-    - NET_ADMIN
-    cpu_shares: 128
-    mem_limit: 64m
-    memswap_limit: 96m
-    restart: on-failure:4
-
   openvpn:
     extends:
       service: base-service
@@ -874,11 +853,11 @@ services:
     - NET_ADMIN
     networks:
     - vpn
-    #sysctls:
-    #- net.ipv4.ip_forward=1
-    #- net.ipv4.conf.all.send_redirects=0
-    #- net.ipv6.conf.default.forwarding=1
-    #- net.ipv6.conf.all.forwarding=1
+    sysctls:
+    - net.ipv4.ip_forward=1
+    - net.ipv4.conf.all.send_redirects=0
+    - net.ipv6.conf.default.forwarding=1
+    - net.ipv6.conf.all.forwarding=1
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
@@ -902,6 +881,9 @@ services:
     - /srv/transmission:/var/lib/transmission-daemon
     networks:
     - transmission
+    sysctls:
+    - net.core.rmem_max=4194304
+    - net.core.wmem_max=1048576
     cpu_shares: 64
     mem_limit: 128m
     memswap_limit: 192m
