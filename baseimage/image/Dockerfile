@@ -8,6 +8,7 @@ ARG APT_MIRROR=fr.archive.ubuntu.com
 
 #ENV CONTAINERPILOT=file:///usr/local/etc/containerpilot.json
 
+COPY docker-healthcheck.sh  /usr/local/bin/
 ADD . /bd_build
 
 RUN /bd_build/prepare.sh && \
@@ -16,6 +17,11 @@ RUN /bd_build/prepare.sh && \
 	/bd_build/cleanup.sh
 
 #VOLUME ["/var/log"]
+
+HEALTHCHECK --interval=60s --timeout=10s --retries=3 \
+	CMD ["/usr/local/bin/docker-healthcheck.sh"]
+# Should you need to disable health checks in an inherited Dockerfile:
+#HEALTHCHECK NONE
 
 #ENTRYPOINT ["/usr/local/sbin/tini", "-g", "--", "/docker-entrypoint.sh"]
 #ENTRYPOINT ["/usr/local/sbin/dumb-init", "--", "/docker-entrypoint.sh"]

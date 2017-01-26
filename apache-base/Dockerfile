@@ -36,6 +36,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 
 EXPOSE 80 443
 
+HEALTHCHECK --interval=5m --timeout=10s --retries=2 \
+	CMD curl -fsSL -o /dev/null http://localhost || exit 1
+
 #CMD ["/usr/sbin/apache2", "-DFOREGROUND", "-k", "start"]
 
 #ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]

@@ -2,7 +2,7 @@ FROM cedrik/baseimage:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
-COPY docker-entrypoint.sh backup_conf.sh restore_conf.sh unbound-statistics.sh  /usr/local/bin/
+COPY docker-entrypoint.sh consul-healthcheck.sh backup_conf.sh restore_conf.sh unbound-statistics.sh  /usr/local/bin/
 COPY runit_unbound /etc/service/unbound/run
 COPY consul.json /usr/local/etc/consul.d/unbound.json
 
@@ -34,6 +34,6 @@ RUN /usr/local/bin/backup_conf.sh
 EXPOSE 53/tcp 53/udp
 #EXPOSE 8953
 
-#ENTRYPOINT ["/usr/local/sbin/docker-init.sh"]
-ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
-CMD ["/usr/sbin/unbound"]
+ENTRYPOINT ["/usr/local/sbin/docker-init.sh"]
+#ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
+#CMD ["/usr/sbin/unbound"]

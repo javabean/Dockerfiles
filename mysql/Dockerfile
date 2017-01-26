@@ -15,6 +15,8 @@ RUN echo "yes" > /etc/container_environment/MYSQL_ALLOW_EMPTY_PASSWORD
 COPY runit_mysql /etc/service/mysql/run
 #COPY runit_mysql /etc/my_init.d/mysql
 
+COPY consul-healthcheck.sh  /usr/local/bin/
+
 # http://dev.mysql.com/downloads/repo/apt/
 # requires user interaction...
 #RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
