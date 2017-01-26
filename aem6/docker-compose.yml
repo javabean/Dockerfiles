@@ -1,0 +1,62 @@
+%YAML 1.2
+---
+# https://docs.docker.com/compose/compose-file/
+
+version: '2.1'
+
+services:
+
+  aem:
+    build:
+      context: aem6
+      args:
+      - AEM_JAR_URL=http://server.example:8081/nexus/content/repositories/thirdparty/com/adobe/aem/aem/6.2.0.1/aem-6.2.0.1-generic.jar
+    expose:
+    - "4502"
+    - "4503"
+    #environment:
+    # See /usr/local/etc/aem6 for all possible keys
+    #- CQ_AUTH=admin:admin
+    #- CQ_PORT=4502
+    #- CQ_RUNMODE=author,nosamplecontent
+    #- CQ_JVM_OPTS=...
+    #- REMOVE_GEOMETRIXX=true
+    tmpfs:
+    # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
+    - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
+    - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
+    #- /var/log
+    - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
+   #shm_size: 64M
+    #depends_on:
+    #- email-relay
+    #- mongodb:mongodb
+    #links:
+    #- email-relay:email-relay
+    volumes:
+    #- /opt/aem/config:/usr/local/etc/aem6
+    - /opt/aem6/packages:/opt/aem6/packages
+    - /srv/aem6:/srv/aem6
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200m"
+        max-file: "9"
+    #sysctls:
+    #- vm.swappiness=5
+    cpu_shares: 1024
+    mem_limit: 3584m
+    memswap_limit: 3584m
+    read_only: true
+    restart: on-failure:3
+
+########################################################################
+########################################################################
+
+#volumes:
+
+########################################################################
+########################################################################
+
+#networks:
+...

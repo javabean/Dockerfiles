@@ -1,0 +1,57 @@
+CQ_USER=${CQ_USER:-aem6}
+CQ_BASEFOLDER=${CQ_BASEFOLDER:-/srv/aem6}
+CQ_TMPDIR=${CQ_BASEFOLDER}/tmp
+# CQ logs file
+CQ_GCLOGDIR=${CQ_GCLOGDIR:-$CQ_BASEFOLDER/crx-quickstart/logs}
+#CQ_GCLOG="$CQ_GCLOGDIR/gc.log-`date +%Y-%m-%d-%H-%M`"
+CQ_GCLOG="$CQ_GCLOGDIR/gc.log"
+PACKAGES_ROOT=${PACKAGES_ROOT:-/opt/aem6/packages}
+# Used for automatic packages installation
+CQ_AUTH=${CQ_AUTH:-admin:admin}
+
+
+##### The following are env vars used by AEM start script #####
+
+
+# TCP port used for stop and status scripts
+CQ_PORT=${CQ_PORT:-4502}
+# hostname of the interface that this server should listen to
+#CQ_HOST=
+
+# runmode(s) (comma-separated)
+# will not be used if repository is already present
+CQ_RUNMODE=${CQ_RUNMODE:-author,nosamplecontent}
+#CQ_RUNMODE=${CQ_RUNMODE:-publish,nosamplecontent}
+
+# name of the jarfile
+#CQ_JARFILE=''
+
+# default JVM options
+if [ -z "$CQ_JVM_OPTS" ]; then
+	CQ_JVM_OPTS='-server -Djava.awt.headless=true -Dfile.encoding=UTF-8'
+	CQ_JVM_OPTS="$CQ_JVM_OPTS -Xms2048M -Xmx2048m -XX:MaxMetaspaceSize=384M"
+	#CQ_JVM_OPTS="$CQ_JVM_OPTS -XX:+DisableExplicitGC"
+	CQ_JVM_OPTS="$CQ_JVM_OPTS -verbose:gc -Xloggc:$CQ_GCLOG -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:GCLogFileSize=10M -XX:NumberOfGCLogFiles=10"
+	#CQ_JVM_OPTS="$CQ_JVM_OPTS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$CQ_GCLOGDIR"
+	CQ_JVM_OPTS="$CQ_JVM_OPTS -Djava.io.tmpdir=$CQ_TMPDIR"
+	#CQ_JVM_OPTS="$CQ_JVM_OPTS -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9004 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=127.0.0.1"
+	# only activate when debugging is required
+	#CQ_DEBUG_PORT=50505
+	#CQ_JVM_OPTS="$CQ_JVM_OPTS -agentlib:jdwp=transport=dt_socket,address=$CQ_DEBUG_PORT,server=y,suspend=n"
+fi
+
+# file size limit (ulimit)
+#CQ_FILE_SIZE_LIMIT=8192
+
+# when using oak (crx3) authentication must be configured using the
+# Apache Felix JAAS Configuration Factory service via the Web Console
+# see http://jackrabbit.apache.org/oak/docs/security/authentication/externalloginmodule.html
+# use jaas.config (legacy: only used for crx2 persistence)
+#CQ_USE_JAAS='true'
+# config for jaas (legacy: only used for crx2 persistence)
+#CQ_JAAS_CONFIG='etc/jaas.config'
+
+# settings for mongo db
+#CQ_MONGO_HOST=127.0.0.1
+#CQ_MONGO_PORT=27017
+#CQ_MONGO_DB=aem6
