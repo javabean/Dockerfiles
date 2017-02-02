@@ -6,5 +6,4 @@
 #	$CATALINA_HOME/bin/catalina.sh start $*
 #fi
 
-#exec gosu tomcat $CATALINA_HOME/bin/catalina.sh run >> "$CATALINA_BASE/logs/catalina.out" 2>&1
-$CATALINA_HOME/bin/catalina.sh run >> "$CATALINA_BASE/logs/catalina.out" 2>&1
+exec gosu tomcat $CATALINA_HOME/bin/catalina.sh run >> "$CATALINA_BASE/logs/catalina.out" 2>&1

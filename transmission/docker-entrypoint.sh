@@ -26,7 +26,7 @@ if [ "$1" = 'transmission-daemon' -o "$1" = '/usr/bin/transmission-daemon' ]; th
 	#sysctl -w net.core.rmem_max = 4194304
 	#sysctl -w net.core.wmem_max = 1048576
 
-	exec "$@" --foreground --logfile /dev/stdout --log-info --config-dir "${TRANSMISSION_HOME}/info" --blocklist --no-auth --allowed '*' --dht --lpd --utp --no-portmap --encryption-preferred --watch-dir "${TRANSMISSION_HOME}/torrents" --incomplete-dir "${TRANSMISSION_HOME}/incomplete" --download-dir "${TRANSMISSION_HOME}/downloads"
+	exec gosu debian-transmission "$@" --foreground --logfile /dev/stdout --log-info --config-dir "${TRANSMISSION_HOME}/info" --blocklist --no-auth --allowed '*' --dht --lpd --utp --no-portmap --encryption-preferred --watch-dir "${TRANSMISSION_HOME}/torrents" --incomplete-dir "${TRANSMISSION_HOME}/incomplete" --download-dir "${TRANSMISSION_HOME}/downloads"
 fi
 
 # else default to run whatever the user wanted like "bash"

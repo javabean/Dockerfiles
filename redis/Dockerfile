@@ -19,7 +19,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 
 #VOLUME ["/var/lib/redis/" "/var/log"]
 
-USER redis
+#USER redis
 
 EXPOSE 6379
 

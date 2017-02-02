@@ -3,7 +3,7 @@ FROM cedrik/baseimage:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
-COPY docker-entrypoint.sh  /usr/local/bin/
+COPY docker-entrypoint.sh consul-healthcheck.sh  /usr/local/bin/
 
 ARG MEMCACHED_VERSION=1.4.34
 

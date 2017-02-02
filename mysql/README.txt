@@ -78,4 +78,7 @@ runtime
 Upgrading version
 =================
 
-See http://dev.mysql.com/doc/refman/5.7/en/mysql-upgrade.html
+See https://dev.mysql.com/doc/refman/5.7/en/upgrading.html and https://dev.mysql.com/doc/refman/5.7/en/mysql-upgrade.html
+	mysql -u root -p --execute="SET GLOBAL innodb_fast_shutdown=0"
+	mysqladmin -u root -p shutdown
+	mysql_upgrade -u root -p

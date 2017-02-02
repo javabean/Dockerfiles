@@ -167,6 +167,9 @@ services:
     - "8443"
     environment:
     - CATALINA_BASE=/opt/tomcat/my-instance
+    depends_on:
+      email-relay:
+        condition: service_started
     links:
     - email-relay:email-relay
     volumes:
@@ -200,9 +203,11 @@ services:
     environment:
     - ENABLE_CRON=1
     #- SERVER_NAME=https://www.example.com
-    #depends_on:
-    #- redis-owncloud
-    #- email-relay
+    depends_on:
+      redis-owncloud:
+        condition: service_healthy
+      email-relay:
+        condition: service_started
     links:
     - mysql:mysql
     #- memcached-owncloud:memcached
@@ -256,9 +261,11 @@ services:
     - ADMIN_PASSWD=changeme
     - ADMIN_NEWSLETTER=0
     - ADMIN_SEND_EMAIL=1
-    #depends_on:
-    #- mysql
-    #- email-relay
+    depends_on:
+      mysql:
+        condition: service_healthy
+      email-relay:
+        condition: service_started
     links:
     - mysql:mysql
     #- memcached-prestashop:memcached
@@ -314,9 +321,11 @@ services:
     #- JOOMLA_DB_USER=
     #- JOOMLA_DB_PASSWORD=
     #- JOOMLA_DB_NAME=
-    #depends_on:
-    #- mysql
-    #- email-relay
+    depends_on:
+      mysql:
+        condition: service_healthy
+      email-relay:
+        condition: service_started
     links:
     - mysql:mysql
     #- memcached-joomla:memcached
@@ -363,9 +372,11 @@ services:
     #- WORDPRESS_SECURE_AUTH_SALT=
     #- WORDPRESS_LOGGED_IN_SALT=
     #- WORDPRESS_NONCE_SALT=
-    #depends_on:
-    #- mysql
-    #- email-relay
+    depends_on:
+      mysql:
+        condition: service_healthy
+      email-relay:
+        condition: service_started
     links:
     - mysql:mysql
     #- memcached-wordpress:memcached
@@ -402,8 +413,9 @@ services:
     expose:
     - "80"
     - "443"
-    #depends_on:
-    #- email-relay
+    depends_on:
+      email-relay:
+        condition: service_started
     links:
     - email-relay:email-relay
     volumes:
@@ -702,8 +714,12 @@ services:
     environment:
     - DNSMASQ_EXTRA_OPTS=--cache-size=900 --log-facility=/dev/null --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
     depends_on:
-    #- dnsmasq-shalla
-    - dnsmasq-urlblacklist
+      consul:
+        condition: service_healthy
+    #  dnsmasq-shalla:
+    #    condition: service_started
+      dnsmasq-urlblacklist:
+        condition: service_started
     links: *consul_link
     volumes:
     - /opt/dnsmasq:/opt/dnsmasq
@@ -722,7 +738,10 @@ services:
     - CONSUL_TAG=shalla
     - DNSMASQ_EXTRA_OPTS=--cache-size=50 --log-facility=/dev/null --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
     depends_on:
-    - dnsmasq-urlblacklist
+      consul:
+        condition: service_healthy
+      dnsmasq-urlblacklist:
+        condition: service_started
     links: *consul_link
     volumes:
     - /opt/dnsmasq-shalla:/opt/dnsmasq
@@ -737,6 +756,9 @@ services:
     environment:
     - CONSUL_TAG=urlblacklist
     - DNSMASQ_EXTRA_OPTS=--cache-size=50 --log-facility=/dev/null --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
+    depends_on:
+      consul:
+        condition: service_healthy
     links: *consul_link
     volumes:
     - /opt/dnsmasq-urlblacklist:/opt/dnsmasq
@@ -758,7 +780,10 @@ services:
     - ENABLE_CONSUL=1
     - CONSUL_NO_DNS_53=1
     depends_on:
-    - dnsmasq
+      consul:
+        condition: service_healthy
+      dnsmasq:
+        condition: service_started
     links: *consul_link
     dns:
     - 172.31.53.53
@@ -834,8 +859,10 @@ services:
     #- EASYRSA_REQ_CN=ChangeMe
     #- EASYRSA_BATCH=
     depends_on:
-    - dnsmasq
-    - web-accelerator
+      dnsmasq:
+        condition: service_started
+      web-accelerator:
+        condition: service_started
     dns:
     - 172.31.53.53
     # use service on gateway IP since docker-compose 1.6 can't assign a fixed IP to dns container
@@ -881,9 +908,9 @@ services:
     - /srv/transmission:/var/lib/transmission-daemon
     networks:
     - transmission
-    sysctls:
-    - net.core.rmem_max=4194304
-    - net.core.wmem_max=1048576
+    #sysctls:
+    #- net.core.rmem_max=4194304
+    #- net.core.wmem_max=1048576
     cpu_shares: 64
     mem_limit: 128m
     memswap_limit: 192m

@@ -14,7 +14,7 @@ if [ "$1" = 'netdata' -o "$1" = '/usr/sbin/netdata' ]; then
 	if ! ls -A /etc/netdata/* > /dev/null 2>&1; then
 		tar xzf /etc/netdata.tgz -C /etc
 	fi
-	exec "$@" -D -s /mnt
+	exec gosu netdata "$@" -D -s /mnt
 fi
 
 # else default to run whatever the user wanted like "bash"

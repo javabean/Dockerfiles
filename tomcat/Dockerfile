@@ -11,7 +11,7 @@ RUN echo "/usr/local/tomcat" > /etc/container_environment/CATALINA_HOME
 COPY runit_tomcat /etc/service/tomcat/run
 #COPY runit_tomcat /etc/my_init.d/tomcat
 
-COPY docker-entrypoint.sh  /usr/local/bin/
+COPY docker-entrypoint.sh consul-healthcheck.sh  /usr/local/bin/
 
 ############### FIXME  change version here! ###############
 ARG TOMCAT_VERSION=7.0.73
@@ -56,7 +56,7 @@ RUN curl -fsSL http://archive.apache.org/dist/tomcat/tomcat-7/v${TOMCAT_VERSION}
 
 EXPOSE 8080 8443
 
-USER tomcat
+#USER tomcat
 
 ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
 # Can not use env var here...

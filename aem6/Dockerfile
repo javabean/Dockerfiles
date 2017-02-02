@@ -19,7 +19,7 @@ RUN	if ! getent group "aem6" > /dev/null 2>&1 ; then \
 
 RUN mkdir -p /srv/aem6/tmp /opt/aem6/packages && chown -R aem6: /srv/aem6 /opt/aem6
 
-COPY docker-entrypoint.sh  /usr/local/bin/
+COPY docker-entrypoint.sh consul-healthcheck.sh  /usr/local/bin/
 COPY aem6  /usr/local/etc/
 
 # ADD creates the remote file with permissions 600, which are not enough for our usage

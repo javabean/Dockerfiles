@@ -24,7 +24,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 	php7.0-memcache php7.0-memcached \
 	php7.0-apcu \
 	php7.0-geoip \
-	#geoipupdate geoip-bin mmdb-bin\
+	#geoipupdate geoip-bin mmdb-bin \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& for m in "rewrite headers env mime"; do a2enmod $m; done \
 	# PHP configuration

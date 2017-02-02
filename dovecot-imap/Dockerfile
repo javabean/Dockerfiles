@@ -2,7 +2,7 @@ FROM cedrik/baseimage:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
-COPY docker-entrypoint.sh  /usr/local/bin/
+COPY docker-entrypoint.sh consul-healthcheck.sh  /usr/local/bin/
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dovecot-imapd dovecot-managesieved \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \

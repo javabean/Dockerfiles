@@ -4,7 +4,7 @@
 num_processes=`pgrep -cx unbound`
 if [ "$num_processes" -eq 0 ]; then
 	echo "No unbound process!"
-	return 2
+	exit 2
 fi
 
 # unbound status

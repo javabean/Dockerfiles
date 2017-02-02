@@ -9,6 +9,7 @@ LABEL org.label-schema.schema-version="1.0" \
 
 # Consul binary & user created in base image
 
+COPY consul-healthcheck.sh  /usr/local/bin/
 #COPY *.json /usr/local/etc/consul.d/
 
 #VOLUME ["/var/log"]

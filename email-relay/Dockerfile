@@ -11,6 +11,8 @@ COPY runit_opendkim /etc/service/opendkim/run
 
 ARG POSTFIX_HOSTNAME=myhost.example.net
 
+COPY consul-healthcheck.sh  /usr/local/bin/
+
 # unattended installs an "Internet" profile
 RUN apt-get update \
 	&& DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends postfix opendkim opendkim-tools \
