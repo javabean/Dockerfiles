@@ -4,15 +4,24 @@
 # A simple ini system semi-compatible with Phusion's baseimage-docker's my_init:
 # * run startup items in /etc/my_init.d/ and /etc/rc.local
 # * executes the executable given in argument, or "runit" if none
-# This implementation will not take care of environment variables (/etc/container_environment*)
+# This implementation will not take care of environment variables defined in /etc/container_environment/,
+# but will dump runtime environment variables in /run/environment for sub-processes to pick up
 
 set -e
 
+export_envvars() {
+#	echo "Writing run-time environment variables in /run/environment"
+	# read-only filesystem...
+	#env | grep -v ... > /etc/environment
+	env | grep -v -e 'HOME' -e 'USER' -e 'LOGNAME' -e 'GROUP' -e 'UID' -e 'GID' -e 'SHELL' -e 'PWD' > /run/environment
+	chown root:docker_env /run/environment
+	chmod 640 /run/environment
+}
+
 run_startup_files() {
 	# Run /etc/my_init.d/*
-	# TODO sort in lexicographical order
-#	echo "Running {}..."
-	find /etc/my_init.d -maxdepth 0 -type f -executable -exec "{}" ';'
+#	echo "Running /etc/my_init.d/..."
+	run-parts --report --lsbsysinit /etc/my_init.d
 
 	# Run /etc/rc.local.
 #	echo "Running /etc/rc.local..."
@@ -63,6 +72,8 @@ main() {
 	if [ "$(id -u)" = "0" ]; then
 		chmod a+rwx,+t /run/lock
 	fi
+
+	export_envvars
 
 	run_startup_files
 
