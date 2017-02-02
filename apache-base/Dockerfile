@@ -9,9 +9,13 @@ COPY runit_apache2 /etc/service/apache2/run
 #COPY runit_apache2 /etc/my_init.d/apache2
 #COPY apache2.conf /etc/apache2.conf
 
-COPY backup_conf.sh restore_conf.sh docker-entrypoint.sh  /usr/local/bin/
+COPY GeoIP.conf /etc/
+
+COPY consul-healthcheck.sh backup_conf.sh restore_conf.sh docker-entrypoint.sh  /usr/local/bin/
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2 apache2-utils openssl libapache2-mod-xsendfile \
+	#libapache2-mod-geoip geoip-database geoipupdate geoip-bin mmdb-bin \
+	libapache2-mod-geoip geoip-database geoip-bin \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& for m in "auth_digest authz_host expires headers info reqtimeout rewrite remoteip slotmem_shm socache_shmcb" ; do a2enmod $m; done \
 #	&& for m in "" ; do a2dismod $m; done \
@@ -27,6 +31,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 	&& echo "\n\n\n# https://httpoxy.org\nRequestHeader unset Proxy early\n" >> /etc/apache2/conf-available/security.conf \
 #	&& sed -i'.bak' -e 's/SSLProtocol all$/SSLProtocol all -SSLv3/' /etc/apache2/mods-available/ssl.conf \
 	&& mkdir -p /var/www/html/.well-known/acme-challenge && chown -R www-data: /var/www/html/.well-known \
+	&& cd /usr/share/GeoIP && curl -fsSLRO http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz && gunzip -f GeoIP.dat.gz && cd - \
+	#&& geoipupdate \
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh
 
@@ -37,7 +43,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 EXPOSE 80 443
 
 HEALTHCHECK --interval=5m --timeout=10s --retries=2 \
-	CMD curl -fsSL -o /dev/null http://localhost || exit 1
+	CMD ["/usr/local/bin/docker-healthcheck.sh"]
 
 #CMD ["/usr/sbin/apache2", "-DFOREGROUND", "-k", "start"]
 
