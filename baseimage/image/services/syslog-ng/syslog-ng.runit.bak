@@ -22,11 +22,11 @@ case "x$CONSOLE_LOG_LEVEL" in
     ;;
 esac
 
-#if [ ! -e /dev/xconsole ]
-#then
-#  mknod -m 640 /dev/xconsole p
-#  chown root:adm /dev/xconsole
-#  [ -x /sbin/restorecon ] && /sbin/restorecon $XCONSOLE
-#fi
+if [ ! -e /dev/xconsole ]
+then
+  mknod -m 640 /dev/xconsole p
+  chown root:adm /dev/xconsole
+  [ -x /sbin/restorecon ] && /sbin/restorecon $XCONSOLE
+fi
 
 exec syslog-ng -F -p /var/run/syslog-ng.pid $SYSLOGNG_OPTS

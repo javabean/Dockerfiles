@@ -13,7 +13,7 @@ export_envvars() {
 #	echo "Writing run-time environment variables in /run/environment"
 	# read-only filesystem...
 	#env | grep -v ... > /etc/environment
-	env | grep -v -e 'HOME' -e 'USER' -e 'LOGNAME' -e 'GROUP' -e 'UID' -e 'GID' -e 'SHELL' -e 'PWD' > /run/environment
+	env | grep -v -e 'HOME' -e 'USER' -e 'LOGNAME' -e 'GROUP' -e 'UID' -e 'GID' -e 'SHELL' -e 'PWD' -e 'SHLVL' > /run/environment
 	chown root:docker_env /run/environment
 	chmod 640 /run/environment
 }
@@ -47,9 +47,11 @@ start_runit() {
 	fi
 	cp -a /etc/service/* "${RUNIT_SV_DIR}"
 	
+	# beware that cron logs to syslog
+	#[ -z "$ENABLE_SYSLOG" -a -z "$ENABLE_CRON" ] && rm -rf ${RUNIT_SV_DIR}/syslog-ng ${RUNIT_SV_DIR}/syslog-forwarder
 	[ -z "$ENABLE_SYSLOG" ] && rm -rf ${RUNIT_SV_DIR}/syslog-ng ${RUNIT_SV_DIR}/syslog-forwarder
-	[ -z "$ENABLE_SSH" ] && rm -rf ${RUNIT_SV_DIR}/sshd
 	[ -z "$ENABLE_CRON" ] && rm -rf ${RUNIT_SV_DIR}/cron
+	[ -z "$ENABLE_SSH" ] && rm -rf ${RUNIT_SV_DIR}/sshd
 	[ -z "$ENABLE_CONSUL" ] && rm -rf ${RUNIT_SV_DIR}/consul
 	
 	exec /usr/bin/runsvdir -P ${RUNIT_SV_DIR}

@@ -65,7 +65,7 @@ destination d_messages { file("/var/log/messages"); };
 #
 #    $ xconsole -file /dev/xconsole [...]
 #
-#destination d_xconsole { pipe("/dev/xconsole"); };
+destination d_xconsole { pipe("/dev/xconsole"); };
 
 # Send the messages to an other host
 #

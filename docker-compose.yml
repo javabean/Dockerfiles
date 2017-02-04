@@ -21,6 +21,7 @@ services:
     #- "8400"
     #- "8500"
     #environment:
+    # please note that SYSLOG requires read_only: false (as it needs creating /dev/log)
     #- ENABLE_SYSLOG=1
     #- ENABLE_CRON=1
     #- ENABLE_CONSUL=1
@@ -30,6 +31,8 @@ services:
     - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
     #- /var/log
     - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
+    # required for syslog
+    #- /var/lib/syslog-ng:rw,nosuid,nodev,noexec,relatime,size=16k
     # required for logrotate
     - /var/lib/logrotate:rw,nosuid,nodev,noexec,relatime,size=16k
     # mount work dir for runit
@@ -202,6 +205,7 @@ services:
     - "443"
     environment:
     - ENABLE_CRON=1
+    #- ENABLE_SYSLOG=1
     #- SERVER_NAME=https://www.example.com
     depends_on:
       redis-owncloud:
@@ -317,6 +321,7 @@ services:
     - "443"
     environment:
     - ENABLE_CRON=1
+    #- ENABLE_SYSLOG=1
     #- JOOMLA_DB_HOST=mysql
     #- JOOMLA_DB_USER=
     #- JOOMLA_DB_PASSWORD=
@@ -486,10 +491,6 @@ services:
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
-    # Can not switch to read_only: true
-    # mknod: /dev/xconsole: Read-only file system
-    # We would need somehow to:
-    # if [ ! -e /dev/xconsole ]; then  mknod -m 640 /dev/xconsole p  else  chmod 0640 /dev/xconsole  fi  chown root:adm /dev/xconsole
     read_only: false
     restart: always
 
@@ -509,6 +510,7 @@ services:
     - "3306"
     environment:
     - ENABLE_CRON=1
+    #- ENABLE_SYSLOG=1
     - MYSQL_ROOT_PASSWORD=
     #- MYSQL_CUSTOM_OPTS=--table_open_cache=500 --max_connections=51
     #- MYSQL_CUSTOM_OPTS=--key_buffer_size=4M --sort_buffer_size=128K --read_buffer_size=64K --net_buffer_length=8K
