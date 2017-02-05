@@ -12,6 +12,10 @@ $AUTOCONFIG = array(
 //  'dbuser' => 'my_user';
 //  'dbpass' => 'my_password';
 //  'dbtableprefix' => 'oc_';
+//  'dbdriveroptions' => array(
+//        PDO::MYSQL_ATTR_SSL_CA => '/file/path/to/ca_cert.pem',
+//        PDO::MYSQL_ATTR_INIT_COMMAND => 'SET wait_timeout = 28800'
+//  ),
 
   'default_language' => 'en',
   'log_rotate_size' => 104857600,
@@ -20,6 +24,8 @@ $AUTOCONFIG = array(
 
   'overwriteprotocol' => 'https',
   'overwrite.cli.url' => 'https://owncloud.example.org/',
+
+  'activity_expire_days' => 61,
 
   'trashbin_retention_obligation' => 'auto,61',
   'versions_retention_obligation' => 'auto,366',
@@ -49,11 +55,34 @@ $AUTOCONFIG = array(
 //      1 => 11211,
 //    ),
 //  ),
+  'memcached_options' => array(
+        // Set timeouts to 50ms
+        //\Memcached::OPT_CONNECT_TIMEOUT => 50,
+        //\Memcached::OPT_RETRY_TIMEOUT =>   50,
+        //\Memcached::OPT_SEND_TIMEOUT =>    50,
+        //\Memcached::OPT_RECV_TIMEOUT =>    50,
+        //\Memcached::OPT_POLL_TIMEOUT =>    50,
+
+        // Enable compression
+        \Memcached::OPT_COMPRESSION =>          true,
+
+        // Turn on consistent hashing
+        \Memcached::OPT_LIBKETAMA_COMPATIBLE => true,
+
+        // Enable Binary Protocol
+        \Memcached::OPT_BINARY_PROTOCOL =>      true,
+
+        // Binary serializer vill be enabled if the igbinary PECL module is available
+        //\Memcached::OPT_SERIALIZER => \Memcached::SERIALIZER_IGBINARY,
+  ),
   'memcache.locking' => '\OC\Memcache\Redis', // Because most memcache backends can clean values without warning using redis is highly recommended to avoid data loss.
   'filelocking.enabled' => 'true',
   'redis' => array(
     'host' => 'redis', // can also be a unix domain socket: '/var/run/redis/redis.sock'
     'port' => 6379,
+//    'timeout' => 0.0,
+//    'password' => '', // Optional, if not defined no password will be used.
+//    'dbindex' => 0, // Optional, if undefined SELECT will not run and will use Redis Server's default DB Index.
   ),
 
   'mail_domain' => 'example.org',
