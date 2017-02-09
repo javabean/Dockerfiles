@@ -17,8 +17,8 @@ COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/
 #ARG OWNCLOUD_VERSION=9.1
 ARG OWNCLOUD_VERSION=stable
 
-RUN echo "deb https://download.owncloud.org/download/repositories/${OWNCLOUD_VERSION}/`lsb_release --id | cut -f 2`_`lsb_release --release | cut -f 2`/ /" >> /etc/apt/sources.list.d/owncloud.list
-RUN curl -fsSL https://download.owncloud.org/download/repositories/${OWNCLOUD_VERSION}/`lsb_release --id | cut -f 2`_`lsb_release --release | cut -f 2`/Release.key | apt-key add -
+RUN echo "deb https://download.owncloud.org/download/repositories/${OWNCLOUD_VERSION}/`lsb_release -is`_`lsb_release -rs`/ /" >> /etc/apt/sources.list.d/owncloud.list
+RUN curl -fsSL https://download.owncloud.org/download/repositories/${OWNCLOUD_VERSION}/`lsb_release -is`_`lsb_release -rs`/Release.key | apt-key add -
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	curl bzip2 openssl file sqlite3 \
