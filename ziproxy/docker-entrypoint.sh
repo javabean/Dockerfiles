@@ -22,9 +22,9 @@ if [ "$1" = 'ziproxy' -o "$1" = '/usr/bin/ziproxy' ]; then
 	# it seems we can't read from stdin here; default to eternal sleep...
 	#read _
 	#line
-	while true; do sleep 999; done
+	while true; do sleep 9999; done
 	shut_down
-	exit $0
+	exit $?
 fi
 
 # else default to run whatever the user wanted like "bash"
