@@ -104,7 +104,6 @@ services:
     extends:
       service: base-service
     build: apache-proxy
-    container_name: http-proxy
     ports:
     - "80:80"
     - "443:443"
@@ -164,7 +163,6 @@ services:
       context: tomcat
       args:
       - TOMCAT_VERSION=7.0.75
-    container_name: tomcat
     expose:
     - "8080"
     - "8443"
@@ -199,7 +197,6 @@ services:
       args:
       #- OWNCLOUD_VERSION=9.1
       - OWNCLOUD_VERSION=stable
-    container_name: owncloud
     expose:
     - "80"
     - "443"
@@ -243,7 +240,6 @@ services:
       context: prestashop
       args:
       - PRESTASHOP_VERSION=1.6.1.11
-    container_name: prestashop
     expose:
     - "80"
     - "443"
@@ -315,7 +311,6 @@ services:
       context: joomla
       args:
       - JOOMLA_VERSION=3.6.5
-    container_name: joomla
     expose:
     - "80"
     - "443"
@@ -358,7 +353,6 @@ services:
       args:
       #- WORDPRESS_VERSION=wordpress-4.7.2
       - WORDPRESS_VERSION=latest
-    container_name: wordpress
     expose:
     - "80"
     - "443"
@@ -414,7 +408,6 @@ services:
       - DOKUWIKI_VERSION=stable
       # Languages to keep (delete all others)
       #- STRIP_LANGS_KEEP=en,fr
-    container_name: dokuwiki
     expose:
     - "80"
     - "443"
@@ -445,7 +438,6 @@ services:
       service: base-service
     build:
       context: tiddlywiki
-    container_name: tiddlywiki
     expose:
     - "8080"
     environment:
@@ -472,7 +464,6 @@ services:
       context: email-relay
       args:
       - POSTFIX_HOSTNAME=myhost.example.net
-    container_name: email-relay
     expose:
     - "25"
     environment:
@@ -505,7 +496,6 @@ services:
       args:
       #- MYSQL_VERSION=5.6
       - MYSQL_VERSION=${MYSQL_VERSION}
-    container_name: mysql
     expose:
     - "3306"
     environment:
@@ -572,7 +562,6 @@ services:
   memcached-prestashop:
     extends:
       service: memcached
-    container_name: memcached-prestashop
     environment:
     - MEM_SIZE=96
     networks:
@@ -581,7 +570,6 @@ services:
   memcached-owncloud:
     extends:
       service: memcached
-    container_name: memcached-owncloud
     environment:
     - MEM_SIZE=32
     networks:
@@ -590,7 +578,6 @@ services:
   memcached-joomla:
     extends:
       service: memcached
-    container_name: memcached-joomla
     environment:
     - MEM_SIZE=64
     networks:
@@ -599,7 +586,6 @@ services:
   memcached-wordpress:
     extends:
       service: memcached
-    container_name: memcached-wordpress
     environment:
     - MEM_SIZE=64
     networks:
@@ -622,6 +608,7 @@ services:
     #tmpfs:
     #- /var/log
     #sysctls:
+    #- sys.net.core.somaxconn=511
     #- vm.overcommit_memory=1
     #- sys.kernel.mm.transparent_hugepage.enabled=never
     cpu_shares: 128
@@ -633,7 +620,6 @@ services:
   redis-owncloud:
     extends:
       service: redis
-    container_name: redis-owncloud
     environment:
     - MAX_MEMORY=32mb
     volumes:
@@ -647,7 +633,6 @@ services:
     extends:
       service: base-service
     build: dovecot-imap
-    container_name: dovecot
     ports:
     # IMAP(s)
     #- "143:143"
@@ -774,7 +759,6 @@ services:
     extends:
       service: base-service
     build: unbound
-    container_name: unbound
     #ports:
     #- "192.0.2.1:53:53/tcp"
     #- "192.0.2.1:53:53/udp"
@@ -833,13 +817,13 @@ services:
     extends:
       service: base-service
     build: vpn-openvpn
-    container_name: openvpn
     #devices:
     #  - "/dev/net/tun:/dev/net/tun:rwm"
     ports:
     - "1194/udp:1194/udp"
     #- "1194/tcp:1194/tcp"
     environment:
+    #- PROTOCOL=udp
     #- DNS_USE_RESOLVCONF=true
     #- DNS_EXTRA_SERVER_1=172.31.53.254
     - DNS_EXTRA_SERVER_1=172.31.53.53
@@ -900,7 +884,6 @@ services:
       service: base-service
     build:
       context: transmission
-    container_name: transmission
     expose:
     - "9091"
     ports:
@@ -928,7 +911,6 @@ services:
     image: quay.io/letsencrypt/letsencrypt:latest
     #build: letsencrypt
     command: --authenticators
-    container_name: letsencrypt
     #ports:
     #- "80:80"
     #- "443:443"
@@ -956,7 +938,6 @@ services:
     extends:
       service: base-service
     build: netdata
-    container_name: netdata
     expose:
     - "19999"
     volumes:

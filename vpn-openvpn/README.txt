@@ -68,6 +68,7 @@ runtime
 -------
 
     environment:
+    #- PROTOCOL=udp
     #- DNS_USE_RESOLVCONF=true
     #- DNS_EXTRA_SERVER_1=172.31.53.254
     - DNS_EXTRA_SERVER_1=172.31.53.53

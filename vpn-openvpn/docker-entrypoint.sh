@@ -1,9 +1,18 @@
 #!/bin/bash
 set -e
 
+PROTOCOL=${PROTOCOL:-udp}
+PROTOCOL_SERVER=${PROTOCOL}
+PROTOCOL_CLIENT=${PROTOCOL}
+if [ "${PROTOCOL}" = "tcp" ]; then
+	PROTOCOL_SERVER="tcp-server"
+	PROTOCOL_CLIENT="tcp-client"
+fi
+
 getIP() {
 	# Try to detect a NATed connection
 	IP=$(curl -fsSL ipv4.icanhazip.com)
+	#IP=$(curl -4fsSL http://whatismyip.akamai.com/)
 	#IP=$(curl -fsSL http://myip.enix.org/REMOTE_ADDR)
 }
 
@@ -55,7 +64,7 @@ if [ ! -f /etc/openvpn/server.conf ]; then
 	# Generate server.conf
 	cat <<- EOF > /etc/openvpn/server.conf
 # Tunnel Options
-proto udp
+proto ${PROTOCOL_SERVER}
 port 1194
 dev tun
 topology subnet
@@ -76,6 +85,7 @@ persist-tun
 persist-key
 ;script-security 1
 user nobody
+# nogroup (debian)|nobody (CentOS)
 group nogroup
 ;errors-to-stderr
 ;fast-io
@@ -172,7 +182,7 @@ remote $IP 1194
 ;remote $IP 1194 udp
 ;remote $IP 443 tcp-client
 ;remote-random
-proto udp
+proto ${PROTOCOL_CLIENT}
 ;http-proxy [proxy server] [proxy port]
 ;http-proxy-retry # retry on connection failures
 ;http-proxy-option AGENT "OpenVPN User-Agent"
@@ -235,6 +245,9 @@ tls-exit
 ;tls-auth ta.key 1
 ;ns-cert-type server # Netscape extensions are deprecated
 remote-cert-tls server
+
+# Windows-Specific Options
+setenv opt block-outside-dns
 EOF
 
 fi
@@ -283,8 +296,8 @@ IP=`sed '/^remote /!d;s/remote \(.*\) 1194/\1/' /etc/openvpn/client-common.txt`
 iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o eth+ -j MASQUERADE || {
 	iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth+ -j MASQUERADE
 }
-iptables -C INPUT -p udp --dport 1194 -j ACCEPT || {
-	iptables -A INPUT -p udp --dport 1194 -j ACCEPT
+iptables -C INPUT -p ${PROTOCOL} --dport 1194 -j ACCEPT || {
+	iptables -A INPUT -p -p ${PROTOCOL} --dport 1194 -j ACCEPT
 }
 iptables -C FORWARD -s 10.8.0.0/24 -j ACCEPT || {
 	iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
