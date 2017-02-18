@@ -11,8 +11,7 @@ ARG MYSQL_VERSION=5.6
 #	&& gpg --export -a 5072E1F5 | apt-key add -
 RUN apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5
 
-#RUN echo "deb http://repo.mysql.com/apt/ubuntu/ `lsb_release -cs` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
-RUN echo "deb http://repo.mysql.com/apt/ubuntu/ trusty mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
+RUN echo "deb http://repo.mysql.com/apt/ubuntu/ `lsb_release -cs` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
 
 RUN LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/php \
 	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \

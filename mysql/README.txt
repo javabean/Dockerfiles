@@ -54,7 +54,7 @@ build-time
 
     build:
       args:
-      - MYSQL_VERSION=5.6
+      - MYSQL_VERSION=5.7
 
 runtime
 -------

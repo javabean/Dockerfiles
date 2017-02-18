@@ -490,11 +490,11 @@ services:
   mysql:
     extends:
       service: base-service
-    #image: mysql:5.6
+    #image: mysql:5.7
     build:
       context: mysql
       args:
-      #- MYSQL_VERSION=5.6
+      #- MYSQL_VERSION=5.7
       - MYSQL_VERSION=${MYSQL_VERSION}
     expose:
     - "3306"
