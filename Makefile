@@ -9,7 +9,7 @@ unexport IMG_VERSION = 0.9.19.1
 
 DOCKER_APT_VERSION = 1.12.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.10.1
+DOCKER_COMPOSE_VERSION = 1.11.1
 # url fragment
 DOCKER_MACHINE_VERSION = v0.9.0
 
@@ -26,7 +26,7 @@ APT_MIRROR ?= cz.archive.ubuntu.com
 #APT_MIRROR ?= ftp.tu-chemnitz.de/pub/linux/ubuntu-ports
 #APT_MIRROR ?= mirror.unej.ac.id/ubuntu
 
-MYSQL_VERSION = 5.6
+MYSQL_VERSION = 5.7
 
 ########################################################################
 # END set versions here
@@ -44,19 +44,26 @@ all: build
 export
 .EXPORT_ALL_VARIABLES:
 
+.PHONY: help
+help: ## Display this help menu
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
 .PHONY: pull
-pull:
+pull: ## pull base Docker images from Docker Hub
 	docker pull ubuntu:$(UBUNTU_VERSION)
 	#docker pull quay.io/letsencrypt/letsencrypt
 
 .PHONY: build
+build: ## build all Docker images
 build: $(docker_compose_build)
 
 .PHONY: baseimage
+baseimage: ## build Docker base image
 baseimage: pull
 	docker build --build-arg APT_MIRROR=$(APT_MIRROR) -t cedrik/baseimage --rm baseimage/image
 
 .PHONY: httpd-base
+httpd-base: ## build Docker base Apache httpd image
 httpd-base: baseimage
 	docker build -t cedrik/httpd-base --rm apache-base
 
@@ -65,10 +72,12 @@ php5-base: httpd-base
 	docker build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php5-base --rm php5-base
 
 .PHONY: php7-base
+php7-base: ## build Docker base PHP 7 image (Apache httpd-based)
 php7-base: httpd-base
 	docker build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php7-base --rm php7-base
 
 .PHONY: java
+java: ## build Docker base Java image
 java: baseimage
 	docker build -t cedrik/java --rm java
 
@@ -95,7 +104,7 @@ tag_latest:
 ########################################################################
 
 .PHONY: stats
-stats:
+stats: ## display running containers statistics
 	docker stats --no-stream $$(docker ps --format='{{.Names}}')
 
 .PHONY: ip
@@ -104,8 +113,8 @@ ip:
 	docker inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(NAME)
 
 .PHONY: health
+health: ## Print out the text of the last 5 checks. Use with:  NAME=<container_name>  make health
 health:
-	@# Print out the text of the last 5 checks
 	@#docker inspect --format='{{json .State.Health}}' $(NAME)
 	docker inspect -f '{{ range .State.Health.Log }}{{ println "======\nStart:" .Start }}{{ .Output }}{{end}}' $(NAME)
 
@@ -115,7 +124,7 @@ health:
 ########################################################################
 
 .PHONY: new-certificates
-new-certificates:
+new-certificates: ## query new TLS certificates
 	# --quiet --dry-run --test-cert
 	docker-compose run --rm letsencrypt --authenticators certonly --non-interactive --dry-run \
 		--webroot \
@@ -127,7 +136,7 @@ new-certificates:
 		-w /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT -d www.cedrik.fr -d cedrik.fr -d wpad.cedrik.fr
 
 .PHONY: renew-certificates
-renew-certificates:
+renew-certificates: ## renew TLS certificates
 	# --quiet --dry-run --test-cert
 	# --pre-hook "service nginx stop" --post-hook "docker restart http-proxy"
 	docker-compose run --rm letsencrypt --authenticators renew --non-interactive --keep-until-expiring
@@ -135,6 +144,7 @@ renew-certificates:
 ########################################################################
 
 .PHONY: clean
+clean: ## remove stopped containers, unused volumes, untagged images, unused networks
 clean:
 	# See also Docker 1.13 `docker system df [-v]` / `docker system prune -f` == `docker container prune -f && docker volume prune -f && docker image prune -f && docker network prune -f`
 	# remove stopped containers
@@ -154,9 +164,11 @@ clean:
 	docker network ls --filter type=custom --no-trunc -q | xargs --no-run-if-empty docker network rm
 
 .PHONY: prune
+prune: ## synonymous for 'clean'; same as:  docker prune -f
 prune: clean
 
 .PHONY: distclean
+distclean: ## 'clean' + remove all built images
 distclean: clean
 	# See also Docker 1.13 `docker image prune -a -f`
 	# docker rmi "cedrik/*" "*_*"
@@ -166,7 +178,7 @@ distclean: clean
 ########################################################################
 
 .PHONY: mkdirs
-mkdirs:
+mkdirs: ## create required directories in  /opt  and  /srv
 	mkdir -p -m 0775 \
 	/opt/consul/config     /srv/consul/data \
 	/opt/http-proxy/conf-available /opt/http-proxy/conf-enabled /opt/http-proxy/conf-include /opt/http-proxy/mods-available /opt/http-proxy/mods-enabled /opt/http-proxy/sites-available /opt/http-proxy/sites-enabled /opt/http-proxy/tls \
@@ -213,7 +225,7 @@ mkdirs:
 ########################################################################
 
 .PHONY: install-docker
-install-docker:
+install-docker: ## install Docker; this target also works for a Raspberry Pi
 	#curl -fsSL https://get.docker.com/gpg | sudo apt-key add -
 	if [ ! -f /etc/apt/sources.list.d/docker.list ]; then \
 		curl -fsSL https://get.docker.com/ | sudo sh; \
@@ -223,7 +235,7 @@ install-docker:
 	fi
 
 .PHONY: install-docker-rpi
-install-docker-rpi:
+install-docker-rpi: ## deprecated; install Docker on a Raspberry Pi
 	if [ ! -f /etc/apt/sources.list.d/Hypriot_Schatzkiste.list ]; then \
 		sudo apt-get install apt-transport-https \
 		sudo curl -fRL -o /etc/apt/sources.list.d/Hypriot_Schatzkiste.list "https://packagecloud.io/install/repositories/Hypriot/Schatzkiste/config_file.list?os=raspbian&dist=8&source=script" \
@@ -235,7 +247,7 @@ install-docker-rpi:
 	sudo systemctl enable docker
 
 .PHONY: install-docker-compose
-install-docker-compose:
+install-docker-compose: ## install docker-compose
 	#pip install docker-compose
 	sudo curl -fsSLR -o /usr/local/bin/docker-compose https://github.com/docker/compose/releases/download/$(DOCKER_COMPOSE_VERSION)/docker-compose-`uname -s`-`uname -m`
 	sudo chmod +x /usr/local/bin/docker-compose
@@ -244,7 +256,7 @@ install-docker-compose:
 	sudo touch -r /usr/local/bin/docker-compose /etc/bash_completion.d/docker-compose
 
 .PHONY: install-docker-compose-rpi
-install-docker-compose-rpi:
+install-docker-compose-rpi: ## install docker-compose on a Raspberry Pi
 	if [ ! -f /etc/apt/sources.list.d/Hypriot_Schatzkiste.list ]; then \
 		sudo apt-get install apt-transport-https \
 		sudo curl -fsSLR -o /etc/apt/sources.list.d/Hypriot_Schatzkiste.list "https://packagecloud.io/install/repositories/Hypriot/Schatzkiste/config_file.list?os=raspbian&dist=8&source=script" \
@@ -256,7 +268,7 @@ install-docker-compose-rpi:
 	sudo touch -r /usr/local/bin/docker-compose /etc/bash_completion.d/docker-compose
 
 .PHONY: install-docker-machine
-install-docker-machine:
+install-docker-machine: ## install docker-machine
 	mkdir -p ~/.docker/machine
 	[ -f ~/.docker/machine/no-error-report ] || touch ~/.docker/machine/no-error-report
 	sudo curl -fsSLR -o /usr/local/bin/docker-machine https://github.com/docker/machine/releases/download/$(DOCKER_MACHINE_VERSION)/docker-machine-`uname -s`-`uname -m`
@@ -270,9 +282,11 @@ install-docker-machine:
 	# PS1='[\u@\h \W$(__docker_machine_ps1 " [%s]")]\$ '
 
 .PHONY: install
+install: ## install docker + docker-compose & create required directories (see 'mkdirs')
 install: install-docker-compose install-docker mkdirs
 
 .PHONY: uninstall
+uninstall: ## remove all traces of Docker save for data in  /opt  and  /srv
 uninstall: distclean
 	rm /usr/local/bin/docker-* /etc/bash_completion.d/docker-*
 	#pip uninstall docker-compose
