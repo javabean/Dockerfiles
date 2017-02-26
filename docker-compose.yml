@@ -100,6 +100,24 @@ services:
 
 ########################################################################
 
+  portainer:
+    image: portainer/portainer
+    #command: ["--tlsverify", "--tlscacert", "/certs/ca.pem", "--tlscert", "/certs/cert.pem", "--tlskey", "/certs/key.pem"]
+    #command: ["--templates", "https://raw.githubusercontent.com/portainer/templates/master/templates.json"]
+    expose:
+    - "9000"
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    - /srv/portainer/acme-challenge/.well-known:/.well-known
+    #- /opt/portainer/certs:/certs
+    - /srv/portainer/data:/data
+    mem_limit: 64m
+    memswap_limit: 96m
+    read_only: true
+    restart: unless-stopped
+
+########################################################################
+
   http-proxy:
     extends:
       service: base-service
@@ -124,6 +142,7 @@ services:
     - tiddlywiki:tiddlywiki
     #- transmission:transmission
     #- netdata:netdata
+    - portainer:portainer
     volumes:
     #- /opt/http-proxy/mods-available:/opt/http-proxy/mods-available:ro
     - /opt/http-proxy/mods-enabled:/opt/http-proxy/mods-enabled:ro
@@ -925,6 +944,7 @@ services:
     - /srv/joomla/acme-challenge:/srv/joomla/acme-challenge
     - /srv/wordpress/acme-challenge:/srv/wordpress/acme-challenge
     - /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known:/opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known
+    - /srv/portainer/acme-challenge:/srv/portainer/acme-challenge
     #networks:
     #- default
     logging:

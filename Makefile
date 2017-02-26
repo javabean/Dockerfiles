@@ -9,7 +9,7 @@ unexport IMG_VERSION = 0.9.19.1
 
 DOCKER_APT_VERSION = 1.12.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.11.1
+DOCKER_COMPOSE_VERSION = 1.11.2
 # url fragment
 DOCKER_MACHINE_VERSION = v0.9.0
 
@@ -202,9 +202,10 @@ mkdirs: ## create required directories in  /opt  and  /srv
                                                   /srv/logs/wordpress/apache2 \
 	/opt/openvpn                                  /srv/logs/openvpn \
 	                                              /srv/logs/ziproxy \
+	  /srv/transmission \
 	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt \
 	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/prestashop/acme-challenge/.well-known/acme-challenge  /srv/joomla/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known /srv/dokuwiki/acme-challenge/.well-known \
-	  /srv/transmission \
+	/opt/portainer/certs  /srv/portainer/acme-challenge/.well-known  /srv/portainer/data \
 	/opt/netdata
 
 	sudo chown -R 8300:8300 /opt/consul /srv/consul
