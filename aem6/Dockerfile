@@ -2,10 +2,12 @@ FROM cedrik/java:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
-# Requires curl & gosu
+# Requires curl, xz & gosu
 
 ############### FIXME  change URL here! ###############
 ARG AEM_JAR_URL=https://files.docker.myserver.example/aem/6.2/cq-quickstart-6.2.0.1.jar
+ARG IMAGEMAGICK=
+ARG FFMPEG=
 
 # Create "aem6" user
 RUN	if ! getent group "aem6" > /dev/null 2>&1 ; then \
@@ -16,6 +18,16 @@ RUN	if ! getent group "aem6" > /dev/null 2>&1 ; then \
 		&& usermod -L aem6 \
 		&& usermod -a -G docker_env aem6 ; \
 	fi
+
+# Install ImageMagick
+RUN if [ -n "${IMAGEMAGICK}" ]; then apt-get update \
+	&& DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends imagemagick \
+	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* ; \
+	fi
+
+# Install FFmpeg
+# Requires xz (CentOS) | xz-utils (Debian)
+RUN if [ -n "${FFMPEG}" ]; then curl -fsSL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz | tar xJ -C /usr/local/bin/ --strip-components=1 --exclude="ffmpeg-*-static/manpages" --exclude="ffmpeg-*-static/*.txt"; fi
 
 RUN mkdir -p /srv/aem6/tmp /opt/aem6/packages && chown -R aem6: /srv/aem6 /opt/aem6
 

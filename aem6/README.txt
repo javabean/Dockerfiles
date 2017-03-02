@@ -60,6 +60,11 @@ build-time
     build:
       args:
       - AEM_JAR_URL=http://server.example:8081/nexus/content/repositories/thirdparty/com/adobe/aem/aem/6.2.0.1/aem-6.2.0.1-generic.jar
+      #- IMAGEMAGICK=1
+      #- FFMPEG=1
+
+Uncomment `IMAGEMAGICK` to install ImageMagick.  
+Uncomment `FFMPEG`to install FFmpeg.
 
 runtime
 -------

@@ -11,6 +11,8 @@ services:
       context: aem6
       args:
       - AEM_JAR_URL=http://server.example:8081/nexus/content/repositories/thirdparty/com/adobe/aem/aem/6.2.0.1/aem-6.2.0.1-generic.jar
+      #- IMAGEMAGICK=1
+      #- FFMPEG=1
     expose:
     - "4502"
     - "4503"
