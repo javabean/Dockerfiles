@@ -297,7 +297,7 @@ iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o eth+ -j MASQUERADE || {
 	iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth+ -j MASQUERADE
 }
 iptables -C INPUT -p ${PROTOCOL} --dport 1194 -j ACCEPT || {
-	iptables -A INPUT -p -p ${PROTOCOL} --dport 1194 -j ACCEPT
+	iptables -A INPUT -p ${PROTOCOL} --dport 1194 -j ACCEPT
 }
 iptables -C FORWARD -s 10.8.0.0/24 -j ACCEPT || {
 	iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
