@@ -1,7 +1,7 @@
 #!/bin/sh
 
-if [ "$(stat -c %u /opt/email-relay/dkim)" != "$(id -u opendkim)" ] || [ "$(stat -c %g /opt/email-relay/dkim)" != "$(id -g postfix)" ]; then
-	chown -R opendkim:postfix /opt/email-relay/dkim
+if [ "$(stat -c %u /usr/local/etc/dkim)" != "$(id -u opendkim)" ] || [ "$(stat -c %g /usr/local/etc/dkim)" != "$(id -g postfix)" ]; then
+	chown -R opendkim:postfix /usr/local/etc/dkim
 fi
 
 #exec gosu opendkim /usr/sbin/opendkim -f -x /etc/opendkim.conf

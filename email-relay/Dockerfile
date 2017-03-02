@@ -11,7 +11,7 @@ COPY runit_opendkim /etc/service/opendkim/run
 
 ARG POSTFIX_HOSTNAME=myhost.example.net
 
-COPY consul-healthcheck.sh  /usr/local/bin/
+COPY dkim_new_domain.sh consul-healthcheck.sh  /usr/local/bin/
 
 # unattended installs an "Internet" profile
 RUN apt-get update \
@@ -26,9 +26,10 @@ RUN apt-get update \
 	&& echo 'Include /etc/opendkim-add.conf' >> /etc/opendkim.conf \
 	&& mkdir -p /var/run/opendkim /var/spool/postfix/var/run/opendkim \
 	&& chown opendkim: /var/run/opendkim /var/spool/postfix/var/run/opendkim \
-	&& mkdir -p /opt/email-relay/dkim/keys \
-	&& touch /opt/email-relay/dkim/TrustedHosts /opt/email-relay/dkim/KeyTable /opt/email-relay/dkim/SigningTable \
-	&& echo "127.0.0.1\nlocalhost\n192.168.0.0/16\n172.16.0.0/12\n10.0.0.0/8" > /opt/email-relay/dkim/TrustedHosts
+	&& mkdir -p /usr/local/etc/dkim/keys \
+	&& touch /usr/local/etc/dkim/TrustedHosts /usr/local/etc/dkim/KeyTable /usr/local/etc/dkim/SigningTable \
+	&& echo "127.0.0.1\nlocalhost\n192.168.0.0/16\n172.16.0.0/12\n10.0.0.0/8" > /usr/local/etc/dkim/TrustedHosts \
+	&& chown -R opendkim:postfix /usr/local/etc/dkim
 
 COPY postfix-main.cf /etc/postfix/main.cf
 COPY opendkim-add.conf /etc/
