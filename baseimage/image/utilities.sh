@@ -7,7 +7,7 @@ set -x
 # can also install "libcap-ng-utils" for "pscap" utility, for debugging required capabilities
 # iproute2 (net-tools is deprecated)
 # bind9-host dnsutils iproute2 iputils-ping telnet
-$minimal_apt_get_install curl less vim-tiny psmisc
+$minimal_apt_get_install curl less vim-tiny psmisc xz-utils
 ln -s /usr/bin/vim.tiny /usr/bin/vim
 
 ## This tool runs a command as another user and sets $HOME.
