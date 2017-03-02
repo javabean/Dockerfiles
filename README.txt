@@ -37,8 +37,6 @@ baseimage
 	email-relay
 	dnsmasq
 	unbound	(requires dnsmasq)
-	memcached
-	redis
 	openvpn	(requires dnsmasq, ziproxy)
 	ziproxy
 	transmission

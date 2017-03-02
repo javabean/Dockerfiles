@@ -423,7 +423,7 @@ services:
     build:
       context: dokuwiki
       args:
-      #- DOKUWIKI_VERSION=2016-06-26a
+      #- DOKUWIKI_VERSION=2017-02-19a
       - DOKUWIKI_VERSION=stable
       # Languages to keep (delete all others)
       #- STRIP_LANGS_KEEP=en,fr
@@ -489,7 +489,7 @@ services:
     - ENABLE_SYSLOG=1
     - ENABLE_CRON=1
     volumes:
-    - /opt/email-relay:/opt/email-relay:ro
+    - /opt/email-relay/dkim:/usr/local/etc/dkim:ro
     #- /srv/logs/email-relay:/var/log
     networks:
     - tomcat-back
@@ -559,19 +559,16 @@ services:
 ########################################################################
 
   memcached:
-    extends:
-      service: base-service
-    #image: memcached:1.4
-    build: memcached
+    image: memcached:1.4-alpine
+    command: ["memcached", "-m", "64", "-p", "11211", "-c", "256"]
     expose:
     - "11211/tcp"
     - "11211/udp"
-    environment:
-    - MEM_SIZE=64
-    #volumes:
-    #- /srv/logs/memcached:/var/log
-    #tmpfs:
-    #- /var/log
+    healthcheck:
+      test: if [ `pgrep -cx memcached` -eq 0 ]; then echo "No memcached process!"; exit 1; else exit 0; fi
+      interval: 30s
+      timeout: 5s
+      retries: 1
     cpu_shares: 128
     mem_limit: 128m
     memswap_limit: 128m
@@ -581,51 +578,45 @@ services:
   memcached-prestashop:
     extends:
       service: memcached
-    environment:
-    - MEM_SIZE=96
+    command: ["memcached", "-m", "96", "-p", "11211", "-c", "256"]
     networks:
     - prestashop-back-internal
 
   memcached-owncloud:
     extends:
       service: memcached
-    environment:
-    - MEM_SIZE=32
+    command: ["memcached", "-m", "32", "-p", "11211", "-c", "256"]
     networks:
     - owncloud-back-internal
 
   memcached-joomla:
     extends:
       service: memcached
-    environment:
-    - MEM_SIZE=64
+    command: ["memcached", "-m", "64", "-p", "11211", "-c", "256"]
     networks:
     - joomla-back-internal
 
   memcached-wordpress:
     extends:
       service: memcached
-    environment:
-    - MEM_SIZE=64
+    command: ["memcached", "-m", "64", "-p", "11211", "-c", "256"]
     networks:
     - wordpress-back-internal
 
 ########################################################################
 
   redis:
-    extends:
-      service: base-service
-    #image: redis:3
-    build: redis
+    image: redis:3-alpine
+    command: ["--daemonize", "no", "--port", "6379", "--tcp-backlog", "511", "--loglevel", "notice", "--logfile", "", "--databases", "1", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--stop-writes-on-bgsave-error", "yes", "--dbfilename", "dump.rdb", "--dir", "/data", "--maxclients", "100", "--maxmemory", "64mb", "--maxmemory-policy noeviction", "--slowlog-log-slower-than", "10000", "--slowlog-max-len", "128"]
     expose:
     - "6379"
-    environment:
-    - MAX_MEMORY=64mb
     #volumes:
-    #- /srv/redis:/var/lib/redis
-    #- /srv/logs/redis:/var/log
-    #tmpfs:
-    #- /var/log
+    #- /srv/redis:/data
+    healthcheck:
+      test: ping="$$(redis-cli --raw ping)" && [ "$$ping" = 'PONG' ] || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 1
     #sysctls:
     #- sys.net.core.somaxconn=511
     #- vm.overcommit_memory=1
@@ -639,10 +630,9 @@ services:
   redis-owncloud:
     extends:
       service: redis
-    environment:
-    - MAX_MEMORY=32mb
+    command: ["--daemonize", "no", "--port", "6379", "--tcp-backlog", "511", "--loglevel", "notice", "--logfile", "", "--databases", "1", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--stop-writes-on-bgsave-error", "yes", "--dbfilename", "dump.rdb", "--dir", "/data", "--maxclients", "100", "--maxmemory", "32mb", "--maxmemory-policy noeviction", "--slowlog-log-slower-than", "10000", "--slowlog-max-len", "128"]
     volumes:
-    - /srv/redis-owncloud:/var/lib/redis
+    - /srv/redis-owncloud:/data
     networks:
     - owncloud-back-internal
 
