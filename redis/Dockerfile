@@ -15,9 +15,13 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 		-e 's/# \(maxmemory\) <bytes>/\1 64mb/' \
 		-e 's/# \(maxmemory-policy noeviction\)/\1/' \
 		-e 's%^\(logfile /var/log/redis/redis-server.log\)%#\1%' \
-		/etc/redis/redis.conf
+		/etc/redis/redis.conf \
+	# For comptability with https://hub.docker.com/_/redis/
+	&& mkdir /data && chown redis:redis /data \
+	&& rm -rf /var/lib/redis && ln -s /data /var/lib/redis
 
-#VOLUME ["/var/lib/redis/" "/var/log"]
+#VOLUME ["/var/lib/redis/", "/data", "/var/log"]
+#WORKDIR /data
 
 #USER redis
 

@@ -25,7 +25,7 @@ Where? (volumes)
 Mount /var/lib/redis/ if you wish to use persistence feature, or run this image r/o:
 
     volumes:
-    - /srv/redis:/var/lib/redis
+    - /srv/redis:/data
     #- /srv/logs/redis:/var/log
 
 
