@@ -4,7 +4,7 @@ LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
 ############### FIXME  change depending on base OS / version! ###############
-ARG MYSQL_VERSION=5.6
+ARG MYSQL_VERSION=5.7
 
 # http://dev.mysql.com/doc/refman/5.7/en/checking-gpg-signature.html
 #RUN gpg --keyserver keys.gnupg.net --recv-keys 5072E1F5 \
