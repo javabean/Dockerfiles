@@ -7,11 +7,11 @@ unexport IMG_VERSION = 0.9.19.1
 # see also docker-compose's .env
 ########################################################################
 
-DOCKER_APT_VERSION = 1.12.*
+DOCKER_APT_VERSION = 17.03.*
 # url fragment
 DOCKER_COMPOSE_VERSION = 1.11.2
 # url fragment
-DOCKER_MACHINE_VERSION = v0.9.0
+DOCKER_MACHINE_VERSION = v0.10.0
 
 #COMPOSE_PROJECT_NAME = `basename`
 #COMPOSE_FILE = docker-compose_1.yml:docker-compose_2.yml
@@ -51,6 +51,8 @@ help: ## Display this help menu
 .PHONY: pull
 pull: ## pull base Docker images from Docker Hub
 	docker pull ubuntu:$(UBUNTU_VERSION)
+	docker pull memcached:1.4-alpine
+	docker pull redis:3-alpine
 	#docker pull quay.io/letsencrypt/letsencrypt
 
 .PHONY: build
