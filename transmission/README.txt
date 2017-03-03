@@ -1,10 +1,10 @@
 What? (purpose)
 ===============
 
-Transmission-based bittorrent server
+Transmission-based bittorrent server, with integrated Bluetack level 1 ip block list (refreshed at launch)
 
 Do not put as-is on an external network since there is no ACL!  
-(You will need to shut down the container and edit settings.json should you want to add ACL:
+(You will need to shut down the container and edit `settings.json` should you want to add ACL:
 https://trac.transmissionbt.com/wiki/EditConfigFiles)
 
 

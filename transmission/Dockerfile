@@ -7,7 +7,9 @@ ENV TRANSMISSION_HOME=/var/lib/transmission-daemon
 
 COPY docker-entrypoint.sh consul-healthcheck.sh  /usr/local/bin/
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends transmission-daemon curl \
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 365C5CA1 \
+	&& echo "deb http://ppa.launchpad.net/transmissionbt/ppa/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/launchpad-transmissionbt.list \
+	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends transmission-daemon curl \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	# remove symbolic link to enable persistent settings.json across container invocations
 	&& rm "${TRANSMISSION_HOME}/.config/transmission-daemon/settings.json" \
