@@ -50,7 +50,7 @@ services:
     memswap_limit: 192m
     #memory-swappiness: "10"
     #read_only: true
-    restart: none
+    restart: "no"
 
 ########################################################################
 
@@ -138,7 +138,7 @@ services:
     - prestashop:prestashop
     #- joomla:joomla
     - wordpress:wordpress
-    #- dokuwiki:dokuwiki
+    - dokuwiki:dokuwiki
     - tiddlywiki:tiddlywiki
     #- transmission:transmission
     #- netdata:netdata
@@ -370,7 +370,7 @@ services:
     build:
       context: wordpress
       args:
-      #- WORDPRESS_VERSION=wordpress-4.7.2
+      #- WORDPRESS_VERSION=wordpress-4.7.3
       - WORDPRESS_VERSION=latest
     expose:
     - "80"
@@ -430,6 +430,8 @@ services:
     expose:
     - "80"
     - "443"
+    environment:
+    - ENABLE_CRON=1
     depends_on:
       email-relay:
         condition: service_started
@@ -439,6 +441,7 @@ services:
     - /srv/dokuwiki/acme-challenge/.well-known:/var/www/html/.well-known
     - /srv/dokuwiki/conf:/var/www/html/conf
     - /srv/dokuwiki/lib/plugins:/var/www/html/lib/plugins
+    #- /srv/dokuwiki/lib/tpl:/var/www/html/lib/tpl
     - /srv/dokuwiki/data:/var/www/html/data
     - /srv/logs/dokuwiki:/var/log
     networks:
@@ -910,7 +913,7 @@ services:
     memswap_limit: 192m
     #blkio-weight: 10
     read_only: true
-    restart: none
+    restart: "no"
 
 ########################################################################
 
@@ -940,7 +943,7 @@ services:
     logging:
       driver: "none"
     read_only: false
-    restart: none
+    restart: "no"
 
 ########################################################################
 
