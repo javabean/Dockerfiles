@@ -6,7 +6,7 @@ LABEL org.label-schema.schema-version="1.0" \
 # https://www.dokuwiki.org/
 
 ############### FIXME  change version here! ###############
-#ARG DOKUWIKI_VERSION=2016-06-26a
+#ARG DOKUWIKI_VERSION=2017-02-19a
 ARG DOKUWIKI_VERSION=stable
 # Languages to keep (delete all others)
 ARG STRIP_LANGS_KEEP=
@@ -21,6 +21,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 	libpng12-0 libjpeg62 libjpeg-turbo8 php7.0-gd \
 	php7.0-curl libxml2 php7.0-mcrypt openssl php7.0-soap \
 	php7.0-json php7.0-intl \
+# we need sudo to upgrade DokuWiki via CLI
+	sudo \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& for m in "rewrite"; do a2enmod $m; done \
 	# PHP configuration: https://www.dokuwiki.org/install:php
@@ -70,13 +72,16 @@ RUN curl -fsSL https://download.dokuwiki.org/src/dokuwiki/dokuwiki-${DOKUWIKI_VE
 	&& chmod +x /var/www/html/bin/*.php \
 	&& find /var/www/html -name '_dummy' -delete \
 	&& rm /var/www/html/README /var/www/html/COPYING \
-	&& if [ ! -z $STRIP_LANGS_KEEP ]; then /var/www/html/bin/striplangs.php -k "${STRIP_LANGS_KEEP}" ; fi \
+	&& if [ -n "$STRIP_LANGS_KEEP" ]; then /var/www/html/bin/striplangs.php -k "${STRIP_LANGS_KEEP}" ; fi \
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh
 
 #COPY preload.php /var/www/html/inc/preload.php
 
-#VOLUME /var/www/html
+# min[0-59] hour[0-23] dom[1-31] month[1-12] dow[0-7]  command
+#RUN crontab -u www-data -l | { cat; echo "7  0  *  *  * /usr/local/bin/cleanup.sh > /dev/null 2>&1"; } | crontab -u www-data -
+RUN echo "7  0  *  *  * /usr/local/bin/cleanup.sh > /dev/null 2>&1" | crontab -u www-data -
+
 #VOLUME ["/var/log"]
 #VOLUME ["/var/www/html/data", "/var/www/html/conf", "/var/www/html/lib/plugins", "/var/www/html/lib/tpl"]
 

@@ -22,15 +22,17 @@ How? (usage)
 Where? (volumes)
 ================
 
-To save your blog data, mount volumes in
+To save your blog configuration, plugins, templates & data, mount volumes in
 	/var/www/html/conf
 	/var/www/html/lib/plugins
+    /var/www/html/lib/tpl
 	/var/www/html/data
 
     volumes:
     - /srv/dokuwiki/acme-challenge/.well-known:/var/www/html/.well-known
     - /srv/dokuwiki/conf:/var/www/html/conf
     - /srv/dokuwiki/lib/plugins:/var/www/html/lib/plugins
+    - /srv/dokuwiki/lib/tpl:/var/www/html/lib/tpl
     - /srv/dokuwiki/data:/var/www/html/data
     - /srv/logs/dokuwiki:/var/log
 
@@ -51,7 +53,7 @@ build-time
 
     build:
       args:
-      #- DOKUWIKI_VERSION=2016-06-26a
+      #- DOKUWIKI_VERSION=2017-02-19a
       - DOKUWIKI_VERSION=latest
 
 runtime
@@ -65,3 +67,4 @@ Upgrading version
 
 DokuWiki: online upgrade before upgrading Docker image
 	http://www.dokuwiki.org/plugin:upgrade
+	`/usr/local/bin/upgrade-dokuwiki.sh`
