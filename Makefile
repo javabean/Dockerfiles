@@ -70,11 +70,12 @@ httpd-base: baseimage
 	docker build -t cedrik/httpd-base --rm apache-base
 
 .PHONY: php5-base
+php5-base: ## build Docker base PHP 5.6 image (Apache httpd-based) with MySQL client
 php5-base: httpd-base
 	docker build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php5-base --rm php5-base
 
 .PHONY: php7-base
-php7-base: ## build Docker base PHP 7 image (Apache httpd-based)
+php7-base: ## build Docker base PHP 7 image (Apache httpd-based) with MySQL client
 php7-base: httpd-base
 	docker build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php7-base --rm php7-base
 
@@ -197,7 +198,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	/opt/dovecot           /srv/dovecot           /srv/logs/dovecot \
 	/opt/email-relay/dkim/keys \
 		                   /srv/joomla            /srv/logs/joomla/apache2 \
-      /srv/dokuwiki/conf  /srv/dokuwiki/lib/plugins  /srv/dokuwiki/data \
+      /srv/dokuwiki/conf  /srv/dokuwiki/lib/plugins  /srv/dokuwiki/lib/tpl  /srv/dokuwiki/data \
                                                   /srv/logs/dokuwiki/apache2 \
       /srv/tiddlywiki  \
       /srv/wordpress/wp-content  /srv/wordpress/wp-includes-languages \

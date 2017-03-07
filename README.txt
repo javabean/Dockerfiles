@@ -32,7 +32,7 @@ baseimage
 			joomla 		(requires mysql, email-relay[, memcached])
 			wordpress	(requires mysql, email-relay[, memcached])
 			dokuwiki	(requires email-relay)
-	tiddlywiki
+	tiddlywiki*
 	mysql
 	email-relay
 	dnsmasq
@@ -41,8 +41,7 @@ baseimage
 	ziproxy
 	transmission
 	netdata
-	letsencrypt*
-* = not done yet
+* = not ready yet
 
 For dependencies and additional usage notes, go read `docker-compose.yml` :-)
 
