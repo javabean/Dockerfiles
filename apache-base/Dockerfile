@@ -13,7 +13,8 @@ COPY GeoIP.conf /etc/
 
 COPY consul-healthcheck.sh backup_conf.sh restore_conf.sh docker-entrypoint.sh  /usr/local/bin/
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2 apache2-utils openssl libapache2-mod-xsendfile \
+RUN LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/apache2 \
+	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2 apache2-utils openssl libapache2-mod-xsendfile \
 	#libapache2-mod-geoip geoip-database geoipupdate geoip-bin mmdb-bin \
 	libapache2-mod-geoip geoip-database geoip-bin \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
