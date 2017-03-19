@@ -53,6 +53,9 @@ pull: ## pull base Docker images from Docker Hub
 	docker pull ubuntu:$(UBUNTU_VERSION)
 	docker pull memcached:1.4-alpine
 	docker pull redis:3-alpine
+	docker pull silverwind/droppy
+	docker pull portainer/portainer
+	#docker pull silverwind/armhf-droppy:latest
 	#docker pull quay.io/letsencrypt/letsencrypt
 
 .PHONY: build
@@ -131,12 +134,15 @@ new-certificates: ## query new TLS certificates
 	# --quiet --dry-run --test-cert
 	docker-compose run --rm letsencrypt --authenticators certonly --non-interactive --dry-run \
 		--webroot \
-		-w /srv/http-proxy/polycarpe -d polycarpe.fr -d www.polycarpe.fr \
 		-w /srv/owncloud/acme-challenge -d oc.cedrik.fr \
 		-w /srv/prestashop/acme-challenge -d boutique.vingt-citadelles.fr -d boutique.piacercanto.org \
-		-w /srv/joomla -d beta.piacercanto.org \
+		-w /srv/wordpress/acme-challenge -d beta.piacercanto.org \
+		-w /srv/droppy -d fichiers.piacercanto.org \
 		-w /srv/dokuwiki/acme-challenge -d wiki.cedrik.fr \
-		-w /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT -d www.cedrik.fr -d cedrik.fr -d wpad.cedrik.fr
+		-w /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT -d www.cedrik.fr -d cedrik.fr -d wpad.cedrik.fr \
+		-w /srv/portainer/acme-challenge -d portainer.cedrik.fr \
+		-w /srv/http-proxy/polycarpe -d polycarpe.fr -d www.polycarpe.fr
+		-w /srv/http-proxy/html/.well-known -d paris.cedrik.fr
 
 .PHONY: renew-certificates
 renew-certificates: ## renew TLS certificates
@@ -197,7 +203,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	/opt/unbound                                  /srv/logs/unbound \
 	/opt/dovecot           /srv/dovecot           /srv/logs/dovecot \
 	/opt/email-relay/dkim/keys \
-		                   /srv/joomla            /srv/logs/joomla/apache2 \
+		            /srv/joomla/.well-known/acme-challenge  /srv/logs/joomla/apache2 \
       /srv/dokuwiki/conf  /srv/dokuwiki/lib/plugins  /srv/dokuwiki/lib/tpl  /srv/dokuwiki/data \
                                                   /srv/logs/dokuwiki/apache2 \
       /srv/tiddlywiki  \
@@ -208,6 +214,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	  /srv/transmission \
 	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt \
 	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/prestashop/acme-challenge/.well-known/acme-challenge  /srv/joomla/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known /srv/dokuwiki/acme-challenge/.well-known \
+	/opt/droppy  /srv/droppy/.well-known/acme-challenge \
 	/opt/portainer/certs  /srv/portainer/acme-challenge/.well-known  /srv/portainer/data \
 	/opt/netdata
 
@@ -225,6 +232,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	sudo chown 105:107 /srv/transmission
 	sudo chown 999:999 /opt/netdata
 	sudo chown 105:107 /srv/redis*
+	sudo chown -R nobody:nogroup /srv/droppy /opt/droppy
 
 ########################################################################
 

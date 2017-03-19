@@ -30,7 +30,10 @@ services:
     - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
     - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
     #- /var/log
+    #- /var/cache
     - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
+    # PHP.ini 'session.save_path'
+    #- /var/lib/php/sessions
     # required for syslog
     #- /var/lib/syslog-ng:rw,nosuid,nodev,noexec,relatime,size=16k
     # required for logrotate
@@ -100,24 +103,6 @@ services:
 
 ########################################################################
 
-  portainer:
-    image: portainer/portainer
-    #command: ["--tlsverify", "--tlscacert", "/certs/ca.pem", "--tlscert", "/certs/cert.pem", "--tlskey", "/certs/key.pem"]
-    #command: ["--templates", "https://raw.githubusercontent.com/portainer/templates/master/templates.json"]
-    expose:
-    - "9000"
-    volumes:
-    - /var/run/docker.sock:/var/run/docker.sock:ro
-    - /srv/portainer/acme-challenge/.well-known:/.well-known
-    #- /opt/portainer/certs:/certs
-    - /srv/portainer/data:/data
-    mem_limit: 64m
-    memswap_limit: 96m
-    read_only: true
-    restart: unless-stopped
-
-########################################################################
-
   http-proxy:
     extends:
       service: base-service
@@ -140,7 +125,8 @@ services:
     - wordpress:wordpress
     - dokuwiki:dokuwiki
     - tiddlywiki:tiddlywiki
-    #- transmission:transmission
+    - droppy:droppy
+    - transmission:transmission
     #- netdata:netdata
     - portainer:portainer
     volumes:
@@ -165,6 +151,7 @@ services:
     - wordpress-front
     - dokuwiki-front
     - tiddlywiki-front
+    - droppy
     - transmission
     - netdata
     cpu_shares: 256
@@ -175,13 +162,33 @@ services:
 
 ########################################################################
 
+  portainer:
+    image: portainer/portainer
+    #command: ["--tlsverify", "--tlscacert", "/certs/ca.pem", "--tlscert", "/certs/cert.pem", "--tlskey", "/certs/key.pem"]
+    #command: ["--templates", "https://raw.githubusercontent.com/portainer/templates/master/templates.json"]
+    command: ["--no-analytics"]
+    expose:
+    - "9000"
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    - /srv/portainer/acme-challenge/.well-known:/.well-known
+    #- /opt/portainer/certs:/certs
+    - /srv/portainer/data:/data
+    cpu_shares: 128
+    mem_limit: 64m
+    memswap_limit: 96m
+    read_only: true
+    restart: unless-stopped
+
+########################################################################
+
   tomcat:
     extends:
       service: base-service
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=7.0.75
+      - TOMCAT_VERSION=7.0.76
     expose:
     - "8080"
     - "8443"
@@ -423,7 +430,7 @@ services:
     build:
       context: dokuwiki
       args:
-      #- DOKUWIKI_VERSION=2017-02-19a
+      #- DOKUWIKI_VERSION=2017-02-19b
       - DOKUWIKI_VERSION=stable
       # Languages to keep (delete all others)
       #- STRIP_LANGS_KEEP=en,fr
@@ -476,6 +483,30 @@ services:
     memswap_limit: 512m
     read_only: true
     restart: on-failure:5
+
+########################################################################
+
+  # https://github.com/silverwind/droppy
+  droppy:
+    image: silverwind/droppy
+    #image: silverwind/armhf-droppy
+    command: ["/usr/bin/droppy", "start", "--color", "-f", "/files", "-c", "/config"]
+    expose:
+    - "8989"
+    #environment:
+    #- UID=nobody
+    #- GID=nogroup
+    user: nobody:nogroup
+    volumes:
+    - /opt/droppy:/config
+    - /srv/droppy:/files
+    networks:
+    - droppy
+    cpu_shares: 128
+    mem_limit: 256m
+    memswap_limit: 384m
+    read_only: true
+    restart: unless-stopped
 
 ########################################################################
 
@@ -807,7 +838,6 @@ services:
     extends:
       service: base-service
     build: ziproxy
-    container_name: ziproxy
     expose:
     - "3128"
     dns:
@@ -931,13 +961,16 @@ services:
     - /srv/letsencrypt:/var/lib/letsencrypt
     - /srv/logs/letsencrypt:/var/log
     # webroot authentification lets encrypt
-    - /srv/http-proxy/polycarpe/.well-known:/srv/http-proxy/polycarpe/.well-known
     - /srv/owncloud/acme-challenge:/srv/owncloud/acme-challenge
     - /srv/prestashop/acme-challenge:/srv/prestashop/acme-challenge
-    - /srv/joomla/acme-challenge:/srv/joomla/acme-challenge
+    - /srv/joomla/.well-known:/srv/joomla/.well-known
     - /srv/wordpress/acme-challenge:/srv/wordpress/acme-challenge
+    - /srv/droppy/.well-known:/srv/droppy/.well-known
+    - /srv/dokuwiki/acme-challenge:/srv/dokuwiki/acme-challenge
     - /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known:/opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known
     - /srv/portainer/acme-challenge:/srv/portainer/acme-challenge
+    - /srv/http-proxy/polycarpe/.well-known:/srv/http-proxy/polycarpe/.well-known
+    - /srv/http-proxy/html/.well-known:/srv/http-proxy/html/.well-known
     #networks:
     #- default
     logging:
@@ -1110,6 +1143,11 @@ networks:
     ipam:
       config:
       - subnet: 172.31.10.0/24
+  droppy:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.11.0/24
   vpn:
     driver: bridge
     ipam:

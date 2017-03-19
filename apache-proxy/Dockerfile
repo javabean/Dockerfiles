@@ -8,7 +8,7 @@ COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/
 #RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libapache2-mod-evasive \
 #	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 #	&& 
-RUN for m in "ssl geoip setenvif proxy proxy_ajp proxy_balancer proxy_http lbmethod_bybusyness lbmethod_byrequests lbmethod_bytraffic lbmethod_heartbeat" ; do a2enmod $m; done \
+RUN for m in "ssl geoip setenvif proxy proxy_ajp proxy_balancer proxy_http proxy_wstunnel lbmethod_bybusyness lbmethod_byrequests lbmethod_bytraffic lbmethod_heartbeat" ; do a2enmod $m; done \
 	&& for m in "remoteip" ; do a2dismod $m; done \
 #	&& a2disconf serve-cgi-bin \
 	&& a2dissite default-ssl \
