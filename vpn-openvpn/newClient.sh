@@ -23,14 +23,22 @@ newclient () {
 	echo "</tls-auth>"      >> ${CLIENT_CERT}
 }
 
-echo ""
-echo "Tell me a name for the client cert"
-echo "Please, use one word only, no special characters"
-read -p "Client name: " -e -i client CLIENT
-cd easy-rsa
-./easyrsa build-client-full "$CLIENT" nopass
-cd ..
-# Generates the custom client.ovpn
-newclient "$CLIENT"
-echo ""
-echo "Client $CLIENT added, certs available at ./clients/$CLIENT.ovpn"
+if [ "$#" -eq 0 ]; then
+	echo ""
+	echo "Tell me a name for the client cert"
+	echo "Please, use one word only, no special characters"
+	read -p "Client name: " -e -i client CLIENT
+    set -- "$CLIENT" "$@"
+fi
+
+while test "$#" -gt 0; do
+	echo "Generating client certificate for: $1"
+	cd easy-rsa
+	./easyrsa build-client-full "$1" nopass
+	cd ..
+	# Generates the custom client.ovpn
+	newclient "$1"
+	echo ""
+	echo "Client $1 added, certs available at ./clients/$1.ovpn"
+	shift
+done
