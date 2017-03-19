@@ -283,7 +283,7 @@ if [ ! -e /dev/net/tun ]; then
 	exit 2
 fi
 
-modprobe tun
+modprobe -v tun
 
 # configure firewall
 
