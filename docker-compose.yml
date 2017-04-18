@@ -157,7 +157,7 @@ services:
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
-    read_only: false
+    read_only: true
     restart: unless-stopped
 
 ########################################################################
@@ -188,7 +188,7 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=7.0.76
+      - TOMCAT_VERSION=7.0.77
     expose:
     - "8080"
     - "8443"
@@ -265,7 +265,7 @@ services:
     build:
       context: prestashop
       args:
-      - PRESTASHOP_VERSION=1.6.1.11
+      - PRESTASHOP_VERSION=1.6.1.12
     expose:
     - "80"
     - "443"
@@ -568,7 +568,7 @@ services:
     # instead of turning off performance_schema, you can reduce RAM usage with --table_open_cache=400 --table_definition_cache=400 --max_connections=151
     - MYSQL_CUSTOM_OPTS=--performance_schema=off
     volumes:
-    - /opt/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    - /opt/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
     #- /opt/mysql/conf.d:/etc/mysql/conf.d
     - /srv/mysql/data:/var/lib/mysql
     - /srv/mysql/backup:/srv
@@ -695,7 +695,7 @@ services:
     - /srv/logs/dovecot:/var/log
     tmpfs:
     # this will have the side-effect of regenerating SSL parameters @ each startup
-    - /var/lib/dovecot:rw,nosuid,nodev,noexec,size=8k
+    - /var/lib/dovecot:rw,nosuid,nodev,noexec,size=32k
     networks:
     - dovecot
     cpu_shares: 256
@@ -858,7 +858,11 @@ services:
   openvpn:
     extends:
       service: base-service
-    build: vpn-openvpn
+    build:
+      context: vpn-openvpn
+      args:
+      # stable|testing|release/2.3|release/2.4
+      - OPENVPN_VERSION=stable
     #devices:
     #  - "/dev/net/tun:/dev/net/tun:rwm"
     ports:
@@ -969,7 +973,8 @@ services:
     - /srv/dokuwiki/acme-challenge:/srv/dokuwiki/acme-challenge
     - /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known:/opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known
     - /srv/portainer/acme-challenge:/srv/portainer/acme-challenge
-    - /srv/http-proxy/polycarpe/.well-known:/srv/http-proxy/polycarpe/.well-known
+    - /srv/http-proxy/polycarpe.fr/.well-known:/srv/http-proxy/polycarpe.fr/.well-known
+    - /srv/http-proxy/vingt-citadelles.fr/.well-known:/srv/http-proxy/vingt-citadelles.fr/.well-known
     - /srv/http-proxy/html/.well-known:/srv/http-proxy/html/.well-known
     #networks:
     #- default

@@ -38,8 +38,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 	mysql-server=${MYSQL_VERSION}.* mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* mysql-utilities mysqltuner \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& usermod -a -G docker_env mysql \
-	&& sed -i'.bak' 's%\(bind-address\)\s= 127.0.0.1%\1 = *%'  /etc/mysql/mysql.conf.d/mysqld.cnf \
-#	&& sed -i'.bak' 's%\(bind-address\)\s= 127.0.0.1%\1 = *%'  /etc/mysql/my.cnf \
+	&& sed -i'.bak' 's%\(bind-address\)\s= 127.0.0.1%\1 = 0.0.0.0%'  /etc/mysql/mysql.conf.d/mysqld.cnf \
+#	&& sed -i'.bak' 's%\(bind-address\)\s= 127.0.0.1%\1 = 0.0.0.0%'  /etc/mysql/my.cnf \
 # /entrypoint.sh can only init an empty (non-existent) DB
 	&& rm -r /var/lib/mysql/*
 

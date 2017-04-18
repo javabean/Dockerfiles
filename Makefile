@@ -9,7 +9,7 @@ unexport IMG_VERSION = 0.9.19.1
 
 DOCKER_APT_VERSION = 17.03.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.11.2
+DOCKER_COMPOSE_VERSION = 1.12.0
 # url fragment
 DOCKER_MACHINE_VERSION = v0.10.0
 
@@ -20,7 +20,9 @@ UBUNTU_VERSION ?= 16.04
 
 # Would have been much easier with Debian's redirector httpredir.debian.org...
 #APT_MIRROR ?= mirrors.online.net
-APT_MIRROR ?= cz.archive.ubuntu.com
+#APT_MIRROR ?= mirror.scaleway.com
+#APT_MIRROR ?= mirror.cloud.online.net # internal network only, does not work for containers!
+APT_MIRROR ?= fr.archive.ubuntu.com
 # arm
 #APT_MIRROR ?= ports.ubuntu.com/ubuntu-ports
 #APT_MIRROR ?= ftp.tu-chemnitz.de/pub/linux/ubuntu-ports
@@ -141,7 +143,8 @@ new-certificates: ## query new TLS certificates
 		-w /srv/dokuwiki/acme-challenge -d wiki.cedrik.fr \
 		-w /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT -d www.cedrik.fr -d cedrik.fr -d wpad.cedrik.fr \
 		-w /srv/portainer/acme-challenge -d portainer.cedrik.fr \
-		-w /srv/http-proxy/polycarpe -d polycarpe.fr -d www.polycarpe.fr
+		-w /srv/http-proxy/polycarpe.fr -d polycarpe.fr -d www.polycarpe.fr \
+		-w /srv/http-proxy/vingt-citadelles.fr -d vingt-citadelles.fr -d www.vingt-citadelles.fr \
 		-w /srv/http-proxy/html/.well-known -d paris.cedrik.fr
 
 .PHONY: renew-certificates
@@ -227,8 +230,10 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/prestashop /srv/joomla /srv/wordpress /srv/dokuwiki /srv/tiddlywiki
 	# if [ "$(ls -A /opt/dovecot/*.pem)" ]; then
 	if ls -A /opt/dovecot/*.pem > /dev/null 2>&1; then sudo chmod 0400 /opt/dovecot/*.pem; fi
+	sudo chown -R dovecot:dovecot /opt/dovecot
 	sudo chown -R mail:mail /srv/dovecot
-	sudo chown root: /opt/email-relay
+	#sudo chown -R opendkim:postfix /opt/email-relay
+	sudo chown -R 106:108 /opt/email-relay
 	sudo chown 105:107 /srv/transmission
 	sudo chown 999:999 /opt/netdata
 	sudo chown 105:107 /srv/redis*
@@ -236,9 +241,14 @@ mkdirs: ## create required directories in  /opt  and  /srv
 
 ########################################################################
 
+.PHONY: check-config
+check-config:
+	curl -fsSL https://raw.githubusercontent.com/docker/docker/master/contrib/check-config.sh | bash
+
 .PHONY: install-docker
 install-docker: ## install Docker; this target also works for a Raspberry Pi
 	#curl -fsSL https://get.docker.com/gpg | sudo apt-key add -
+	#curl -fsSL https://download.docker.com/linux/centos|debian|fedora|ubuntu/gpg | sudo apt-key add -
 	if [ ! -f /etc/apt/sources.list.d/docker.list ]; then \
 		curl -fsSL https://get.docker.com/ | sudo sh; \
 		sudo usermod -aG docker `whoami`; \
@@ -269,6 +279,7 @@ install-docker-compose: ## install docker-compose
 
 .PHONY: install-docker-compose-rpi
 install-docker-compose-rpi: ## install docker-compose on a Raspberry Pi
+	#sudo apt-get -y install --no-install-recommends python3-yaml python3-pip  &&  sudo pip3 install docker-compose
 	if [ ! -f /etc/apt/sources.list.d/Hypriot_Schatzkiste.list ]; then \
 		sudo apt-get install apt-transport-https \
 		sudo curl -fsSLR -o /etc/apt/sources.list.d/Hypriot_Schatzkiste.list "https://packagecloud.io/install/repositories/Hypriot/Schatzkiste/config_file.list?os=raspbian&dist=8&source=script" \
@@ -302,5 +313,6 @@ uninstall: ## remove all traces of Docker save for data in  /opt  and  /srv
 uninstall: distclean
 	rm /usr/local/bin/docker-* /etc/bash_completion.d/docker-*
 	#pip uninstall docker-compose
-	apt-get purge -y docker-engine docker-hypriot docker-compose docker-machine
+	sudo apt-get purge -y docker-engine docker-hypriot docker-compose docker-machine
+	#sudo rm -rf /var/lib/docker
 	echo "Left over: config & data dirs: /opt /srv"

@@ -54,7 +54,7 @@ MAINTENANCE
 
 `docker-compose.override.yml`: adjust `${*}` vars
 
-`baseimage/image/Dockerfile`: `FROM`: check and adjust guest OS version (e.g. 16.04)
+`baseimage/image/Dockerfile`: `FROM`: check and adjust guest OS version (e.g. 16.04)  
 `baseimage/image/buildconfig`
 
 `.env` : check and adjust `MYSQL_VERSION`
@@ -75,6 +75,7 @@ WordPress: online upgrade before upgrading Docker image
 
 DokuWiki: online upgrade before upgrading Docker image
 	http://www.dokuwiki.org/plugin:upgrade
+	`/usr/local/bin/upgrade-dokuwiki.sh`
 
 TiddlyWiki: update your installed plugins, themes & languages after upgrading Docker image
 
