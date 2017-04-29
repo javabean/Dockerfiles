@@ -27,3 +27,6 @@ cp -a /bd_build/bin/su-exec.$(dpkg --print-architecture | awk -F- '{ print $NF }
 ln -s /usr/local/bin/su-exec /usr/local/bin/gosu
 
 cp -a /bd_build/bin/wait_for.sh /usr/local/bin/
+
+mkdir /usr/local/share/tls
+cp -a dhparams-ffdhe*.pem /usr/local/share/tls/
