@@ -66,4 +66,4 @@ runtime
 Upgrading version
 =================
 
-See https://www.consul.io/docs/upgrading.html
+See https://www.consul.io/docs/upgrading.html and https://www.consul.io/docs/upgrade-specific.html
