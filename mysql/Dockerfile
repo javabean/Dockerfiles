@@ -41,7 +41,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 	&& sed -i'.bak' 's%\(bind-address\)\s= 127.0.0.1%\1 = 0.0.0.0%'  /etc/mysql/mysql.conf.d/mysqld.cnf \
 #	&& sed -i'.bak' 's%\(bind-address\)\s= 127.0.0.1%\1 = 0.0.0.0%'  /etc/mysql/my.cnf \
 # /entrypoint.sh can only init an empty (non-existent) DB
-	&& rm -r /var/lib/mysql/*
+	&& rm -r /var/lib/mysql/* \
+# MySQLTuner
+	&& curl -fsSL https://github.com/major/MySQLTuner-perl/archive/master.tar.gz | tar xz -C /usr/local/bin/ --strip-components=1 MySQLTuner-perl-master/mysqltuner.pl MySQLTuner-perl-master/basic_passwords.txt MySQLTuner-perl-master/vulnerabilities.csv
 
 ADD https://raw.githubusercontent.com/mysql/mysql-docker/mysql-server/${MYSQL_VERSION}/docker-entrypoint.sh  /entrypoint.sh
 RUN chmod +x /entrypoint.sh \
