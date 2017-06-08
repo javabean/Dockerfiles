@@ -3,7 +3,7 @@
 # https://docs.docker.com/compose/compose-file/
 # https://hub.docker.com/explore/
 
-version: '2.1'
+version: '2.2'
 
 services:
 
@@ -51,7 +51,8 @@ services:
     cpu_shares: 1024
     mem_limit: 128m
     memswap_limit: 192m
-    #memory-swappiness: "10"
+    mem_swappiness: 10
+    #mem_reservation: 128m
     #read_only: true
     restart: "no"
 
@@ -98,6 +99,7 @@ services:
     - vpn
     mem_limit: 128m
     memswap_limit: 192m
+    mem_reservation: 64m
     read_only: true
     restart: always
 
@@ -157,6 +159,7 @@ services:
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
+    mem_reservation: 96m
     read_only: true
     restart: unless-stopped
 
@@ -177,6 +180,7 @@ services:
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
+    mem_reservation: 32m
     read_only: true
     restart: unless-stopped
 
@@ -188,7 +192,7 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=7.0.77
+      - TOMCAT_VERSION=7.0.78
     expose:
     - "8080"
     - "8443"
@@ -208,7 +212,8 @@ services:
     - tomcat-back
     mem_limit: 1024m
     memswap_limit: 1024m
-#    memory-swappiness: "1"
+    mem_swappiness: 1
+    mem_reservation: 1024m
     read_only: true
     restart: on-failure:2
 
@@ -253,6 +258,7 @@ services:
     - owncloud-back
     mem_limit: 384m
     memswap_limit: 512m
+    mem_reservation: 256m
     read_only: false
     restart: unless-stopped
 
@@ -265,7 +271,7 @@ services:
     build:
       context: prestashop
       args:
-      - PRESTASHOP_VERSION=1.6.1.12
+      - PRESTASHOP_VERSION=1.6.1.14
     expose:
     - "80"
     - "443"
@@ -324,6 +330,7 @@ services:
     - prestashop-back
     mem_limit: 448m
     memswap_limit: 512m
+    mem_reservation: 416m
     read_only: false
     restart: unless-stopped
 
@@ -377,7 +384,7 @@ services:
     build:
       context: wordpress
       args:
-      #- WORDPRESS_VERSION=wordpress-4.7.3
+      #- WORDPRESS_VERSION=wordpress-4.7.5
       - WORDPRESS_VERSION=latest
     expose:
     - "80"
@@ -419,6 +426,7 @@ services:
     - wordpress-back
     mem_limit: 448m
     memswap_limit: 512m
+    mem_reservation: 384m
     read_only: false
     restart: on-failure:5
 
@@ -455,8 +463,9 @@ services:
     - dokuwiki-front
     - dokuwiki-back-internal
     - dokuwiki-back
-    mem_limit: 384m
-    memswap_limit: 512m
+    mem_limit: 192m
+    memswap_limit: 256m
+    mem_reservation: 128m
     read_only: false
     restart: on-failure:5
 
@@ -481,6 +490,7 @@ services:
     - tiddlywiki-front
     mem_limit: 384m
     memswap_limit: 512m
+    mem_reservation: 256m
     read_only: true
     restart: on-failure:5
 
@@ -502,9 +512,15 @@ services:
     - /srv/droppy:/files
     networks:
     - droppy
+    healthcheck:
+      test: wget -q -O /dev/null localhost:8989 || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 1
     cpu_shares: 128
-    mem_limit: 256m
-    memswap_limit: 384m
+    mem_limit: 192m
+    memswap_limit: 256m
+    mem_reservation: 128m
     read_only: true
     restart: unless-stopped
 
@@ -524,7 +540,7 @@ services:
     - ENABLE_CRON=1
     volumes:
     - /opt/email-relay/dkim:/usr/local/etc/dkim:ro
-    #- /srv/logs/email-relay:/var/log
+    - /srv/logs/email-relay:/var/log
     networks:
     - tomcat-back
     - owncloud-back
@@ -535,6 +551,7 @@ services:
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
+    mem_reservation: 32m
     read_only: false
     restart: always
 
@@ -555,18 +572,21 @@ services:
     - ENABLE_CRON=1
     #- ENABLE_SYSLOG=1
     - MYSQL_ROOT_PASSWORD=
-    #- MYSQL_CUSTOM_OPTS=--table_open_cache=500 --max_connections=51
     #- MYSQL_CUSTOM_OPTS=--key_buffer_size=4M --sort_buffer_size=128K --read_buffer_size=64K --net_buffer_length=8K
     #- MYSQL_CUSTOM_OPTS=--innodb_buffer_pool_size=64M --innodb_log_buffer_size=8M
     #- MYSQL_CUSTOM_OPTS=--default-storage-engine=MyISAM --default_tmp_storage_engine=MyISAM
     #- MYSQL_CUSTOM_OPTS=--sql-mode=NO_ENGINE_SUBSTITUTION
-    # http://bugs.mysql.com/bug.php?id=68287
+    # http://bugs.mysql.com/bug.php?id=68287 [MySQL 5.6]
     # There are thresholds based on table_open_cache and table_definition_cache and max_connections and crossing the thresholds produces a big increase in RAM used. The thresholds work by first deciding if the server size is small, medium or large.
     # Small: all three are same as or less than defaults (2000, 400, 151). (max 52.6 megabytes RAM)
     # Large: any of the three is more than twice the default. (min 400 megabytes RAM)
     # Medium: others. (90.7-98.4 megabytes RAM)
+    # default values: [MySQL 5.7]
+    #   table_open_cache = 2000
+    #   table_definition_cache = min(2000, 400 + (table_open_cache / 2))
+    #   max_connections = 151
     # instead of turning off performance_schema, you can reduce RAM usage with --table_open_cache=400 --table_definition_cache=400 --max_connections=151
-    - MYSQL_CUSTOM_OPTS=--performance_schema=off
+    - MYSQL_CUSTOM_OPTS=--performance_schema=off --table_definition_cache=800
     volumes:
     - /opt/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
     #- /opt/mysql/conf.d:/etc/mysql/conf.d
@@ -587,6 +607,7 @@ services:
     #cpu_shares: 512
     mem_limit: 448m
     memswap_limit: 512m
+    mem_reservation: 416m
     read_only: true
     restart: unless-stopped
 
@@ -641,7 +662,7 @@ services:
 
   redis:
     image: redis:3-alpine
-    command: ["--daemonize", "no", "--port", "6379", "--tcp-backlog", "511", "--loglevel", "notice", "--logfile", "", "--databases", "1", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--stop-writes-on-bgsave-error", "yes", "--dbfilename", "dump.rdb", "--dir", "/data", "--maxclients", "100", "--maxmemory", "64mb", "--maxmemory-policy noeviction", "--slowlog-log-slower-than", "10000", "--slowlog-max-len", "128"]
+    command: ["--daemonize", "no", "--port", "6379", "--tcp-backlog", "511", "--loglevel", "notice", "--logfile", "", "--databases", "1", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--stop-writes-on-bgsave-error", "yes", "--dbfilename", "dump.rdb", "--dir", "/data", "--maxclients", "100", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction", "--slowlog-log-slower-than", "10000", "--slowlog-max-len", "128"]
     expose:
     - "6379"
     #volumes:
@@ -658,17 +679,19 @@ services:
     cpu_shares: 128
     mem_limit: 128m
     memswap_limit: 128m
+    mem_reservation: 80m
     read_only: true
     restart: always
 
   redis-owncloud:
     extends:
       service: redis
-    command: ["--daemonize", "no", "--port", "6379", "--tcp-backlog", "511", "--loglevel", "notice", "--logfile", "", "--databases", "1", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--stop-writes-on-bgsave-error", "yes", "--dbfilename", "dump.rdb", "--dir", "/data", "--maxclients", "100", "--maxmemory", "32mb", "--maxmemory-policy noeviction", "--slowlog-log-slower-than", "10000", "--slowlog-max-len", "128"]
+    command: ["--daemonize", "no", "--port", "6379", "--tcp-backlog", "511", "--loglevel", "notice", "--logfile", "", "--databases", "1", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--stop-writes-on-bgsave-error", "yes", "--dbfilename", "dump.rdb", "--dir", "/data", "--maxclients", "100", "--maxmemory", "32mb", "--maxmemory-policy", "noeviction", "--slowlog-log-slower-than", "10000", "--slowlog-max-len", "128"]
     volumes:
     - /srv/redis-owncloud:/data
     networks:
     - owncloud-back-internal
+    mem_reservation: 48m
 
 ########################################################################
 
@@ -700,7 +723,8 @@ services:
     - dovecot
     cpu_shares: 256
     mem_limit: 128m
-    memswap_limit: 256m
+    memswap_limit: 192m
+    mem_reservation: 96m
     read_only: true
     restart: unless-stopped
 
@@ -731,6 +755,7 @@ services:
     cpu_shares: 128
     mem_limit: 192m
     memswap_limit: 256m
+    mem_reservation: 160m
     read_only: true
     restart: always
 
@@ -760,6 +785,7 @@ services:
         ipv4_address: 172.31.53.53
     mem_limit: 96m
     memswap_limit: 128m
+    mem_reservation: 96m
 
   dnsmasq-shalla:
     extends:
@@ -829,6 +855,7 @@ services:
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
+    mem_reservation: 64m
     read_only: true
     restart: always
 
@@ -850,6 +877,7 @@ services:
     cpu_shares: 128
     mem_limit: 128m
     memswap_limit: 192m
+    mem_reservation: 32m
     read_only: true
     restart: unless-stopped
 
@@ -920,6 +948,7 @@ services:
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
+    mem_reservation: 32m
     read_only: true
     restart: unless-stopped
 
@@ -945,6 +974,7 @@ services:
     cpu_shares: 64
     mem_limit: 128m
     memswap_limit: 192m
+    mem_reservation: 96m
     #blkio-weight: 10
     read_only: true
     restart: "no"

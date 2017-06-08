@@ -9,12 +9,9 @@ unexport IMG_VERSION = 0.9.19.1
 
 DOCKER_APT_VERSION = 17.03.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.12.0
+DOCKER_COMPOSE_VERSION = 1.13.0
 # url fragment
-DOCKER_MACHINE_VERSION = v0.10.0
-
-#COMPOSE_PROJECT_NAME = `basename`
-#COMPOSE_FILE = docker-compose_1.yml:docker-compose_2.yml
+DOCKER_MACHINE_VERSION = v0.12.0
 
 UBUNTU_VERSION ?= 16.04
 
@@ -28,12 +25,12 @@ APT_MIRROR ?= fr.archive.ubuntu.com
 #APT_MIRROR ?= ftp.tu-chemnitz.de/pub/linux/ubuntu-ports
 #APT_MIRROR ?= mirror.unej.ac.id/ubuntu
 
-MYSQL_VERSION = 5.7
-
 ########################################################################
 # END set versions here
 ########################################################################
 
+include .env
+#export $(shell sed 's/=.*//' .env)
 
 docker_compose_build = consul http-proxy tomcat dovecot dnsmasq unbound email-relay mysql owncloud redis-owncloud memcached-owncloud prestashop joomla wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission netdata
 .PHONY: $(docker_compose_build)
@@ -205,7 +202,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	/opt/dnsmasq/dnsmasq.d                        /srv/logs/dnsmasq \
 	/opt/unbound                                  /srv/logs/unbound \
 	/opt/dovecot           /srv/dovecot           /srv/logs/dovecot \
-	/opt/email-relay/dkim/keys \
+	/opt/email-relay/dkim/keys                    /srv/logs/email-relay \
 		            /srv/joomla/.well-known/acme-challenge  /srv/logs/joomla/apache2 \
       /srv/dokuwiki/conf  /srv/dokuwiki/lib/plugins  /srv/dokuwiki/lib/tpl  /srv/dokuwiki/data \
                                                   /srv/logs/dokuwiki/apache2 \

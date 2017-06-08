@@ -9,8 +9,13 @@ export DISABLE_SSH=${DISABLE_SSH:-1}
 export DISABLE_CRON=${DISABLE_CRON:-0}
 export DISABLE_CONSUL=${DISABLE_CONSUL:-0}
 
+# https://github.com/tianon/gosu
 #export GOSU_VERSION=${GOSU_VERSION:-1.10}
+# https://github.com/krallin/tini
 export TINI_VERSION=${TINI_VERSION:-v0.14.0}
+# https://github.com/Yelp/dumb-init
 export DUMB_INIT_VERSION=${DUMB_INIT_VERSION:-1.2.0}
+# https://www.consul.io
 export CONSUL_VERSION=${CONSUL_VERSION:-0.7.5}
+# https://github.com/hashicorp/consul-template
 export CONSUL_TEMPLATE_VERSION=${CONSUL_TEMPLATE_VERSION:-0.16.0}
