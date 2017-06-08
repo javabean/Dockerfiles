@@ -54,7 +54,7 @@ rm /tmp/consul-template.zip
 # we drop to the non-root user. Note that this doesn't work with all
 # storage drivers (it won't work with AUFS).
 # An alternative would be to use authbind, which unfortunately does not work in Docker...
-setcap 'cap_net_bind_service=+ep' /usr/local/bin/consul
+setcap 'cap_net_bind_service=+ep' /usr/local/bin/consul || true
 
 mkdir -p /srv/consul /tmp/consul/data /usr/local/etc/consul.d
 # In a read-only container, only /tmp is writable; no effect if /srv/consul/data is docker-mounted
