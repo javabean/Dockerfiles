@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 /usr/local/bin/wait_for.sh mysqladmin --silent --wait=9 --connect_timeout 10 -h "${DB_SERVER:-mysql}" -u "${DB_USER:-prestashop}" -p"${DB_PASSWD:-prestashop}" ping
@@ -74,3 +74,8 @@ if [ ! -f /var/www/html/config/settings.inc.php  ]; then
 		rm -r "/var/www/html/$PS_FOLDER_INSTALL"
 	fi
 fi
+
+# now that we're definitely done writing configuration, let's clear out the relevant envrionment variables (so that stray "phpinfo()" calls don't leak secrets from our code)
+for e in "${envs[@]}"; do
+	unset "$e"
+done

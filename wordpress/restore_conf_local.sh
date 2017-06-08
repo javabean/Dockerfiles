@@ -161,10 +161,22 @@ EOPHP
 <?php
 // database might not exist, so let's try creating it (just to be safe)
 $stderr = fopen('php://stderr', 'w');
-list($host, $port) = explode(':', $argv[1], 2);
+// https://codex.wordpress.org/Editing_wp-config.php#MySQL_Alternate_Port
+//   "hostname:port"
+// https://codex.wordpress.org/Editing_wp-config.php#MySQL_Sockets_or_Pipes
+//   "hostname:unix-socket-path"
+list($host, $socket) = explode(':', $argv[1], 2);
+$port = 0;
+if (is_numeric($socket)) {
+	$port = (int) $socket;
+	$socket = null;
+}
+$user = $argv[2];
+$pass = $argv[3];
+$dbName = $argv[4];
 $maxTries = 10;
 do {
-	$mysql = new mysqli($host, $argv[2], $argv[3], '', (int)$port);
+	$mysql = new mysqli($host, $user, $pass, '', $port, $socket);
 	if ($mysql->connect_error) {
 		fwrite($stderr, "\n" . 'MySQL Connection Error: (' . $mysql->connect_errno . ') ' . $mysql->connect_error . "\n");
 		--$maxTries;
@@ -174,7 +186,7 @@ do {
 		sleep(3);
 	}
 } while ($mysql->connect_error);
-if (!$mysql->query('CREATE DATABASE IF NOT EXISTS `' . $mysql->real_escape_string($argv[4]) . '`')) {
+if (!$mysql->query('CREATE DATABASE IF NOT EXISTS `' . $mysql->real_escape_string($dbName) . '`')) {
 	fwrite($stderr, "\n" . 'MySQL "CREATE DATABASE" Error: ' . $mysql->error . "\n");
 	$mysql->close();
 	exit(1);
@@ -183,3 +195,8 @@ $mysql->close();
 EOPHP
 
 fi
+
+# now that we're definitely done writing configuration, let's clear out the relevant envrionment variables (so that stray "phpinfo()" calls don't leak secrets from our code)
+for e in "${envs[@]}"; do
+	unset "$e"
+done
