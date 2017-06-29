@@ -167,6 +167,7 @@ services:
 
   portainer:
     image: portainer/portainer
+    init: true
     #command: ["--tlsverify", "--tlscacert", "/certs/ca.pem", "--tlscert", "/certs/cert.pem", "--tlskey", "/certs/key.pem"]
     #command: ["--templates", "https://raw.githubusercontent.com/portainer/templates/master/templates.json"]
     command: ["--no-analytics"]
@@ -271,7 +272,7 @@ services:
     build:
       context: prestashop
       args:
-      - PRESTASHOP_VERSION=1.6.1.14
+      - PRESTASHOP_VERSION=1.6.1.15
     expose:
     - "80"
     - "443"
@@ -500,6 +501,7 @@ services:
   droppy:
     image: silverwind/droppy
     #image: silverwind/armhf-droppy
+    init: true
     command: ["/usr/bin/droppy", "start", "--color", "-f", "/files", "-c", "/config"]
     expose:
     - "8989"
@@ -514,7 +516,7 @@ services:
     - droppy
     healthcheck:
       test: wget -q -O /dev/null localhost:8989 || exit 1
-      interval: 30s
+      interval: 240s
       timeout: 5s
       retries: 1
     cpu_shares: 128
@@ -615,6 +617,7 @@ services:
 
   memcached:
     image: memcached:1.4-alpine
+    init: true
     command: ["memcached", "-m", "64", "-p", "11211", "-c", "256"]
     expose:
     - "11211/tcp"
@@ -662,6 +665,7 @@ services:
 
   redis:
     image: redis:3-alpine
+    init: true
     command: ["--daemonize", "no", "--port", "6379", "--tcp-backlog", "511", "--loglevel", "notice", "--logfile", "", "--databases", "1", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--stop-writes-on-bgsave-error", "yes", "--dbfilename", "dump.rdb", "--dir", "/data", "--maxclients", "100", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction", "--slowlog-log-slower-than", "10000", "--slowlog-max-len", "128"]
     expose:
     - "6379"
@@ -894,8 +898,8 @@ services:
     #devices:
     #  - "/dev/net/tun:/dev/net/tun:rwm"
     ports:
-    - "1194/udp:1194/udp"
-    #- "1194/tcp:1194/tcp"
+    - "1194:1194/udp"
+    #- "1194:1194/tcp"
     environment:
     #- PROTOCOL=udp
     #- DNS_USE_RESOLVCONF=true
