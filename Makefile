@@ -9,7 +9,7 @@ unexport IMG_VERSION = 0.9.19.1
 
 DOCKER_APT_VERSION = 17.03.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.13.0
+DOCKER_COMPOSE_VERSION = 1.14.0
 # url fragment
 DOCKER_MACHINE_VERSION = v0.12.0
 
@@ -49,13 +49,14 @@ help: ## Display this help menu
 
 .PHONY: pull
 pull: ## pull base Docker images from Docker Hub
-	docker pull ubuntu:$(UBUNTU_VERSION)
-	docker pull memcached:1.4-alpine
-	docker pull redis:3-alpine
-	docker pull silverwind/droppy
-	docker pull portainer/portainer
-	#docker pull silverwind/armhf-droppy:latest
-	#docker pull quay.io/letsencrypt/letsencrypt
+	docker image pull ubuntu:$(UBUNTU_VERSION)
+	#docker-compose pull
+	docker image pull memcached:1.4-alpine
+	docker image pull redis:3-alpine
+	docker image pull silverwind/droppy
+	#docker image pull silverwind/armhf-droppy:latest
+	docker image pull portainer/portainer
+	#docker image pull quay.io/letsencrypt/letsencrypt
 
 .PHONY: build
 build: ## build all Docker images
