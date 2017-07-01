@@ -18,7 +18,8 @@ sed -i "s%http://archive.ubuntu.com%http://${APT_MIRROR:-archive.ubuntu.com}%g" 
 # arm
 sed -i "s%http://ports.ubuntu.com/ubuntu-ports%http://${APT_MIRROR:-ports.ubuntu.com/ubuntu-ports}%g" /etc/apt/sources.list
 
-## Enable Ubuntu Universe and Multiverse.
+## Enable Ubuntu Universe, Multiverse, and deb-src for main.
+sed -i 's/^#\s*\(deb.*main restricted\)$/\1/g' /etc/apt/sources.list
 sed -i 's/^#\s*\(deb.*universe\)$/\1/g' /etc/apt/sources.list
 sed -i 's/^#\s*\(deb.*multiverse\)$/\1/g' /etc/apt/sources.list
 # Disable source packages
@@ -37,6 +38,7 @@ ln -sf /bin/true /sbin/initctl
 dpkg-divert --local --rename --add /usr/bin/ischroot
 ln -sf /bin/true /usr/bin/ischroot
 
+# apt-utils fix for Ubuntu 16.04
 $minimal_apt_get_install apt-utils
 
 ## Install HTTPS support for APT.
@@ -46,7 +48,7 @@ $minimal_apt_get_install apt-transport-https ca-certificates
 $minimal_apt_get_install software-properties-common
 
 ## Upgrade all packages.
-#apt-get dist-upgrade -y --no-install-recommends
+#apt-get dist-upgrade -y --no-install-recommends -o Dpkg::Options::="--force-confold"
 
 ## Fix locale.
 $minimal_apt_get_install language-pack-en

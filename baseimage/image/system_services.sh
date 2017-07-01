@@ -9,6 +9,8 @@ set -x
 cp -a /bd_build/bin/my_init /sbin/
 cp -a /bd_build/bin/docker-init.sh /usr/local/sbin/
 mkdir -p /etc/my_init.d
+mkdir -p /etc/my_init.pre_shutdown.d
+mkdir -p /etc/my_init.post_shutdown.d
 mkdir -p /etc/container_environment
 touch /etc/container_environment.sh
 touch /etc/container_environment.json

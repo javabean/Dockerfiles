@@ -1,5 +1,5 @@
 unexport IMG_NAME = cedrik/baseimage
-unexport IMG_VERSION = 0.9.19.1
+unexport IMG_VERSION = 0.9.22.1
 
 
 ########################################################################
@@ -11,7 +11,7 @@ DOCKER_APT_VERSION = 17.06.*
 # url fragment
 DOCKER_COMPOSE_VERSION = 1.14.0
 # url fragment
-DOCKER_MACHINE_VERSION = v0.12.0
+DOCKER_MACHINE_VERSION = v0.12.1
 
 UBUNTU_VERSION ?= 16.04
 

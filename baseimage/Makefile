@@ -1,5 +1,5 @@
 NAME = cedrik/baseimage
-VERSION = 0.9.19.1
+VERSION = 0.9.22.1
 
 .PHONY: all build test tag_latest release ssh
 
@@ -9,5 +9,5 @@ build:
 	docker build -t $(NAME):$(VERSION) --rm image
 
 tag_latest:
-	docker tag -f $(NAME):$(VERSION) $(NAME):latest
+	docker tag $(NAME):$(VERSION) $(NAME):latest
 

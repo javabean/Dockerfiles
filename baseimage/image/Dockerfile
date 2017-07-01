@@ -9,12 +9,17 @@ ARG APT_MIRROR=fr.archive.ubuntu.com
 #ENV CONTAINERPILOT=file:///usr/local/etc/containerpilot.json
 
 COPY docker-healthcheck.sh  /usr/local/bin/
-ADD . /bd_build
+COPY . /bd_build
 
 RUN /bd_build/prepare.sh && \
 	/bd_build/system_services.sh && \
 	/bd_build/utilities.sh && \
 	/bd_build/cleanup.sh
+
+ENV DEBIAN_FRONTEND="teletype" \
+    LANG="en_US.UTF-8" \
+    LANGUAGE="en_US:en" \
+    LC_ALL="en_US.UTF-8"
 
 #VOLUME ["/var/log"]
 

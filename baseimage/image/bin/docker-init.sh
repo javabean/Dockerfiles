@@ -1,11 +1,16 @@
 #!/usr/local/sbin/dumb-init /bin/bash
 ##!/usr/local/sbin/tini -g /bin/bash
 
-# A simple ini system semi-compatible with Phusion's baseimage-docker's my_init:
-# * run startup items in /etc/my_init.d/ and /etc/rc.local
+# A simple init system semi-compatible with Phusion's baseimage-docker's my_init:
+# * run startup items in "/etc/my_init.d/" and "/etc/rc.local"
+# * run shutdown items in "/etc/my_init.pre_shutdown.d" and "/etc/my_init.post_shutdown.d" (runit-managed processes only)
 # * executes the executable given in argument, or "runit" if none
-# This implementation will not take care of environment variables defined in /etc/container_environment/,
-# but will dump runtime environment variables in /run/environment for sub-processes to pick up
+# 
+# This implementation will not take care of environment variables defined in "/etc/container_environment/",
+# but will dump runtime environment variables in "/run/environment" for sub-processes to pick up.
+# 
+# Also no support for ${KILL_PROCESS_TIMEOUT} and ${KILL_ALL_PROCESSES_TIMEOUT} environment variables;
+# defaults to runit's 7 seconds timeout (for shorter timeout: use Docker's native timeout facility).
 
 set -eu -o pipefail -o posix
 shopt -s failglob
@@ -23,18 +28,45 @@ export_envvars() {
 run_startup_files() {
 	# Run /etc/my_init.d/*
 #	echo "Running /etc/my_init.d/..."
-	run-parts --report --lsbsysinit /etc/my_init.d
+	[ -d /etc/my_init.d ] && run-parts --report --lsbsysinit /etc/my_init.d
 
 	# Run /etc/rc.local.
 #	echo "Running /etc/rc.local..."
 	[ -x /etc/rc.local ] && /etc/rc.local
 }
 
+run_pre_shutdown_scripts() {
+#	echo "Running pre-shutdown scripts..."
+	# Run /etc/my_init.pre_shutdown.d/*
+	[ -d /etc/my_init.pre_shutdown.d ] && run-parts --report --lsbsysinit /etc/my_init.pre_shutdown.d
+}
+
+run_post_shutdown_scripts() {
+#	echo "Running post-shutdown scripts..."
+	# Run /etc/my_init.post_shutdown.d/*
+	[ -d /etc/my_init.post_shutdown.d ] && run-parts --report --lsbsysinit /etc/my_init.post_shutdown.d
+}
+
 export SVDIR=/var/lib/runit-sv
 
 shutdown_runit_services() {
 #	echo "Begin shutting down runit services..."
+#	/usr/bin/sv -w ${KILL_PROCESS_TIMEOUT:-5} down ${SVDIR}/* > /dev/null
 	/usr/bin/sv stop ${SVDIR}/*
+}
+
+wait_for_runit_services() {
+#	echo "Waiting for runit services to exit..."
+	while `/usr/bin/sv status ${SVDIR}/* | grep -q '^run:'`; do
+		sleep 1
+	done
+}
+
+clean_shutdown_runit() {
+	run_pre_shutdown_scripts
+	shutdown_runit_services
+	wait_for_runit_services
+	run_post_shutdown_scripts
 }
 
 start_runit() {
@@ -65,7 +97,7 @@ start_runit() {
 	# If runsvdir receives a HUP signal, it sends a TERM signal to each runsv(8) process it is monitoring and then exits with 111.
 	# -> keeping the default TERM signal, and relying on tini to send SIGTERM to all runsv instances, does not work as intended.
 	# -> we can not 'exec runsvdir' since our 'trap' wouldn't be executed...
-	trap "shutdown_runit_services; exit $?" TERM HUP
+	trap "clean_shutdown_runit; exit $?" TERM HUP
 	
 	#exec /usr/bin/runsvdir -P ${SVDIR}
 	/usr/bin/runsvdir -P ${SVDIR}
@@ -80,15 +112,8 @@ start_runit() {
 		wait $process_pid # Wait for any signals or end of execution of process
 	done
 	# Stop container properly
-	shutdown_runit_services
+	clean_shutdown_runit
 	exit $?
-}
-
-wait_for_runit_services() {
-#	echo "Waiting for runit services to exit..."
-	while `/usr/bin/sv status ${SVDIR}/* | grep -q '^run:'`; do
-		sleep 1
-	done
 }
 
 main() {
