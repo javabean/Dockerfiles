@@ -1,5 +1,8 @@
-#!/bin/bash
-set -e
+#!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 # copy backup of conf dirs if mounted volume is empty
 

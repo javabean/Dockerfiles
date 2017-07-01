@@ -7,7 +7,9 @@
 # This implementation will not take care of environment variables defined in /etc/container_environment/,
 # but will dump runtime environment variables in /run/environment for sub-processes to pick up
 
-set -e
+set -eu -o pipefail -o posix
+shopt -s failglob
+#set -x
 
 export_envvars() {
 #	echo "Writing run-time environment variables in /run/environment"
@@ -48,6 +50,10 @@ start_runit() {
 	cp -a /etc/service/* "${SVDIR}"
 	
 	# beware that cron logs to syslog
+	ENABLE_SYSLOG=${ENABLE_SYSLOG:-}
+	ENABLE_CRON=${ENABLE_CRON:-}
+	ENABLE_SSH=${ENABLE_SSH:-}
+	ENABLE_CONSUL=${ENABLE_CONSUL:-}
 	#[ -z "$ENABLE_SYSLOG" -a -z "$ENABLE_CRON" ] && rm -rf ${SVDIR}/syslog-ng ${SVDIR}/syslog-forwarder
 	[ -z "$ENABLE_SYSLOG" ] && rm -rf ${SVDIR}/syslog-ng ${SVDIR}/syslog-forwarder
 	[ -z "$ENABLE_CRON" ] && rm -rf ${SVDIR}/cron

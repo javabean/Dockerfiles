@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 # "env" needed in order to get the binary "kill" instead of built-in which does not know a thing about SIGsignals...
 #env kill -s SIGUSR2 `cat /run/openvpn/server.pid`

@@ -35,7 +35,7 @@ RUN echo "deb http://repo.mysql.com/apt/ubuntu/ `lsb_release -cs` mysql-${MYSQL_
 #RUN debconf-set-selections <<< 'mysql-server mysql-server/root_password password $MYSQL_ROOT_PASSWORD'
 #RUN echo mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASSWORD | debconf-set-selections
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-	mysql-server=${MYSQL_VERSION}.* mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* mysql-utilities mysqltuner \
+	mysql-server=${MYSQL_VERSION}.* mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* mysql-utilities \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& usermod -a -G docker_env mysql \
 	&& sed -i'.bak' 's%\(bind-address\)\s= 127.0.0.1%\1 = 0.0.0.0%'  /etc/mysql/mysql.conf.d/mysqld.cnf \

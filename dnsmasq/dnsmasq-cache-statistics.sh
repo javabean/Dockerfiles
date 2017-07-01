@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 # cachesize:  cache size
 # evictions:  number of names which have had to removed from the cache before they expired in order to make room for new names

@@ -7,7 +7,7 @@ unexport IMG_VERSION = 0.9.19.1
 # see also docker-compose's .env
 ########################################################################
 
-DOCKER_APT_VERSION = 17.03.*
+DOCKER_APT_VERSION = 17.06.*
 # url fragment
 DOCKER_COMPOSE_VERSION = 1.14.0
 # url fragment
@@ -32,7 +32,7 @@ APT_MIRROR ?= fr.archive.ubuntu.com
 include .env
 #export $(shell sed 's/=.*//' .env)
 
-docker_compose_build = consul http-proxy tomcat dovecot dnsmasq unbound email-relay mysql owncloud redis-owncloud memcached-owncloud prestashop joomla wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission netdata
+docker_compose_build = consul http-proxy tomcat dovecot dnsmasq unbound email-relay mysql owncloud prestashop joomla wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission netdata
 .PHONY: $(docker_compose_build)
 
 
@@ -94,7 +94,7 @@ $(docker_compose_build): baseimage
 tomcat: java
 http-proxy: httpd-base
 owncloud joomla wordpress prestashop dokuwiki: php7-base
-owncloud: memcached-owncloud redis-owncloud
+#owncloud: memcached-owncloud redis-owncloud
 owncloud joomla wordpress prestashop: mysql email-relay
 dokuwiki: email-relay
 openvpn: dnsmasq web-accelerator

@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 # ziproxy process
 #num_processes=`pgrep -cx ziproxy`

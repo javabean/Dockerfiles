@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 mkdir -p /var/log/mysql /var/run/mysqld
 chown mysql:adm /var/log/mysql /var/run/mysqld

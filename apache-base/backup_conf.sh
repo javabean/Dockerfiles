@@ -1,5 +1,8 @@
 #!/bin/sh
-set -e
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 # copy conf dirs to enable populating empty volumes (see restore_conf.sh)
 for d in /etc/apache2/conf-available /etc/apache2/conf-enabled \

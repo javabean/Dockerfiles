@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 NUMBEROFCLIENTS=$(tail -n +2 easy-rsa/pki/index.txt | grep -c "^V")
 if [ "$NUMBEROFCLIENTS" = '0' ]; then

@@ -1,5 +1,8 @@
 #!/bin/bash
-set -e
+#set -u
+set -e -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 /usr/local/bin/wait_for.sh mysqladmin --silent --wait=9 --connect_timeout 10 -h "${WORDPRESS_DB_HOST:-mysql}" -u "${WORDPRESS_DB_USER:-wordpress}" -p"${WORDPRESS_DB_PASSWORD:-wordpress}" ping
 

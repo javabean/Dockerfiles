@@ -1,5 +1,8 @@
 #!/bin/bash
-set -e
+#set -u
+set -e -o pipefail -o posix
+shopt -s failglob
+#set -x
 
 PROTOCOL=${PROTOCOL:-udp}
 PROTOCOL_SERVER=${PROTOCOL}
@@ -108,8 +111,10 @@ management localhost 7505 # use telnet!
 # Server Mode
 #server 10.66.77.0 255.255.255.0
 server 10.8.0.0 255.255.255.0
-# Enable client access to Docker containers
-#push "route 172.17.0.0 255.255.0.0"
+# Enable client access to local network (including Docker containers)
+#push "route 192.168.0.0 255.255.0.0"
+#push "route 172.16.0.0 255.240.0.0"
+#push "route 10.0.0.0 255.0.0.0"
 push "sndbuf 0"
 push "rcvbuf 0"
 # force all traffic through VPN
@@ -164,6 +169,7 @@ key server.key  # This file should be kept secret
 ;tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384
 ;tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256:TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256:TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-CBC-SHA256
 tls-exit
+# OpenVPN 2.4: replace tls-auth with "tls-crypt ta.key" and remove "key-direction"
 tls-auth ta.key 0 # This file is secret
 remote-cert-tls client
 crl-verify crl.pem
@@ -242,6 +248,7 @@ mute-replay-warnings
 ;tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384
 ;tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256:TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256:TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-CBC-SHA256
 tls-exit
+# OpenVPN 2.4: replace tls-auth with "tls-crypt ta.key" and remove "key-direction"
 ;tls-auth ta.key 1
 ;ns-cert-type server # Netscape extensions are deprecated
 remote-cert-tls server
@@ -290,8 +297,8 @@ modprobe -v tun
 # Set NAT for the VPN subnet
 IP=`sed '/^remote /!d;s/remote \(.*\) 1194/\1/' /etc/openvpn/client-common.txt`
 #IP=`/sbin/ifconfig eth0 | grep "inet" | head -n1 | awk '{ print $2}' | cut -d: -f2`
-#iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -j SNAT --to $IP || {
-#	iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -j SNAT --to $IP
+#iptables -t nat -C POSTROUTING -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j SNAT --to $IP || {
+#	iptables -t nat -A POSTROUTING -s 10.8.0.0/24 ! -d 10.8.0.0/24 -j SNAT --to $IP
 #}
 iptables -t nat -C POSTROUTING -s 10.8.0.0/24 -o eth+ -j MASQUERADE || {
 	iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth+ -j MASQUERADE

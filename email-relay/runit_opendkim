@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 if [ "$(stat -c %u /usr/local/etc/dkim)" != "$(id -u opendkim)" ] || [ "$(stat -c %g /usr/local/etc/dkim)" != "$(id -g postfix)" ]; then
 	chown -R opendkim:postfix /usr/local/etc/dkim

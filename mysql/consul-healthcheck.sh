@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 # mysqld process
 num_processes=`pgrep -cx mysqld`
@@ -8,6 +12,10 @@ if [ "$num_processes" -eq 0 ]; then
 fi
 
 # mysqladmin ping
+MYSQL_RANDOM_ROOT_PASSWORD=${MYSQL_RANDOM_ROOT_PASSWORD:-}
+MYSQL_USER=${MYSQL_USER:-}
+MYSQL_PASSWORD=${MYSQL_PASSWORD:-}
+MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-}
 if [ "$MYSQL_RANDOM_ROOT_PASSWORD" ] && [ -z "$MYSQL_USER" ] && [ -z "$MYSQL_PASSWORD" ]; then
 	# there's no way we can guess what the random MySQL password was
 	echo >&2 'healthcheck error: cannot determine random root password (and MYSQL_USER and MYSQL_PASSWORD were not set)'

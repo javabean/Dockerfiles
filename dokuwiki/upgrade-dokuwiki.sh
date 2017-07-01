@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 # https://www.dokuwiki.org/install:upgrade
 # https://www.dokuwiki.org/changes

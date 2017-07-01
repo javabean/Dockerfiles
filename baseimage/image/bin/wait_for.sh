@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 SERVICE_NAME=${SERVICE_NAME:-service}
 
@@ -45,8 +49,9 @@ echoerr() { if [ "$QUIET" -ne 1 ]; then echo "$@" 1>&2; fi }
 
 wait_for() {
 	local start_ts=$(date +%s)
+	local result=
 	until $@; do
-		local result=$?
+		result=$?
 		sleep 1
 		echoerr -n "."
 	done

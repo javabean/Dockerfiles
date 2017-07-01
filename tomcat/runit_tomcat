@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 #if [ -x /usr/bin/authbind ]; then
 #	/usr/bin/authbind --deep "$CATALINA_HOME/bin/catalina.sh" start $*

@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 #exec gosu postfix /usr/lib/postfix/sbin/master
 exec /usr/lib/postfix/sbin/master

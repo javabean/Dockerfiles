@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 # transmission-daemon process
 # pgrep: The process name used for matching is limited to the 15 characters present in the output of /proc/pid/stat

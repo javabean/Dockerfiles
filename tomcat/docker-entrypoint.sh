@@ -1,5 +1,7 @@
 #!/bin/bash
-set -e
+set -eu -o pipefail -o posix
+shopt -s failglob
+#set -x
 
 # this if will check if the first argument is a flag
 # but only works if all arguments require a hyphenated flag

@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 # Generate a private and public key pair for use when signing your mail of a new DKIM domain
 # http://www.opendkim.org/opendkim-README

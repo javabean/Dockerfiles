@@ -1,5 +1,8 @@
 #!/bin/bash
- 
+set -eu -o pipefail -o posix
+shopt -s failglob
+#set -x
+
 # https://www.dokuwiki.org/tips:maintenance
 
 # Automatic cleanup script

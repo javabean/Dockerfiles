@@ -1,4 +1,7 @@
 #!/bin/bash
+set -eu -o pipefail -o posix
+shopt -s failglob
+#set -x
 
 # need bash (not sh) for 'read' options...
 

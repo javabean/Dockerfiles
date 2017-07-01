@@ -1,4 +1,8 @@
 #!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 modprobe nf_conntrack_pptp
 modprobe nf_nat_pptp

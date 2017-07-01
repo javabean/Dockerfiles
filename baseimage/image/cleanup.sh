@@ -1,5 +1,7 @@
 #!/bin/bash
-set -e
+set -eu -o pipefail -o posix
+#shopt -s failglob
+#set -x
 source /bd_build/buildconfig
 set -x
 

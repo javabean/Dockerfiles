@@ -1,4 +1,8 @@
 #!/bin/bash
+#set -u
+set -e -o pipefail -o posix
+#shopt -s failglob
+#set -x
 
 # Starts a CQ / AEM instance with the following properties:
 #
