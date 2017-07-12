@@ -48,7 +48,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 #	&& docker-php-ext-install gd mysqli opcache
 
 RUN curl -fsSL https://wordpress.org/${WORDPRESS_VERSION}.tar.gz | tar xz -C /var/www/html/ --strip-components=1 \
-	&& mv /var/www/html/index.html /var/www/html/index.html.bak \
+	&& rm /var/www/html/index.html /var/www/html/readme.html /var/www/html/license.txt \
+	&& mkdir /var/www/html/wp-content/uploads \
+	&& echo -e "# Kill PHP execution\n<Files *.php>\n\tRequire all denied\n</Files>" >> /var/www/html/wp-content/uploads/.htaccess \
 	&& chown www-data:www-data -R /var/www/html/ \
 # https://wp-cli.org/docs/installing/
 	&& curl -fsSLR -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
