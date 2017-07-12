@@ -251,7 +251,7 @@ install-docker: ## install Docker; this target also works for a Raspberry Pi
 		curl -fsSL https://get.docker.com/ | sudo sh; \
 		sudo usermod -aG docker `whoami`; \
 	else \
-		sudo apt-get install docker-engine=$(DOCKER_APT_VERSION); \
+		sudo apt-get install docker-ce=$(DOCKER_APT_VERSION); \
 	fi
 
 .PHONY: install-docker-rpi
@@ -311,6 +311,6 @@ uninstall: ## remove all traces of Docker save for data in  /opt  and  /srv
 uninstall: distclean
 	rm /usr/local/bin/docker-* /etc/bash_completion.d/docker-*
 	#pip uninstall docker-compose
-	sudo apt-get purge -y docker-engine docker-hypriot docker-compose docker-machine
+	sudo apt-get purge -y docker docker-engine docker.io docker-ce docker-hypriot docker-compose docker-machine
 	#sudo rm -rf /var/lib/docker
 	echo "Left over: config & data dirs: /opt /srv"
