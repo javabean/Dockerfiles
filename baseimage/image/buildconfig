@@ -12,7 +12,7 @@ export DISABLE_CONSUL=${DISABLE_CONSUL:-0}
 # https://github.com/tianon/gosu
 #export GOSU_VERSION=${GOSU_VERSION:-1.10}
 # https://github.com/krallin/tini
-export TINI_VERSION=${TINI_VERSION:-v0.14.0}
+export TINI_VERSION=${TINI_VERSION:-v0.15.0}
 # https://github.com/Yelp/dumb-init
 export DUMB_INIT_VERSION=${DUMB_INIT_VERSION:-1.2.0}
 # https://www.consul.io

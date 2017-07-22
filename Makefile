@@ -11,7 +11,7 @@ DOCKER_APT_VERSION = 17.06.*
 # url fragment
 DOCKER_COMPOSE_VERSION = 1.14.0
 # url fragment
-DOCKER_MACHINE_VERSION = v0.12.1
+DOCKER_MACHINE_VERSION = v0.12.2
 
 UBUNTU_VERSION ?= 16.04
 
@@ -148,7 +148,7 @@ new-certificates: ## query new TLS certificates
 .PHONY: renew-certificates
 renew-certificates: ## renew TLS certificates
 	# --quiet --dry-run --test-cert
-	# --pre-hook "service nginx stop" --post-hook "docker restart http-proxy"
+	# --pre-hook "service nginx stop" --post-hook "docker container restart http-proxy"
 	docker-compose run --rm letsencrypt --authenticators renew --non-interactive --keep-until-expiring
 
 ########################################################################
@@ -159,31 +159,31 @@ clean:
 	# See also Docker 1.13 `docker system df [-v]` / `docker system prune -f` == `docker container prune -f && docker volume prune -f && docker image prune -f && docker network prune -f`
 	# remove stopped containers
 	# WARNING: be aware if you use data-only container, it will remove them also if you set "--volumes=true"
-	docker ps --no-trunc -a -q -f "status=exited" | xargs --no-run-if-empty docker rm --volumes=false
+	docker container ps --no-trunc -a -q -f "status=exited" | xargs --no-run-if-empty docker container rm --volumes=false
 	# remove all unused volumes
 	#docker volume ls -q | xargs --no-run-if-empty docker volume rm
 	# remove local volumes
 	#docker volume ls | awk '/^local/ { print $2 }' | xargs --no-run-if-empty docker volume rm
 	# remove untagged images
-	docker images -f "dangling=true" -q | xargs --no-run-if-empty docker rmi
+	docker image ls -f "dangling=true" -q | xargs --no-run-if-empty docker image rm
 	# delete and untag every image that is not a container
 	# a little more heinous since "<none>" is the repo/tag for dangling images
 	# sort is not necessary but is nice if you add a -tn1 to xargs so you can see each rm line
-	#docker images | awk 'NR>1 { if ($1 == "<none>") print $3; else print $1":"$2 }' | sort | xargs --no-run-if-empty docker rmi
+	#docker image ls | awk 'NR>1 { if ($1 == "<none>") print $3; else print $1":"$2 }' | sort | xargs --no-run-if-empty docker image rm
 	# remove unused networks
 	docker network ls --filter type=custom --no-trunc -q | xargs --no-run-if-empty docker network rm
 
 .PHONY: prune
-prune: ## synonymous for 'clean'; same as:  docker prune -f
+prune: ## synonymous for 'clean'; same as:  docker system prune -f
 prune: clean
 
 .PHONY: distclean
 distclean: ## 'clean' + remove all built images
 distclean: clean
 	# See also Docker 1.13 `docker image prune -a -f`
-	# docker rmi "cedrik/*" "*_*"
-	docker images --no-trunc -q "*_*" | xargs --no-run-if-empty docker rmi
-	docker images --no-trunc -q "cedrik/*" | xargs --no-run-if-empty docker rmi
+	# docker image rm "cedrik/*" "*_*"
+	docker image ls --no-trunc -q "*_*" | xargs --no-run-if-empty docker image rm
+	docker image ls --no-trunc -q "cedrik/*" | xargs --no-run-if-empty docker image rm
 
 ########################################################################
 

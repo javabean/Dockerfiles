@@ -40,7 +40,7 @@ Usage
     * TCP: (echo > /dev/tcp/\$HOST/\$PORT) >/dev/null 2>&1
     * TCP: nc -z -w 1 server port
     * HTTP(S): curl -fsS -o /dev/null http://server:port/
-    * MySQL: mysqladmin --silent [--wait=3] [--connect_timeout 10] -h \${MYSQL_HOST} -u "\${MYSQL_USER}" -p"\${MYSQL_PASSWORD}" ping
+    * MySQL: mysqladmin --silent --no-beep [--wait=3] [--connect_timeout 10] -h \${MYSQL_HOST} -u "\${MYSQL_USER}" -p"\${MYSQL_PASSWORD}" ping
     * Elasticsearch: [ \$(curl -fsS -o /dev/null --write-out %{http_code} http://localhost:9200/_cat/health?h=st) = 200 ]
 EOT
 }

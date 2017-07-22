@@ -193,7 +193,7 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=7.0.78
+      - TOMCAT_VERSION=7.0.79
     expose:
     - "8080"
     - "8443"
