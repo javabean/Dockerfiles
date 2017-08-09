@@ -9,7 +9,7 @@ unexport IMG_VERSION = 0.9.22.1
 
 DOCKER_APT_VERSION = 17.06.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.14.0
+DOCKER_COMPOSE_VERSION = 1.15.0
 # url fragment
 DOCKER_MACHINE_VERSION = v0.12.2
 
@@ -19,6 +19,7 @@ UBUNTU_VERSION ?= 16.04
 #APT_MIRROR ?= mirrors.online.net
 #APT_MIRROR ?= mirror.scaleway.com
 #APT_MIRROR ?= mirror.cloud.online.net # internal network only, does not work for containers!
+#APT_MIRROR ?= us-west1.gce.archive.ubuntu.com
 APT_MIRROR ?= fr.archive.ubuntu.com
 # arm
 #APT_MIRROR ?= ports.ubuntu.com/ubuntu-ports
@@ -195,7 +196,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	                       /srv/http-proxy        /srv/logs/http-proxy/apache2 \
 	/opt/tomcat                                   /srv/logs/tomcat \
 	/opt/owncloud/config /opt/owncloud/apps  /srv/owncloud/data     /srv/logs/owncloud/apache2 \
-	                                              /src/redis-owncloud \
+	                                              /srv/redis-owncloud \
 	/opt/prestashop                               /srv/logs/prestashop/apache2 \
 	  /srv/prestashop/override /srv/prestashop/mails /srv/prestashop/img /srv/prestashop/modules /srv/prestashop/download /srv/prestashop/upload /srv/prestashop/config \
 	/opt/mysql/docker-entrypoint-initdb.d         /srv/logs/mysql/mysql \
@@ -228,7 +229,8 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/prestashop /srv/joomla /srv/wordpress /srv/dokuwiki /srv/tiddlywiki
 	# if [ "$(ls -A /opt/dovecot/*.pem)" ]; then
 	if ls -A /opt/dovecot/*.pem > /dev/null 2>&1; then sudo chmod 0400 /opt/dovecot/*.pem; fi
-	sudo chown -R dovecot:dovecot /opt/dovecot
+	# usd:gid 105:108 == dovecot
+	sudo chown -R 105:108 /opt/dovecot
 	sudo chown -R mail:mail /srv/dovecot
 	#sudo chown -R opendkim:postfix /opt/email-relay
 	sudo chown -R 106:108 /opt/email-relay

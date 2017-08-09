@@ -35,13 +35,17 @@ RUN echo "deb http://repo.mysql.com/apt/ubuntu/ `lsb_release -cs` mysql-${MYSQL_
 #RUN debconf-set-selections <<< 'mysql-server mysql-server/root_password password $MYSQL_ROOT_PASSWORD'
 #RUN echo mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASSWORD | debconf-set-selections
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-	mysql-server=${MYSQL_VERSION}.* mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* mysql-utilities \
+	mysql-server=${MYSQL_VERSION}.* mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* mysql-utilities perl \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& usermod -a -G docker_env mysql \
-	&& sed -i'.bak' 's%\(bind-address\)\s= 127.0.0.1%\1 = 0.0.0.0%'  /etc/mysql/mysql.conf.d/mysqld.cnf \
+#	&& sed -i'.bak' 's%\(bind-address\)\s= 127.0.0.1%\1 = 0.0.0.0%'  /etc/mysql/mysql.conf.d/mysqld.cnf \
 #	&& sed -i'.bak' 's%\(bind-address\)\s= 127.0.0.1%\1 = 0.0.0.0%'  /etc/mysql/my.cnf \
+# comment out a few problematic configuration values
+# don't reverse lookup hostnames, they are usually another container
+  && sed -Ei 's/^(bind-address|log)/#&/' /etc/mysql/mysql.conf.d/mysqld.cnf \
+	&& echo '[mysqld]\nskip-host-cache\nskip-name-resolve' > /etc/mysql/conf.d/docker.cnf \
 # /entrypoint.sh can only init an empty (non-existent) DB
-	&& rm -r /var/lib/mysql/* \
+	&& rm -rf /var/lib/mysql/* \
 # MySQLTuner
 	&& curl -fsSL https://github.com/major/MySQLTuner-perl/archive/master.tar.gz | tar xz -C /usr/local/bin/ --strip-components=1 MySQLTuner-perl-master/mysqltuner.pl MySQLTuner-perl-master/basic_passwords.txt MySQLTuner-perl-master/vulnerabilities.csv
 
