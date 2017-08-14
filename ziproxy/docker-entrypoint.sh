@@ -21,15 +21,15 @@ if [ "$1" = 'ziproxy' -o "$1" = '/usr/bin/ziproxy' ]; then
 	[ -d /var/log/ziproxy ] || ( mkdir /var/log/ziproxy && chown ziproxy:ziproxy /var/log/ziproxy )
 	# Can not exec "$@" since Ziproxy forks...
 	"$@" -c /etc/ziproxy/ziproxy.conf -u ziproxy -g ziproxy -d -p /var/run/ziproxy.pid
-	process_pid=$!
+	#process_pid=$(cat /var/run/ziproxy.pid)
 	# it seems we can't read from stdin here; default to eternal sleep...
 	#read _
 	#line
-	#while true; do sleep 9999; done
+	while true; do sleep 9999; done
 	# wait "indefinitely"
-	while [ -e /proc/$process_pid ]; do
-		wait $process_pid # Wait for any signals or end of execution of process
-	done
+	#while [ -e /proc/$process_pid ]; do
+	#	wait $process_pid # Wait for any signals or end of execution of process
+	#done
 	# Stop container properly
 	shut_down
 	exit $?

@@ -2,7 +2,7 @@
 ##!/usr/local/sbin/tini -g /bin/bash
 
 # A simple init system semi-compatible with Phusion's baseimage-docker's my_init:
-# * run startup items in "/etc/my_init.d/" and "/etc/rc.local"
+# * run startup items in "${ENV_INIT_DIRECTORY:-/etc/my_init.d}" and "/etc/rc.local"
 # * run shutdown items in "/etc/my_init.pre_shutdown.d" and "/etc/my_init.post_shutdown.d" (runit-managed processes only)
 # * executes the executable given in argument, or "runit" if none
 # 
@@ -16,6 +16,8 @@ set -eu -o pipefail -o posix
 shopt -s failglob
 #set -x
 
+ENV_INIT_DIRECTORY=${ENV_INIT_DIRECTORY:-/etc/my_init.d}
+
 export_envvars() {
 #	echo "Writing run-time environment variables in /run/environment"
 	# read-only filesystem...
@@ -26,9 +28,9 @@ export_envvars() {
 }
 
 run_startup_files() {
-	# Run /etc/my_init.d/*
-#	echo "Running /etc/my_init.d/..."
-	[ -d /etc/my_init.d ] && run-parts --report --lsbsysinit /etc/my_init.d
+	# Run ${ENV_INIT_DIRECTORY}/*
+#	echo "Running ${ENV_INIT_DIRECTORY}/..."
+	[ -d ${ENV_INIT_DIRECTORY} ] && run-parts --report --lsbsysinit ${ENV_INIT_DIRECTORY}
 
 	# Run /etc/rc.local.
 #	echo "Running /etc/rc.local..."
@@ -82,10 +84,10 @@ start_runit() {
 	cp -a /etc/service/* "${SVDIR}"
 	
 	# beware that cron logs to syslog
-	ENABLE_SYSLOG=${ENABLE_SYSLOG:-}
-	ENABLE_CRON=${ENABLE_CRON:-}
-	ENABLE_SSH=${ENABLE_SSH:-}
-	ENABLE_CONSUL=${ENABLE_CONSUL:-}
+	local ENABLE_SYSLOG=${ENABLE_SYSLOG:-}
+	local ENABLE_CRON=${ENABLE_CRON:-}
+	local ENABLE_SSH=${ENABLE_SSH:-}
+	local ENABLE_CONSUL=${ENABLE_CONSUL:-}
 	#[ -z "$ENABLE_SYSLOG" -a -z "$ENABLE_CRON" ] && rm -rf ${SVDIR}/syslog-ng ${SVDIR}/syslog-forwarder
 	[ -z "$ENABLE_SYSLOG" ] && rm -rf ${SVDIR}/syslog-ng ${SVDIR}/syslog-forwarder
 	[ -z "$ENABLE_CRON" ] && rm -rf ${SVDIR}/cron
@@ -102,15 +104,15 @@ start_runit() {
 	#exec /usr/bin/runsvdir -P ${SVDIR}
 	/usr/bin/runsvdir -P ${SVDIR}
 	
-	process_pid=$!
+	#local process_pid=$!
 	# it seems we can't read from stdin here; default to eternal sleep...
 	#read _
 	#line
-	#while true; do sleep 9999; done
+	while true; do sleep 9999; done
 	# wait "indefinitely"
-	while [ -e /proc/$process_pid ]; do
-		wait $process_pid # Wait for any signals or end of execution of process
-	done
+	#while [ -e /proc/$process_pid ]; do
+	#	wait $process_pid # Wait for any signals or end of execution of process
+	#done
 	# Stop container properly
 	clean_shutdown_runit
 	exit $?
