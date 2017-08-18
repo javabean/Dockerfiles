@@ -10,11 +10,11 @@ LABEL org.label-schema.schema-version="1.0" \
 # http://codex.wordpress.org/Hardening_WordPress
 
 ############### FIXME  change version here! ###############
-#ARG WORDPRESS_VERSION=wordpress-4.6.1
+#ARG WORDPRESS_VERSION=wordpress-4.7.5
 ARG WORDPRESS_VERSION=latest
 
 COPY wordpress.conf /etc/apache2/conf-enabled/
-COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/
+COPY backup_conf_local.sh restore_conf_local.sh wp-changeDomainName.sh  /usr/local/bin/
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	#php7.0-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \

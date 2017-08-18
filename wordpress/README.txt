@@ -59,7 +59,7 @@ build-time
 
     build:
       args:
-      - #WORDPRESS_VERSION=wordpress-4.5.2
+      - #WORDPRESS_VERSION=wordpress-4.7.5
       - WORDPRESS_VERSION=latest
 
 runtime
