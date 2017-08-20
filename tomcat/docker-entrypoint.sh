@@ -13,9 +13,9 @@ fi
 # check for the expected command
 if [ "$1" = "$CATALINA_HOME/bin/catalina.sh" ]; then
 	if [ -x /usr/bin/authbind ]; then
-		exec /usr/bin/authbind --deep gosu tomcat "$@" >> "$CATALINA_BASE/logs/catalina.out" 2>&1
+		exec /usr/bin/authbind --deep gosu tomcat "$@" >> "${CATALINA_OUT:-$CATALINA_BASE/logs/catalina.out}" 2>&1
 	else
-		exec gosu tomcat "$@" >> "$CATALINA_BASE/logs/catalina.out" 2>&1
+		exec gosu tomcat "$@" >> "${CATALINA_OUT:-$CATALINA_BASE/logs/catalina.out}" 2>&1
 	fi
 fi
 
