@@ -51,6 +51,7 @@ RUN curl -fsSL https://archive.apache.org/dist/tomcat/tomcat-`echo "${TOMCAT_VER
 	&& rm -rf /usr/local/tomcat/webapps/docs /usr/local/tomcat/webapps/examples \
 	&& cd /usr/local/tomcat/lib/ && curl -fsSLR --remote-name-all https://archive.apache.org/dist/tomcat/tomcat-`echo "${TOMCAT_VERSION}"|cut -d '.' -f 1`/v${TOMCAT_VERSION}/bin/extras/catalina-{ws,jmx-remote}.jar && cd - \
 	&& mkdir -p /usr/local/tomcat/lib/org/apache/catalina/util && echo "server.info=Apache Tomcat/42.x" > /usr/local/tomcat/lib/org/apache/catalina/util/ServerInfo.properties \
+	&& sed -i'.bak' 's%#\(JAVA_OPTS=.*SecurityListener.UMASK=.*\)$%\1%'  /usr/local/tomcat/bin/catalina.sh \
 	&& chgrp -R tomcat /usr/local/tomcat/* \
 	&& chown -R tomcat: /usr/local/tomcat/logs /usr/local/tomcat/temp /usr/local/tomcat/work \
 	&& chmod -R g+rX /usr/local/tomcat/* \

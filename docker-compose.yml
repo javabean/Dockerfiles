@@ -198,6 +198,8 @@ services:
     - "8080"
     - "8443"
     environment:
+    # See $CATALINA_HOME/bin/catalina.sh for available env vars,
+    # and $CATALINA_BASE/bin/setenv.sh for additional configuration
     - CATALINA_BASE=/opt/tomcat/my-instance
     depends_on:
       email-relay:
