@@ -157,7 +157,7 @@ renew-certificates: ## renew TLS certificates
 .PHONY: clean
 clean: ## remove stopped containers, unused volumes, untagged images, unused networks
 clean:
-	# See also Docker 1.13 `docker system df [-v]` / `docker system prune -f` == `docker container prune -f && docker volume prune -f && docker image prune -f && docker network prune -f`
+	# See also Docker 1.13 `docker system df [-v]` / `docker system prune [--volumes] -f` == `docker container prune -f && docker volume prune -f && docker image prune -f && docker network prune -f`
 	# remove stopped containers
 	# WARNING: be aware if you use data-only container, it will remove them also if you set "--volumes=true"
 	docker container ps --no-trunc -a -q -f "status=exited" | xargs --no-run-if-empty docker container rm --volumes=false

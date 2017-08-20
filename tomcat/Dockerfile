@@ -14,7 +14,7 @@ COPY runit_tomcat /etc/service/tomcat/run
 COPY docker-entrypoint.sh consul-healthcheck.sh  /usr/local/bin/
 
 ############### FIXME  change version here! ###############
-ARG TOMCAT_VERSION=7.0.79
+ARG TOMCAT_VERSION=8.5.20
 
 # Create "tomcat" user
 RUN	if ! getent group "tomcat" > /dev/null 2>&1 ; then \
@@ -46,9 +46,14 @@ RUN	if ! getent group "tomcat" > /dev/null 2>&1 ; then \
 		&& chmod 700 /etc/authbind/byuid/$TOMCAT_UID /etc/authbind/byport/80 /etc/authbind/byport/443 ; \
 	fi
 
-RUN curl -fsSL http://archive.apache.org/dist/tomcat/tomcat-7/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | tar xz -C /usr/local/ \
+RUN curl -fsSL https://archive.apache.org/dist/tomcat/tomcat-`echo "${TOMCAT_VERSION}"|cut -d '.' -f 1`/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz | tar xz -C /usr/local/ \
 	&& ln -s /usr/local/apache-tomcat-* /usr/local/tomcat \
-	&& rm -r /usr/local/tomcat/webapps/docs /usr/local/tomcat/webapps/examples \
+	&& rm -rf /usr/local/tomcat/webapps/docs /usr/local/tomcat/webapps/examples \
+	&& cd /usr/local/tomcat/lib/ && curl -fsSLR --remote-name-all https://archive.apache.org/dist/tomcat/tomcat-`echo "${TOMCAT_VERSION}"|cut -d '.' -f 1`/v${TOMCAT_VERSION}/bin/extras/catalina-{ws,jmx-remote}.jar && cd - \
+	&& mkdir -p /usr/local/tomcat/lib/org/apache/catalina/util && echo "server.info=Apache Tomcat/42.x" > /usr/local/tomcat/lib/org/apache/catalina/util/ServerInfo.properties \
+	&& chgrp -R tomcat /usr/local/tomcat/* \
+	&& chown -R tomcat: /usr/local/tomcat/logs /usr/local/tomcat/temp /usr/local/tomcat/work \
+	&& chmod -R g+rX /usr/local/tomcat/* \
 	&& mkdir -p /opt/tomcat && chown tomcat: /opt/tomcat
 #	&& chown -R tomcat:adm /srv/logs/tomcat
 

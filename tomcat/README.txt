@@ -46,7 +46,7 @@ build-time
 
     build:
       args:
-      - TOMCAT_VERSION=7.0.73
+      - TOMCAT_VERSION=8.5.20
 
 runtime
 -------
