@@ -72,6 +72,7 @@ port 1194
 dev tun
 topology subnet
 ;tun-ipv6
+# fragment is not supported in iOS OpenVPN 1.1.1
 ;tun-mtu 12000 # default 1500
 ;fragment 0
 ;mssfix 0
@@ -199,6 +200,7 @@ dev tun
 # force all traffic through VPN; pushed from server
 ;redirect-gateway autolocal def1 ipv6 bypass-dhcp
 ;redirect-gateway autolocal def1 bypass-dhcp
+# fragment is not supported in iOS OpenVPN 1.1.1
 ;tun-mtu 12000 # default 1500
 ;fragment 0
 ;mssfix 0

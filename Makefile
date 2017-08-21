@@ -13,7 +13,8 @@ DOCKER_COMPOSE_VERSION = 1.15.0
 # url fragment
 DOCKER_MACHINE_VERSION = v0.12.2
 
-UBUNTU_VERSION ?= 16.04
+DOCKER_FROM ?= ubuntu:16.04
+#DOCKER_FROM = armhf/ubuntu:16.04
 
 # Would have been much easier with Debian's redirector httpredir.debian.org...
 #APT_MIRROR ?= mirrors.online.net
@@ -50,7 +51,7 @@ help: ## Display this help menu
 
 .PHONY: pull
 pull: ## pull base Docker images from Docker Hub
-	docker image pull ubuntu:$(UBUNTU_VERSION)
+	docker image pull $(DOCKER_FROM)
 	#docker-compose pull
 	docker image pull memcached:1.4-alpine
 	docker image pull redis:3-alpine
@@ -66,7 +67,7 @@ build: $(docker_compose_build)
 .PHONY: baseimage
 baseimage: ## build Docker base image
 baseimage: pull
-	docker build --build-arg APT_MIRROR=$(APT_MIRROR) -t cedrik/baseimage --rm baseimage/image
+	docker build --build-arg DOCKER_FROM=$(DOCKER_FROM) --build-arg APT_MIRROR=$(APT_MIRROR) -t cedrik/baseimage --rm baseimage/image
 
 .PHONY: httpd-base
 httpd-base: ## build Docker base Apache httpd image
