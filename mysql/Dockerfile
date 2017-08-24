@@ -59,7 +59,7 @@ COPY logrotate-mysql-dump /etc/logrotate.d/mysql-dump
 
 #VOLUME ["/var/lib/mysql", "/srv", "/var/log"]
 
-EXPOSE 3306
+EXPOSE 3306 33060
 
 #ENTRYPOINT ["/entrypoint.sh"]
 #CMD ["mysqld"]

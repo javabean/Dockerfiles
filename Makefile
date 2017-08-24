@@ -200,8 +200,8 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	                                              /srv/redis-owncloud \
 	/opt/prestashop                               /srv/logs/prestashop/apache2 \
 	  /srv/prestashop/override /srv/prestashop/mails /srv/prestashop/img /srv/prestashop/modules /srv/prestashop/download /srv/prestashop/upload /srv/prestashop/config \
-	/opt/mysql/docker-entrypoint-initdb.d         /srv/logs/mysql/mysql \
-	  /srv/mysql/data /srv/mysql/backup \
+	/opt/mysql/docker-entrypoint-initdb.d /opt/mysql/healthcheck.cnf /opt/mysql/mysql-init-complete \
+	  /srv/mysql/data /srv/mysql/backup           /srv/logs/mysql/mysql \
 	/opt/dnsmasq/dnsmasq.d                        /srv/logs/dnsmasq \
 	/opt/unbound                                  /srv/logs/unbound \
 	/opt/dovecot           /srv/dovecot           /srv/logs/dovecot \

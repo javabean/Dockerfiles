@@ -441,7 +441,7 @@ services:
     build:
       context: dokuwiki
       args:
-      #- DOKUWIKI_VERSION=2017-02-19b
+      #- DOKUWIKI_VERSION=2017-02-19c
       - DOKUWIKI_VERSION=stable
       # Languages to keep (delete all others)
       #- STRIP_LANGS_KEEP=en,fr
@@ -593,6 +593,9 @@ services:
     - MYSQL_CUSTOM_OPTS=--performance_schema=off --table_definition_cache=800
     volumes:
     - /opt/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+    # following 2 files are a hack to enable read_only: true
+    - /opt/mysql/healthcheck.cnf:/healthcheck.cnf
+    - /opt/mysql/mysql-init-complete:/mysql-init-complete
     #- /opt/mysql/conf.d:/etc/mysql/conf.d
     - /srv/mysql/data:/var/lib/mysql
     - /srv/mysql/backup:/srv
