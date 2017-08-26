@@ -513,7 +513,7 @@ services:
     user: nobody:nogroup
     volumes:
     - /opt/droppy:/config
-    - /srv/droppy:/files
+    - /srv/droppy:/files:ro
     networks:
     - droppy
     healthcheck:
