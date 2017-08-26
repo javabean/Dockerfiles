@@ -13,7 +13,10 @@ COPY GeoIP.conf /etc/
 
 COPY consul-healthcheck.sh backup_conf.sh restore_conf.sh docker-entrypoint.sh  /usr/local/bin/
 
-RUN LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/apache2 \
+ADD https://raw.githubusercontent.com/docker-library/php/master/7.1/apache/apache2-foreground  /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/apache2-foreground \
+  && LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/apache2 \
 	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2 apache2-utils openssl libapache2-mod-xsendfile \
 	#libapache2-mod-geoip geoip-database geoipupdate geoip-bin mmdb-bin \
 	libapache2-mod-geoip geoip-database geoip-bin \
@@ -46,9 +49,7 @@ EXPOSE 80 443
 HEALTHCHECK --interval=5m --timeout=10s --retries=2 \
 	CMD ["/usr/local/bin/docker-healthcheck.sh"]
 
-#CMD ["/usr/sbin/apache2", "-DFOREGROUND", "-k", "start"]
-
 #ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
-#CMD ["/usr/sbin/apache2ctl"]
+#CMD ["/usr/local/bin/apache2-foreground"]
 
 #ENTRYPOINT ["/usr/local/sbin/docker-init.sh"]

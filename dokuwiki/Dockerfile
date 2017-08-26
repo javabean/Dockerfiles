@@ -88,4 +88,4 @@ RUN echo "7  0  *  *  * /usr/local/bin/cleanup.sh > /dev/null 2>&1" | crontab -u
 EXPOSE 80 443
 
 ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
-CMD ["/usr/sbin/apache2ctl"]
+CMD ["/usr/local/bin/apache2-foreground"]

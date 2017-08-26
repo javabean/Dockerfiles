@@ -64,4 +64,4 @@ EXPOSE 80 443
 #ENTRYPOINT ["/docker_run.sh"]
 
 ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
-CMD ["/usr/sbin/apache2ctl"]
+CMD ["/usr/local/bin/apache2-foreground"]

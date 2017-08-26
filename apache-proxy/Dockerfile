@@ -30,4 +30,4 @@ COPY zzzz_sites.conf /etc/apache2/sites-enabled/
 EXPOSE 80 443
 
 ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
-CMD ["/usr/sbin/apache2ctl"]
+CMD ["/usr/local/bin/apache2-foreground"]

@@ -8,5 +8,10 @@ set -eu
 /usr/local/bin/restore_conf.sh
 
 rm -f /usr/local/apache2/logs/httpd.pid /var/run/apache2/apache2.pid
+# ssl_scache shouldn't be here if we're just starting up.
+# (this is bad if there are several apache2 instances running)
+rm -f ${APACHE_RUN_DIR:-/var/run/apache2}/*ssl_scache*
+
 #exec gosu www-data /usr/sbin/apache2 -DFOREGROUND -k start
-exec /usr/sbin/apache2ctl -D FOREGROUND -k start
+#exec /usr/sbin/apache2ctl -D FOREGROUND -k start
+exec /usr/local/bin/apache2-foreground
