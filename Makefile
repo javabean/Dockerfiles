@@ -67,27 +67,27 @@ build: $(docker_compose_build)
 .PHONY: baseimage
 baseimage: ## build Docker base image
 baseimage: pull
-	docker build --build-arg DOCKER_FROM=$(DOCKER_FROM) --build-arg APT_MIRROR=$(APT_MIRROR) -t cedrik/baseimage --rm baseimage/image
+	docker image build --build-arg DOCKER_FROM=$(DOCKER_FROM) --build-arg APT_MIRROR=$(APT_MIRROR) -t cedrik/baseimage --rm baseimage/image
 
 .PHONY: httpd-base
 httpd-base: ## build Docker base Apache httpd image
 httpd-base: baseimage
-	docker build -t cedrik/httpd-base --rm apache-base
+	docker image build -t cedrik/httpd-base --rm apache-base
 
 .PHONY: php5-base
 php5-base: ## build Docker base PHP 5.6 image (Apache httpd-based) with MySQL client
 php5-base: httpd-base
-	docker build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php5-base --rm php5-base
+	docker image build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php5-base --rm php5-base
 
 .PHONY: php7-base
 php7-base: ## build Docker base PHP 7 image (Apache httpd-based) with MySQL client
 php7-base: httpd-base
-	docker build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php7-base --rm php7-base
+	docker image build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php7-base --rm php7-base
 
 .PHONY: java
 java: ## build Docker base Java image
 java: baseimage
-	docker build -t cedrik/java --rm java
+	docker image build -t cedrik/java --rm java
 
 
 $(docker_compose_build): baseimage
