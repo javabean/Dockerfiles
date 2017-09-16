@@ -13,8 +13,8 @@ fi
 # check for the expected command
 if [ "$1" = 'transmission-daemon' -o "$1" = '/usr/bin/transmission-daemon' ]; then
 
-	# if [ ! "$(ls -A "${d}")" ]; then
-	if ! ls -A "${TRANSMISSION_HOME}/*" > /dev/null 2>&1; then
+	# if [ ! "$(ls -U "${d}")" ]; then
+	if ! ls -U "${TRANSMISSION_HOME}/*" > /dev/null 2>&1; then
 		tar xzf /var/lib/transmission-daemon.tgz -C /var/lib
 	fi
 

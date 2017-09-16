@@ -21,8 +21,8 @@ if [ "$1" = "tiddlywiki" ]; then
 	PASSWORD=${PASSWORD:-}
 	PATH_PREFIX=${PATH_PREFIX:-}
 
-	# if [ ! "$(ls -A "${d}")" ]; then
-	if ! ls -A /srv/${WIKI_FOLDER} > /dev/null 2>&1; then
+	# if [ ! "$(ls -U "${d}")" ]; then
+	if ! ls -U /srv/${WIKI_FOLDER} > /dev/null 2>&1; then
 		echo "Creating new wiki: \"${WIKI_FOLDER}\""
 		gosu www-data tiddlywiki /srv/${WIKI_FOLDER} --init server
 	fi

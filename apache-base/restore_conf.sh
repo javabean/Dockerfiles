@@ -8,8 +8,8 @@ set -eu
 for d in /etc/apache2/conf-available /etc/apache2/conf-enabled \
 /etc/apache2/mods-available /etc/apache2/mods-enabled \
 /etc/apache2/sites-available /etc/apache2/sites-enabled ; do
-	# if [ ! "$(ls -A "${d}")" ]; then
-	if ! ls -A "${d}"/* > /dev/null 2>&1; then
+	# if [ ! "$(ls -U "${d}")" ]; then
+	if ! ls -U "${d}"/* > /dev/null 2>&1; then
 		cp -a "${d}.bak/." "${d}"/
 	fi
 done

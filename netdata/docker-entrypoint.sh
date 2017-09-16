@@ -12,8 +12,8 @@ fi
 
 # check for the expected command
 if [ "$1" = 'netdata' -o "$1" = '/usr/sbin/netdata' ]; then
-	# if [ ! "$(ls -A "${d}")" ]; then
-	if ! ls -A /etc/netdata/* > /dev/null 2>&1; then
+	# if [ ! "$(ls -U "${d}")" ]; then
+	if ! ls -U /etc/netdata/* > /dev/null 2>&1; then
 		tar xzf /etc/netdata.tgz -C /etc
 	fi
 	exec gosu netdata "$@" -D -s /mnt

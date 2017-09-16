@@ -14,8 +14,8 @@ download upload \
 translations \
 config ; do
 
-	# if [ ! "$(ls -A "/var/www/html/${d}")" ]; then
-	if ! ls -A "/var/www/html/${d}"/* > /dev/null 2>&1; then
+	# if [ ! "$(ls -U "/var/www/html/${d}")" ]; then
+	if ! ls -U "/var/www/html/${d}"/* > /dev/null 2>&1; then
 		cp -a "/var/www/html/${d}.bak/." "/var/www/html/${d}"/
 	fi
 done
