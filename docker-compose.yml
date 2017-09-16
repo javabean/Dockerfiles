@@ -274,7 +274,7 @@ services:
     build:
       context: prestashop
       args:
-      - PRESTASHOP_VERSION=1.6.1.16
+      - PRESTASHOP_VERSION=1.6.1.17
     expose:
     - "80"
     - "443"
