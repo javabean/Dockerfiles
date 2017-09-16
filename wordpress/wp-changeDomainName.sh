@@ -48,9 +48,16 @@ main() {
 		exit 1
 	fi
 
+	local WP_MIGRATE_DB_WAS_INACTIVE=
 	if ! wp plugin is-installed wp-migrate-db ; then
 		echo "Installing wp-migrate-db..."
 		wp plugin install wp-migrate-db --activate --activate-network
+		WP_MIGRATE_DB_WAS_INACTIVE=1
+	fi
+	if [ `wp plugin get wp-migrate-db --field=status` = "inactive" ]; then
+		WP_MIGRATE_DB_WAS_INACTIVE=1
+		echo "Activating wp-migrate-db..."
+		wp plugin activate wp-migrate-db --network
 	fi
 
 	local DB_DEST_BACKUP_FILE="${BACKUP_DIR}/wp-db-backup_${BACKUP_SUFFIX}.sql.gz"
@@ -72,8 +79,20 @@ main() {
 #	( echo "USE \`${DB_NAME}\`;" && zcat "${DB_DUMP_FILE}" ) | mysql --batch --connect-timeout=30 -u "$DB_USER" -p"$DB_PASSWORD" -h "$DB_HOST"
 	( echo "USE \`${DB_NAME}\`; update ${DB_PREFIX}usermeta set meta_value='${URL_REPLACE}' where meta_key='source_domain' and meta_value='${URL_FIND}'" ) | mysql --batch --connect-timeout=30 -u "${DB_USER}" -p"${DB_PASSWORD}" -h "${DB_HOST}"
 
+	if [ -n "$WP_MIGRATE_DB_WAS_INACTIVE" ]; then
+		echo "Deactivating wp-migrate-db..."
+		wp plugin deactivate wp-migrate-db --network
+	fi
+
 	echo "Flushing WordPress caches..."
 	wp cache flush
-	wp total-cache flush all || true
+	if wp plugin is-installed w3-total-cache ; then
+		local W3TC_STATUS=`wp plugin get w3-total-cache --field=status`
+		if [ "${W3TC_STATUS}" = "active" -o "${W3TC_STATUS}" = "active-network" ]; then
+			wp total-cache flush all
+			wp total-cache pgcache_cleanup
+			wp total-cache cdn_purge
+		fi
+	fi
 }
 main "$@"
