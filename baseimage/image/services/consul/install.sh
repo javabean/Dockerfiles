@@ -53,10 +53,10 @@ unzip -q -d /usr/local/bin /tmp/consul-template.zip
 rm /tmp/consul-template.zip
 
 # If requested, set the capability to bind to privileged ports before
-# we drop to the non-root user. Note that this doesn't work with all
-# storage drivers (it won't work with AUFS).
+# we drop to the non-root user. Note that this doesn't work if the storage
+# drivers hasn't got the XATTR configuration in the kernel (e.g. zgrep CONFIG_AUFS_XATTR /proc/config.gz).
 # An alternative would be to use authbind, which unfortunately does not work in Docker...
-setcap 'cap_net_bind_service=+ep' /usr/local/bin/consul || true
+setcap 'cap_net_bind_service=+ep' /usr/local/bin/consul
 
 mkdir -p /srv/consul /tmp/consul/data /usr/local/etc/consul.d
 # In a read-only container, only /tmp is writable; no effect if /srv/consul/data is docker-mounted
