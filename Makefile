@@ -14,7 +14,7 @@ DOCKER_COMPOSE_VERSION = 1.16.1
 DOCKER_MACHINE_VERSION = v0.12.2
 
 DOCKER_FROM ?= ubuntu:16.04
-#DOCKER_FROM = armhf/ubuntu:16.04
+#DOCKER_FROM = arm32v7/ubuntu:16.04
 
 # Would have been much easier with Debian's redirector httpredir.debian.org...
 #APT_MIRROR ?= mirrors.online.net
@@ -56,7 +56,6 @@ pull: ## pull base Docker images from Docker Hub
 	docker image pull memcached:1.4-alpine
 	docker image pull redis:3-alpine
 	docker image pull silverwind/droppy
-	#docker image pull silverwind/armhf-droppy:latest
 	docker image pull portainer/portainer
 	#docker image pull quay.io/letsencrypt/letsencrypt
 
@@ -243,7 +242,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 ########################################################################
 
 .PHONY: check-config
-check-config:
+check-config: ## check host configuration for Docker compatibility
 	curl -fsSL https://raw.githubusercontent.com/docker/docker/master/contrib/check-config.sh | bash
 
 .PHONY: install-docker

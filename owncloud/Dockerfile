@@ -14,8 +14,10 @@ COPY logrotate-owncloud-dump /etc/logrotate.d/owncloud-dump
 COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/
 
 ############### FIXME  change depending on base OS / version! ###############
-#ARG OWNCLOUD_VERSION=9.1
-ARG OWNCLOUD_VERSION=stable
+# https://owncloud.org/release-channels/
+#ARG OWNCLOUD_VERSION=10.0
+#ARG OWNCLOUD_VERSION=stable
+ARG OWNCLOUD_VERSION=production
 
 RUN echo "deb https://download.owncloud.org/download/repositories/${OWNCLOUD_VERSION}/`lsb_release -is`_`lsb_release -rs`/ /" >> /etc/apt/sources.list.d/owncloud.list
 RUN curl -fsSL https://download.owncloud.org/download/repositories/${OWNCLOUD_VERSION}/`lsb_release -is`_`lsb_release -rs`/Release.key | apt-key add -

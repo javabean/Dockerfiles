@@ -229,8 +229,10 @@ services:
     build:
       context: owncloud
       args:
-      #- OWNCLOUD_VERSION=9.1
-      - OWNCLOUD_VERSION=stable
+      # https://owncloud.org/release-channels/
+      #- OWNCLOUD_VERSION=10.0
+      #- OWNCLOUD_VERSION=stable
+      - OWNCLOUD_VERSION=production
     expose:
     - "80"
     - "443"
@@ -387,7 +389,7 @@ services:
     build:
       context: wordpress
       args:
-      #- WORDPRESS_VERSION=wordpress-4.7.5
+      #- WORDPRESS_VERSION=wordpress-4.7.6
       - WORDPRESS_VERSION=latest
     expose:
     - "80"
@@ -441,7 +443,7 @@ services:
     build:
       context: dokuwiki
       args:
-      #- DOKUWIKI_VERSION=2017-02-19c
+      #- DOKUWIKI_VERSION=2017-02-19e
       - DOKUWIKI_VERSION=stable
       # Languages to keep (delete all others)
       #- STRIP_LANGS_KEEP=en,fr
@@ -502,7 +504,6 @@ services:
   # https://github.com/silverwind/droppy
   droppy:
     image: silverwind/droppy
-    #image: silverwind/armhf-droppy
     init: true
     command: ["/usr/bin/droppy", "start", "--color", "-f", "/files", "-c", "/config"]
     expose:

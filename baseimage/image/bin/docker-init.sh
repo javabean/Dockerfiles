@@ -23,7 +23,8 @@ export_envvars() {
 	# read-only filesystem...
 	#env | grep -v ... > /etc/environment
 	env | grep -v -e 'HOME' -e 'USER' -e 'LOGNAME' -e 'GROUP' -e 'UID' -e 'GID' -e 'SHELL' -e 'PWD' -e 'SHLVL' > /run/environment
-	chown root:docker_env /run/environment
+	chown root /run/environment || true
+	chgrp docker_env /run/environment || true
 	chmod 640 /run/environment
 }
 
