@@ -63,7 +63,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 RUN mkdir -p /opt/owncloud /srv/owncloud/data /srv/owncloud/backup \
 	&& chown www-data /opt/owncloud /srv/owncloud/data
 
-COPY autoconfig.php /var/www/owncloud/config/autoconfig.php
+COPY --chown=www-data:www-data autoconfig.php /var/www/owncloud/config/autoconfig.php
 
 # helper script to upgrade ownCloud via command-line
 COPY ownCloudUpgrade.sh /usr/local/bin/

@@ -52,7 +52,7 @@ RUN curl -fsSLR -o /tmp/prestashop.zip https://www.prestashop.com/download/old/p
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh
 
-#ADD https://raw.githubusercontent.com/PrestaShop/docker/master/config_files/docker_updt_ps_domains.php  /var/www/html/
+#ADD --chown=www-data:www-data https://raw.githubusercontent.com/PrestaShop/docker/master/config_files/docker_updt_ps_domains.php  /var/www/html/
 
 #VOLUME /var/www/html
 #VOLUME ["/var/log"]

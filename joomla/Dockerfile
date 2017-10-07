@@ -62,7 +62,7 @@ RUN crontab -u www-data -l | { cat; \
 
 # Copy init scripts and custom .htaccess
 #ADD https://raw.githubusercontent.com/joomla/docker-joomla/master/apache/docker-entrypoint.sh  /entrypoint.sh
-#ADD https://raw.githubusercontent.com/joomla/docker-joomla/master/apache/makedb.php  /makedb.php
+#ADD --chown=www-data:www-data https://raw.githubusercontent.com/joomla/docker-joomla/master/apache/makedb.php  /makedb.php
 
 #ENTRYPOINT ["/entrypoint.sh"]
 #CMD ["apache2-foreground"]

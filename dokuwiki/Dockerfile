@@ -76,7 +76,7 @@ RUN curl -fsSL https://download.dokuwiki.org/src/dokuwiki/dokuwiki-${DOKUWIKI_VE
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh
 
-#COPY preload.php /var/www/html/inc/preload.php
+#COPY --chown=www-data:www-data preload.php /var/www/html/inc/preload.php
 
 # min[0-59] hour[0-23] dom[1-31] month[1-12] dow[0-7]  command
 #RUN crontab -u www-data -l | { cat; echo "7  0  *  *  * /usr/local/bin/cleanup.sh > /dev/null 2>&1"; } | crontab -u www-data -
