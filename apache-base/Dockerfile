@@ -30,7 +30,7 @@ RUN chmod +x /usr/local/bin/apache2-foreground \
 		-e 's/^\(ServerSignature On\)/#\1/' \
 		-e 's/^#Header set \(X-Content-Type-Options:? "nosniff"\)/Header setifempty \1/' \
 		# X-Frame-Options and X-XSS-Protection have been superseded by Content Security Policy (CSP)
-		-e 's/^\(#Header set X-Frame-Options.*\)$/\1\nHeader setifempty X-Frame-Options "sameorigin"\nHeader setifempty X-XSS-Protection "1; mode=block"\nHeader setifempty Content-Security-Policy "frame-ancestors '\''self'\'' example.com *.example.net ; object-src '\''none'\'' ; plugin-types '\''none'\'' ; connect-src '\''self'\'' * ;"/' \
+		-e 's/^\(#Header set X-Frame-Options.*\)$/\1\nHeader setifempty X-Frame-Options "sameorigin"\nHeader setifempty X-XSS-Protection "1; mode=block"\nHeader setifempty Content-Security-Policy "frame-ancestors '\''self'\'' example.com *.example.net ; object-src '\''none'\'' ; connect-src '\''self'\'' * ;"/' \
 		/etc/apache2/conf-available/security.conf \
 	&& echo "\n\n\n# https://httpoxy.org\nRequestHeader unset Proxy early\n" >> /etc/apache2/conf-available/security.conf \
 #	&& sed -i'.bak' -e 's/SSLProtocol all$/SSLProtocol all -SSLv3/' /etc/apache2/mods-available/ssl.conf \
