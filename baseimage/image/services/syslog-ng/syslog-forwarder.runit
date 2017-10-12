@@ -1,7 +1,0 @@
-#!/bin/sh
-set -eu
-#set -o pipefail -o posix
-#shopt -s failglob
-#set -x
-
-exec tail -F -n 0 /var/log/syslog
