@@ -35,8 +35,8 @@ readme_directory = no
 compatibility_level=2
 
 inet_interfaces = all
-#inet_protocols = ipv4
-inet_protocols = all
+inet_protocols = ipv4
+#inet_protocols = all
 myhostname = __POSTFIX_HOSTNAME__
 #mydomain = example.net
 myorigin = $mydomain
