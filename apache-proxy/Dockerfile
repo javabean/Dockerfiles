@@ -9,7 +9,7 @@ COPY http2.conf /etc/apache2/conf-enabled/
 #RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libapache2-mod-evasive \
 #	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 #	&& 
-RUN for m in "http2 ssl geoip setenvif proxy proxy_ajp proxy_balancer proxy_http proxy_wstunnel lbmethod_bybusyness lbmethod_byrequests lbmethod_bytraffic lbmethod_heartbeat" ; do a2enmod $m; done \
+RUN for m in "http2 ssl geoip setenvif proxy proxy_ajp proxy_balancer proxy_http proxy_wstunnel lbmethod_bybusyness lbmethod_byrequests lbmethod_bytraffic lbmethod_heartbeat autoindex dav_fs auth_digest" ; do a2enmod $m; done \
 	&& for m in "remoteip" ; do a2dismod $m; done \
 #	&& a2disconf serve-cgi-bin \
 	&& a2dissite default-ssl \
