@@ -9,9 +9,9 @@ unexport IMG_VERSION = 0.9.22.1
 
 DOCKER_APT_VERSION = 17.09.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.16.1
+DOCKER_COMPOSE_VERSION = 1.17.1
 # url fragment
-DOCKER_MACHINE_VERSION = v0.12.2
+DOCKER_MACHINE_VERSION = v0.13.0
 
 DOCKER_FROM ?= ubuntu:16.04
 #DOCKER_FROM = arm32v7/ubuntu:16.04
@@ -117,7 +117,8 @@ stats: ## display running containers statistics
 .PHONY: ip
 ip:
 	@#docker inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(filter-out $@,$(MAKECMDGOALS))
-	docker inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(NAME)
+	@#docker inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(NAME)
+	docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $$(docker ps -f name=$(NAME) -q)
 
 .PHONY: health
 health: ## Print out the text of the last 5 checks. Use with:  NAME=<container_name>  make health
