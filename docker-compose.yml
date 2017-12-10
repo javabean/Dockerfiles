@@ -46,8 +46,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "50m"
-        max-file: "9"
+        max-size: "10m"
+        max-file: "3"
     cpu_shares: 1024
     mem_limit: 128m
     memswap_limit: 192m
@@ -125,8 +125,8 @@ services:
     - prestashop:prestashop
     #- joomla:joomla
     - wordpress:wordpress
-    - dokuwiki:dokuwiki
-    - tiddlywiki:tiddlywiki
+    #- dokuwiki:dokuwiki
+    #- tiddlywiki:tiddlywiki
     - droppy:droppy
     - transmission:transmission
     #- netdata:netdata
@@ -193,7 +193,7 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=8.5.23
+      - TOMCAT_VERSION=8.5.24
     expose:
     - "8080"
     - "8443"
@@ -389,7 +389,7 @@ services:
     build:
       context: wordpress
       args:
-      #- WORDPRESS_VERSION=wordpress-4.7.6
+      #- WORDPRESS_VERSION=wordpress-4.7.8
       - WORDPRESS_VERSION=latest
     expose:
     - "80"
