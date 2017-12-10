@@ -11,7 +11,7 @@ LABEL org.label-schema.schema-version="1.0" \
 
 COPY owncloud.conf /etc/apache2/conf-enabled/
 COPY logrotate-owncloud-dump /etc/logrotate.d/owncloud-dump
-COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/
+COPY backup_conf_local.sh restore_conf_local.sh ownCloudUpgrade.sh  /usr/local/bin/
 
 ############### FIXME  change depending on base OS / version! ###############
 # https://owncloud.org/release-channels/
@@ -65,12 +65,9 @@ RUN mkdir -p /opt/owncloud /srv/owncloud/data /srv/owncloud/backup \
 
 COPY --chown=www-data:www-data autoconfig.php /var/www/owncloud/config/autoconfig.php
 
-# helper script to upgrade ownCloud via command-line
-COPY ownCloudUpgrade.sh /usr/local/bin/
-
 # min[0-59] hour[0-23] dom[1-31] month[1-12] dow[0-7]  command
 #RUN crontab -u www-data -l | { cat; echo "*/15  *  *  *  * php -f /var/www/owncloud/cron.php > /dev/null 2>&1"; } | crontab -u www-data -
-RUN echo "53  *  *  *  * php -f /var/www/owncloud/cron.php > /dev/null 2>&1" | crontab -u www-data -
+RUN echo "53  *  *  *  * php -f /var/www/owncloud/cron.php > /dev/null 2>&1\n43  1  *  *  * ( cd /var/www/owncloud && sudo -u www-data php occ dav:cleanup-chunks ) > /dev/null 2>&1" | crontab -u www-data -
 
 
 #VOLUME /var/www/html

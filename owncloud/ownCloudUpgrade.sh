@@ -4,7 +4,7 @@ set -eu
 #shopt -s failglob
 #set -x
 
-# docker exec -ti owncloud bash
+# docker container exec -ti owncloud bash
 
 cd /var/www/owncloud
 sudo -u www-data php occ upgrade
