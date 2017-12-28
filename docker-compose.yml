@@ -21,7 +21,7 @@ services:
     #- "8400"
     #- "8500"
     #environment:
-    # please note that SYSLOG requires read_only: false (as it needs creating /dev/log)
+    # please note that SYSLOG requires read_only: false (as it needs creating /dev/log) for Docker < 17.12.0
     #- ENABLE_SYSLOG=1
     #- ENABLE_CRON=1
     #- ENABLE_CONSUL=1
@@ -31,6 +31,7 @@ services:
     - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
     #- /var/log
     #- /var/cache
+    #- /var/tmp
     - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
     # PHP.ini 'session.save_path'
     #- /var/lib/php/sessions
@@ -46,8 +47,8 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-size: "10m"
-        max-file: "3"
+        max-size: "5m"
+        max-file: "2"
     cpu_shares: 1024
     mem_limit: 128m
     memswap_limit: 192m
@@ -327,7 +328,7 @@ services:
     #- /srv/prestashop/config/smarty.config.inc.php:/var/www/html/config/smarty.config.inc.php
     #- /srv/prestashop/translations/myTranslation:/var/www/html/translations/myTranslation
     - /srv/prestashop/translations/fr:/var/www/html/translations/fr
-    #- /srv/prestashop/admin-backups:/var/www/html/${PS_FOLDER_ADMIN}/backups/
+    #- /srv/prestashop/admin-backups:/var/www/html/${PS_FOLDER_ADMIN:-admin}/backups/
     - /srv/logs/prestashop:/var/log
     networks:
     - prestashop-front
@@ -570,7 +571,7 @@ services:
       context: mysql
       args:
       #- MYSQL_VERSION=5.7
-      - MYSQL_VERSION=${MYSQL_VERSION}
+      - MYSQL_VERSION=${MYSQL_VERSION:-5.7}
     expose:
     - "3306"
     environment:
@@ -943,8 +944,8 @@ services:
     - /lib/modules:/lib/modules:ro
     #- /srv/logs/openvpn:/var/log
     tmpfs:
-    # required to have the container read-only
-    - /dev/net:rw,nosuid,dev,noexec,relatime,size=16k
+    # required to have the container read-only in docker < 17.12.0
+    #- /dev/net:rw,nosuid,dev,noexec,relatime,size=16k
     #- /var/log
     cap_add:
     - NET_ADMIN
