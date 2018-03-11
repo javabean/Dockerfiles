@@ -1,5 +1,7 @@
 #!/bin/sh
 set -eu
+(set -o | grep -q pipefail) && set -o pipefail
+(set -o | grep -q posix) && set -o posix
 #set -x
 
 print_usage() {

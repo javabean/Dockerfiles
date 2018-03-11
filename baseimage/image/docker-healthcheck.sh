@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
-#set -o pipefail -o posix
+(set -o | grep -q pipefail) && set -o pipefail
+(set -o | grep -q posix) && set -o posix
 #shopt -s failglob
 #set -x
 
@@ -20,7 +21,7 @@ set -eu
 # Docker
 # https://docs.docker.com/engine/reference/builder/#/healthcheck
 # 
-# The command’s exit status indicates the health status of the container. The possible values are:
+# The command's exit status indicates the health status of the container. The possible values are:
 # 
 # 0: success - the container is healthy and ready for use
 # 1: unhealthy - the container is not working correctly

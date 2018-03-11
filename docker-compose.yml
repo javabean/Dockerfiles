@@ -3,7 +3,7 @@
 # https://docs.docker.com/compose/compose-file/
 # https://hub.docker.com/explore/
 
-version: '2.2'
+version: '2.3'
 
 services:
 
@@ -123,7 +123,7 @@ services:
     links:
     - tomcat:tomcat
     - owncloud:owncloud
-    - prestashop:prestashop
+    #- prestashop:prestashop
     #- joomla:joomla
     - wordpress:wordpress
     #- dokuwiki:dokuwiki
@@ -149,8 +149,8 @@ services:
     - default
     - tomcat-front
     - owncloud-front
-    - prestashop-front
-    - joomla-front
+    #- prestashop-front
+    #- joomla-front
     - wordpress-front
     - dokuwiki-front
     - tiddlywiki-front
@@ -194,7 +194,7 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=8.5.24
+      - TOMCAT_VERSION=8.5.28
     expose:
     - "8080"
     - "8443"
@@ -277,7 +277,7 @@ services:
     build:
       context: prestashop
       args:
-      - PRESTASHOP_VERSION=1.6.1.17
+      - PRESTASHOP_VERSION=1.6.1.18
     expose:
     - "80"
     - "443"
@@ -390,7 +390,7 @@ services:
     build:
       context: wordpress
       args:
-      #- WORDPRESS_VERSION=wordpress-4.7.8
+      #- WORDPRESS_VERSION=wordpress-4.8.6
       - WORDPRESS_VERSION=latest
     expose:
     - "80"
@@ -523,6 +523,7 @@ services:
       interval: 240s
       timeout: 5s
       retries: 1
+      start_period: 10s
     cpu_shares: 128
     mem_limit: 192m
     memswap_limit: 256m
@@ -623,7 +624,7 @@ services:
 ########################################################################
 
   memcached:
-    image: memcached:1.4-alpine
+    image: memcached:1.5-alpine
     init: true
     command: ["memcached", "-m", "64", "-p", "11211", "-c", "256"]
     expose:
@@ -634,6 +635,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 1
+      start_period: 2s
     cpu_shares: 128
     mem_limit: 128m
     memswap_limit: 128m
@@ -683,6 +685,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 1
+      start_period: 2s
     #sysctls:
     #- sys.net.core.somaxconn=511
     #- vm.overcommit_memory=1
@@ -943,7 +946,7 @@ services:
     # Required for `modprobe tun`
     - /lib/modules:/lib/modules:ro
     #- /srv/logs/openvpn:/var/log
-    tmpfs:
+    #tmpfs:
     # required to have the container read-only in docker < 17.12.0
     #- /dev/net:rw,nosuid,dev,noexec,relatime,size=16k
     #- /var/log
@@ -995,7 +998,7 @@ services:
   letsencrypt:
     extends:
       service: base-service
-    image: quay.io/letsencrypt/letsencrypt:latest
+    image: certbot/certbot:latest
     #build: letsencrypt
     command: --authenticators
     #ports:
@@ -1007,15 +1010,15 @@ services:
     - /srv/logs/letsencrypt:/var/log
     # webroot authentification lets encrypt
     - /srv/owncloud/acme-challenge:/srv/owncloud/acme-challenge
-    - /srv/prestashop/acme-challenge:/srv/prestashop/acme-challenge
-    - /srv/joomla/.well-known:/srv/joomla/.well-known
+    #- /srv/prestashop/acme-challenge:/srv/prestashop/acme-challenge
+    #- /srv/joomla/.well-known:/srv/joomla/.well-known
     - /srv/wordpress/acme-challenge:/srv/wordpress/acme-challenge
     - /srv/droppy/.well-known:/srv/droppy/.well-known
     - /srv/dokuwiki/acme-challenge:/srv/dokuwiki/acme-challenge
     - /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known:/opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known
     - /srv/portainer/acme-challenge:/srv/portainer/acme-challenge
     - /srv/http-proxy/polycarpe.fr/.well-known:/srv/http-proxy/polycarpe.fr/.well-known
-    - /srv/http-proxy/vingt-citadelles.fr/.well-known:/srv/http-proxy/vingt-citadelles.fr/.well-known
+    #- /srv/http-proxy/vingt-citadelles.fr/.well-known:/srv/http-proxy/vingt-citadelles.fr/.well-known
     - /srv/http-proxy/html/.well-known:/srv/http-proxy/html/.well-known
     #networks:
     #- default

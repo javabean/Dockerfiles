@@ -15,6 +15,9 @@ ln -s /usr/bin/vim.tiny /usr/bin/vim
 ## This tool runs a command as another user and sets $HOME.
 cp -a /bd_build/bin/setuser /sbin/setuser
 
+## This tool allows installation of apt packages with automatic cache cleanup.
+cp /bd_build/bin/install_clean /sbin/install_clean
+
 # sudo replacements: setuser / chpst (runit) / gosu <https://github.com/tianon/gosu> / su-exec <https://github.com/ncopa/su-exec>
 # Note that you can also: chroot --skip-chdir --userspec=<user> / <cmd>
 #if [ -z "${GOSU_VERSION}" -o "${GOSU_VERSION}" = "latest" ]; then

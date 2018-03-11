@@ -9,9 +9,9 @@ unexport IMG_VERSION = 0.9.22.1
 
 DOCKER_APT_VERSION = 17.12.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.18.0
+DOCKER_COMPOSE_VERSION = 1.19.0
 # url fragment
-DOCKER_MACHINE_VERSION = v0.13.0
+DOCKER_MACHINE_VERSION = v0.14.0
 
 DOCKER_FROM ?= ubuntu:16.04
 #DOCKER_FROM = arm32v7/ubuntu:16.04
@@ -53,11 +53,11 @@ help: ## Display this help menu
 pull: ## pull base Docker images from Docker Hub
 	docker image pull $(DOCKER_FROM)
 	#docker-compose pull
-	docker image pull memcached:1.4-alpine
+	docker image pull memcached:1.5-alpine
 	docker image pull redis:3-alpine
 	docker image pull silverwind/droppy
 	docker image pull portainer/portainer
-	#docker image pull quay.io/letsencrypt/letsencrypt
+	#docker image pull certbot/certbot
 
 .PHONY: build
 build: ## build all Docker images
@@ -137,14 +137,12 @@ new-certificates: ## query new TLS certificates
 	docker-compose run --rm letsencrypt --authenticators certonly --non-interactive --dry-run \
 		--webroot \
 		-w /srv/owncloud/acme-challenge -d oc.cedrik.fr \
-		-w /srv/prestashop/acme-challenge -d boutique.vingt-citadelles.fr -d boutique.piacercanto.org \
-		-w /srv/wordpress/acme-challenge -d beta.piacercanto.org \
+		-w /srv/wordpress/acme-challenge -d beta.piacercanto.org -d www.piacercanto.org \
 		-w /srv/droppy -d fichiers.piacercanto.org \
 		-w /srv/dokuwiki/acme-challenge -d wiki.cedrik.fr \
 		-w /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT -d www.cedrik.fr -d cedrik.fr -d wpad.cedrik.fr \
 		-w /srv/portainer/acme-challenge -d portainer.cedrik.fr \
 		-w /srv/http-proxy/polycarpe.fr -d polycarpe.fr -d www.polycarpe.fr \
-		-w /srv/http-proxy/vingt-citadelles.fr -d vingt-citadelles.fr -d www.vingt-citadelles.fr \
 		-w /srv/http-proxy/html/.well-known -d paris.cedrik.fr
 
 .PHONY: renew-certificates
@@ -227,6 +225,8 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	sudo chown -R root: /opt/http-proxy/tls
 	sudo chown -R 8080:8080 /opt/tomcat
 	if [ ! -f /srv/joomla/configuration.php ]; then touch /srv/joomla/configuration.php; chown www-data: /srv/joomla/configuration.php; fi
+	if [ ! -f /srv/wordpress/wp-config.php ]; then touch /srv/wordpress/wp-config.php; fi
+	if [ ! -f /srv/wordpress/htaccess ]; then touch /srv/wordpress/htaccess; fi
 	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/prestashop /srv/joomla /srv/wordpress /srv/dokuwiki /srv/tiddlywiki
 	# if [ "$(ls -A /opt/dovecot/*.pem)" ]; then
 	if ls -A /opt/dovecot/*.pem > /dev/null 2>&1; then sudo chmod 0400 /opt/dovecot/*.pem; fi

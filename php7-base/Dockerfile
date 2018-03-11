@@ -9,6 +9,7 @@ ARG MYSQL_VERSION=5.7
 # http://dev.mysql.com/doc/refman/5.7/en/checking-gpg-signature.html
 #RUN gpg --keyserver keys.gnupg.net --recv-keys 5072E1F5 \
 #	&& gpg --export -a 5072E1F5 | apt-key add -
+# If behind a restrictive firewall, use: apt-key adv --keyserver hkp://pgp.mit.edu:80 --keyserver-options http-proxy="http://<username>:<password>@<proxy_server_addr>:<proxy_port>" --recv-keys 5072E1F5
 RUN apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5
 
 RUN echo "deb http://repo.mysql.com/apt/ubuntu/ `lsb_release -cs` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list

@@ -1,8 +1,5 @@
 #!/bin/sh
-set -eu
-#set -o pipefail -o posix
-#shopt -s failglob
-#set -x
+set -e
 
 # If /dev/log is either a named pipe or it was placed there accidentally,
 # e.g. because of the issue documented at https://github.com/phusion/baseimage-docker/pull/25,
@@ -11,8 +8,6 @@ if [ ! -S /dev/log ]; then rm -f /dev/log; fi
 if [ ! -S /var/lib/syslog-ng/syslog-ng.ctl ]; then rm -f /var/lib/syslog-ng/syslog-ng.ctl; fi
 
 SYSLOGNG_OPTS=""
-CONSOLE_LOG_LEVEL=${CONSOLE_LOG_LEVEL:-}
-XCONSOLE=${XCONSOLE:-}
 
 [ -r /etc/default/syslog-ng ] && . /etc/default/syslog-ng
 
@@ -27,11 +22,11 @@ case "x$CONSOLE_LOG_LEVEL" in
     ;;
 esac
 
-#if [ ! -e /dev/xconsole ]
-#then
-#  mknod -m 640 /dev/xconsole p
-#  chown root:adm /dev/xconsole
-#  [ -x /sbin/restorecon ] && /sbin/restorecon $XCONSOLE
-#fi
+if [ ! -e /dev/xconsole ]
+then
+  mknod -m 640 /dev/xconsole p
+  chown root:adm /dev/xconsole
+  [ -x /sbin/restorecon ] && /sbin/restorecon $XCONSOLE
+fi
 
 exec syslog-ng -F -p /var/run/syslog-ng.pid $SYSLOGNG_OPTS

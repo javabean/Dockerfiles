@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
-#set -o pipefail -o posix
+(set -o | grep -q pipefail) && set -o pipefail
+(set -o | grep -q posix) && set -o posix
 #shopt -s failglob
 #set -x
 

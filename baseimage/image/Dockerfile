@@ -24,7 +24,7 @@ ENV DEBIAN_FRONTEND="teletype" \
 
 #VOLUME ["/var/log"]
 
-HEALTHCHECK --interval=60s --timeout=10s --retries=3 \
+HEALTHCHECK --interval=60s --timeout=10s --start-period=5s --retries=3 \
 	CMD ["/usr/local/bin/docker-healthcheck.sh"]
 # Should you need to disable health checks in an inherited Dockerfile:
 #HEALTHCHECK NONE

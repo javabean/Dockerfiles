@@ -26,7 +26,7 @@ done
 
 
 # First run
-if [ ! -f /var/www/html/wp-config.php ]; then
+if [ ! -s /var/www/html/wp-config.php ]; then
 	: "${WORDPRESS_DB_HOST:=mysql}"
 	# if we're linked to MySQL and thus have credentials already, let's use them
 	: ${WORDPRESS_DB_USER:=${MYSQL_ENV_MYSQL_USER:-root}}
@@ -46,7 +46,7 @@ if [ ! -f /var/www/html/wp-config.php ]; then
 
 	cd /var/www/html
 
-		if [ ! -e .htaccess ]; then
+		if [ ! -s .htaccess ]; then
 			# NOTE: The "Indexes" option is disabled in the php:apache base image
 			cat > .htaccess <<-'EOF'
 				# Block the include-only files.
@@ -86,9 +86,10 @@ if [ ! -f /var/www/html/wp-config.php ]; then
 	# version 4.4.1 decided to switch to windows line endings, that breaks our seds and awks
 	# https://github.com/docker-library/wordpress/issues/116
 	# https://github.com/WordPress/WordPress/commit/1acedc542fba2482bab88ec70d4bea4b997a92e4
-	sed -ri 's/\r\n|\r/\n/g' wp-config*
+	sed -ri 's/\r\n|\r/\n/g' wp-config-*.php
+	[ -s wp-config.php ] && sed -ri 's/\r\n|\r/\n/g' wp-config.php
 
-	if [ ! -e wp-config.php ]; then
+	if [ ! -s wp-config.php ]; then
 		awk '/^\/\*.*stop editing.*\*\/$/ && c == 0 { c = 1; system("cat") } { print }' wp-config-sample.php > wp-config.php <<'EOPHP'
 // If we're behind a proxy server and using HTTPS, we need to alert Wordpress of that fact
 // see also http://codex.wordpress.org/Administration_Over_SSL#Using_a_Reverse_Proxy
