@@ -3,7 +3,7 @@
 # https://docs.docker.com/compose/compose-file/
 # https://hub.docker.com/explore/
 
-version: '2.3'
+version: '2.4'
 
 services:
 
@@ -14,6 +14,41 @@ services:
 
   base-service:
     build: .
+    labels:
+      #- "traefik.backend=xxx"
+      #- "traefik.backend.loadbalancer.stickiness=true"
+      #- "traefik.backend.loadbalancer.stickiness.cookieName=JSESSIONID"
+      #- "traefik.port=80"
+      - "traefik.enable=false"
+      #- "traefik.frontend.rule=Host:www.example.com"
+      - "traefik.frontend.passHostHeader=true"
+      #- "traefik.frontend.entryPoints=http,https"
+      #- "traefik.frontend.redirect.entryPoint=https"
+      #- >-
+      #    traefik.frontend.whiteList.sourceRange=192.168.0.0/16, 172.16.0.0/12,
+      #    10.0.0.0/8
+      #- "traefik.frontend.headers.STSSeconds=15768000"
+      - "traefik.frontend.headers.STSIncludeSubdomains=false"
+      - "traefik.frontend.headers.STSPreload=false"
+      - "traefik.frontend.headers.customFrameOptionsValue=sameorigin"
+      - "traefik.frontend.headers.browserXSSFilter=true"
+      - "traefik.frontend.headers.contentSecurityPolicy=frame-ancestors 'self' example.com *.example.net ; object-src 'none' ; connect-src 'self' * ;"
+      # To disallow /admin path, one can not simply use negative lookaround:
+      #   "traefik.frontend.rule=Host:www.example.com;PathPrefix:/{re:(?!admin|manager).*}/"
+      # because: (?!re)	before text not matching re (NOT SUPPORTED) (https://github.com/google/re2/wiki/Syntax)
+      # Workaround (ugly, but it works): use Services labels to override port:
+      # # Allow general traffic (low prioriy rule)
+      # - "traefik.202.frontend.rule=www.example.com"
+      # # Forbid admin endpoint on plain http
+      # - "traefik.403.frontend.entryPoints=http"
+      # - "traefik.403.frontend.rule=PathPrefix:/{re:(?i:admin|install).*}/;Host:www.example.com"
+      # - "traefik.403.frontend.priority=65536"
+      # - "traefik.403.port=65536"
+      # # IP restriction on https admin endpoint
+      # - "traefik.407.frontend.entryPoints=https"
+      # - "traefik.407.frontend.rule=PathPrefix:/{re:(?i:admin|install).*}/;Host:www.example.com"
+      # - "traefik.407.frontend.priority=65536"
+      # - "traefik.407.frontend.whiteList.sourceRange=192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8"
     expose:
     # Consul agent ports
     - "8301"
@@ -49,6 +84,7 @@ services:
       options:
         max-size: "5m"
         max-file: "2"
+        compress: "true"
     cpu_shares: 1024
     mem_limit: 128m
     memswap_limit: 192m
@@ -106,6 +142,58 @@ services:
 
 ########################################################################
 
+  # to configure backends: https://docs.traefik.io/configuration/backends/docker/
+  # to extract Let'sEncrypt certificates: https://github.com/containous/traefik/blob/master/contrib/scripts/dumpcerts.sh
+  traefik:
+    extends:
+      service: base-service
+    image: traefik:${TRAEFIK_VERSION:-1.6}
+    init: true
+    command: ["-c", "/etc/traefik/traefik.toml", "--sendAnonymousUsage=false", "--checkNewVersion=false", "--docker"]
+    ports:
+    - "80:80"
+    - "443:443"
+    - "8080:8080"
+    - "8443:8443"
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    - /opt/traefik/traefik.toml:/etc/traefik/traefik.toml
+    # create with: touch /opt/traefik/acme.json && chmod 600 /opt/traefik/acme.json
+    - /opt/traefik/acme.json:/acme.json
+    # docker container run --rm -ti httpd:2.4-alpine htpasswd -n <user> >> /opt/traefik/htpasswd
+    # docker container run --rm -ti -v /opt/traefik/htpasswd:/.htpasswd httpd:2.4-alpine htpassw /.htpasswd <user>
+    - /opt/traefik/htpasswd:/.htpasswd
+    # docker container run --rm -ti -v /opt/traefik/htdigest:/.htdigest httpd:2.4-alpine htdigest /.htdigest <realm> <username>
+    - /opt/traefik/htdigest:/.htdigest
+    healthcheck:
+      test: ["CMD", "/traefik", "healthcheck"]
+      interval: 240s
+      timeout: 5s
+      retries: 1
+      start_period: 10s
+    networks:
+    # "default" needed to get connectivity from outside(!)
+    - default
+    #- statichttp
+    - tomcat-front
+    - owncloud-front
+    #- prestashop-front
+    #- joomla-front
+    - wordpress-front
+    - dokuwiki-front
+    - tiddlywiki-front
+    - droppy
+    - transmission
+    #- netdata
+    cpu_shares: 128
+    mem_limit: 96m
+    memswap_limit: 128m
+    mem_reservation: 32m
+    read_only: true
+    restart: unless-stopped
+
+#  http-static:
+
   http-proxy:
     extends:
       service: base-service
@@ -140,8 +228,8 @@ services:
     - /opt/http-proxy/conf-include:/opt/http-proxy/conf-include:ro
     #- /opt/http-proxy/sites-available:/opt/http-proxy/sites-available:ro
     - /opt/http-proxy/sites-enabled:/opt/http-proxy/sites-enabled:ro
-    - /opt/http-proxy/tls:/opt/http-proxy/tls:ro
-    #- /opt/letsencrypt:/opt/http-proxy/tls:ro
+    #- /opt/http-proxy/tls:/opt/http-proxy/tls:ro
+    - /opt/letsencrypt:/etc/letsencrypt:ro
     - /srv/http-proxy:/var/www:ro
     - /srv/logs/http-proxy:/var/log
     networks:
@@ -169,6 +257,12 @@ services:
   portainer:
     image: portainer/portainer
     init: true
+    labels:
+      - "traefik.backend=portainer"
+      - "traefik.port=9000"
+      - "traefik.enable=true"
+      - "traefik.frontend.entryPoints=https"
+      - "traefik.frontend.rule=Host:www.example.com"
     #command: ["--tlsverify", "--tlscacert", "/certs/ca.pem", "--tlscert", "/certs/cert.pem", "--tlskey", "/certs/key.pem"]
     #command: ["--templates", "https://raw.githubusercontent.com/portainer/templates/master/templates.json"]
     command: ["--no-analytics"]
@@ -176,7 +270,7 @@ services:
     - "9000"
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock:ro
-    - /srv/portainer/acme-challenge/.well-known:/.well-known
+    - /srv/portainer/acme-challenge/.well-known:/public/.well-known:ro
     #- /opt/portainer/certs:/certs
     - /srv/portainer/data:/data
     cpu_shares: 128
@@ -194,7 +288,12 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=8.5.28
+      - TOMCAT_VERSION=8.5.32
+    labels:
+      - "traefik.backend=tomcat"
+      - "traefik.port=8080"
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host:www.example.com"
     expose:
     - "8080"
     - "8443"
@@ -234,6 +333,12 @@ services:
       #- OWNCLOUD_VERSION=10.0
       #- OWNCLOUD_VERSION=stable
       - OWNCLOUD_VERSION=production
+    labels:
+      - "traefik.backend=owncloud"
+      - "traefik.port=80"
+      - "traefik.enable=true"
+      - "traefik.frontend.entryPoints=https"
+      - "traefik.frontend.rule=Host:www.example.com"
     expose:
     - "80"
     - "443"
@@ -277,7 +382,24 @@ services:
     build:
       context: prestashop
       args:
-      - PRESTASHOP_VERSION=1.6.1.18
+      - PRESTASHOP_VERSION=1.6.1.20
+    labels:
+      - "traefik.backend=prestashop"
+      - "traefik.port=80"
+      #- "traefik.enable=true"
+      - "traefik.frontend.rule=Host:www.example.com"
+      # Allow general traffic (low prioriy rule)
+      - "traefik.202.frontend.rule=Host:www.example.com"
+      # Forbid admin endpoint on plain http
+      - "traefik.403.frontend.entryPoints=http"
+      - "traefik.403.frontend.rule=PathPrefix:/{re:(?i:admin|install).*}/;Host:www.example.com"
+      - "traefik.403.frontend.priority=65536"
+      - "traefik.403.port=65536"
+      # IP restriction on https admin endpoint
+      - "traefik.407.frontend.entryPoints=https"
+      - "traefik.407.frontend.rule=PathPrefix:/{re:(?i:admin|install).*}/;Host:www.example.com"
+      - "traefik.407.frontend.priority=65536"
+      - "traefik.407.frontend.whiteList.sourceRange=192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8"
     expose:
     - "80"
     - "443"
@@ -390,8 +512,13 @@ services:
     build:
       context: wordpress
       args:
-      #- WORDPRESS_VERSION=wordpress-4.8.6
+      #- WORDPRESS_VERSION=wordpress-4.9.6
       - WORDPRESS_VERSION=latest
+    labels:
+      - "traefik.backend=wordpress"
+      - "traefik.port=80"
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host:www.example.com"
     expose:
     - "80"
     - "443"
@@ -444,10 +571,16 @@ services:
     build:
       context: dokuwiki
       args:
-      #- DOKUWIKI_VERSION=2017-02-19e
+      #- DOKUWIKI_VERSION=2018-04-22a
       - DOKUWIKI_VERSION=stable
       # Languages to keep (delete all others)
       #- STRIP_LANGS_KEEP=en,fr
+    labels:
+      - "traefik.backend=dokuwiki"
+      - "traefik.port=80"
+      - "traefik.enable=true"
+      - "traefik.frontend.redirect.entryPoint=https"
+      - "traefik.frontend.rule=Host:www.example.com"
     expose:
     - "80"
     - "443"
@@ -482,6 +615,12 @@ services:
       service: base-service
     build:
       context: tiddlywiki
+    labels:
+      - "traefik.backend=tiddlywiki"
+      - "traefik.port=8080"
+      - "traefik.enable=true"
+      - "traefik.frontend.redirect.entryPoint=https"
+      - "traefik.frontend.rule=Host:www.example.com"
     expose:
     - "8080"
     environment:
@@ -506,6 +645,11 @@ services:
   droppy:
     image: silverwind/droppy
     init: true
+    labels:
+      - "traefik.backend=droppy"
+      - "traefik.port=8989"
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host:www.example.com"
     command: ["/usr/bin/droppy", "start", "--color", "-f", "/files", "-c", "/config"]
     expose:
     - "8989"
@@ -909,6 +1053,7 @@ services:
     #  - "/dev/net/tun:/dev/net/tun:rwm"
     ports:
     - "1194:1194/udp"
+    - "443:1194/udp"
     #- "1194:1194/tcp"
     environment:
     #- PROTOCOL=udp
@@ -973,6 +1118,12 @@ services:
       service: base-service
     build:
       context: transmission
+    labels:
+      - "traefik.backend=transmission"
+      - "traefik.port=9091"
+      - "traefik.enable=true"
+      - "traefik.frontend.entryPoints=https"
+      - "traefik.frontend.rule=Host:www.example.com;PathPrefix:/transmission/"
     expose:
     - "9091"
     ports:
@@ -1015,10 +1166,12 @@ services:
     - /srv/wordpress/acme-challenge:/srv/wordpress/acme-challenge
     - /srv/droppy/.well-known:/srv/droppy/.well-known
     - /srv/dokuwiki/acme-challenge:/srv/dokuwiki/acme-challenge
+    - /srv/http-proxy/wiki/.well-known:/srv/http-proxy/wiki/.well-known
     - /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known:/opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known
     - /srv/portainer/acme-challenge:/srv/portainer/acme-challenge
     - /srv/http-proxy/polycarpe.fr/.well-known:/srv/http-proxy/polycarpe.fr/.well-known
     #- /srv/http-proxy/vingt-citadelles.fr/.well-known:/srv/http-proxy/vingt-citadelles.fr/.well-known
+    - /srv/http-proxy/ebooks/.well-known:/srv/http-proxy/ebooks/.well-known
     - /srv/http-proxy/html/.well-known:/srv/http-proxy/html/.well-known
     #networks:
     #- default
@@ -1033,6 +1186,12 @@ services:
     extends:
       service: base-service
     build: netdata
+    labels:
+      - "traefik.backend=netdata"
+      - "traefik.port=19999"
+      - "traefik.enable=true"
+      - "traefik.frontend.entryPoints=https"
+      - "traefik.frontend.rule=Host:www.example.com;PathPrefix:/netdata/"
     expose:
     - "19999"
     volumes:
