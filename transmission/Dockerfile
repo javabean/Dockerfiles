@@ -9,7 +9,8 @@ COPY docker-entrypoint.sh consul-healthcheck.sh  /usr/local/bin/
 
 RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 365C5CA1 \
 	&& echo "deb http://ppa.launchpad.net/transmissionbt/ppa/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/launchpad-transmissionbt.list \
-	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends transmission-daemon curl \
+	# transmission-remote-cli requires python, hence is excluded here to save 13 MB; add it to control Transmission daemon from CLI
+	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends transmission-daemon transmission-cli curl \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	# remove symbolic link to enable persistent settings.json across container invocations
 	&& rm "${TRANSMISSION_HOME}/.config/transmission-daemon/settings.json" \
