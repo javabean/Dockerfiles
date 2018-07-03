@@ -5,7 +5,7 @@ LABEL org.label-schema.schema-version="1.0" \
 COPY 60-ipsec.conf /etc/sysctl.d/
 COPY docker-entrypoint.sh consul-healthcheck.sh newClient.sh revokeClient.sh openvpn-status.sh  /usr/local/bin/
 
-ARG EASYRSA_VERSION=3.0.3
+ARG EASYRSA_VERSION=3.0.4
 # stable|testing|release/2.3|release/2.4
 ARG OPENVPN_VERSION=stable
 
