@@ -13,7 +13,7 @@ COPY GeoIP.conf /etc/
 
 COPY consul-healthcheck.sh backup_conf.sh restore_conf.sh docker-entrypoint.sh  /usr/local/bin/
 
-ADD https://raw.githubusercontent.com/docker-library/php/master/7.1/jessie/apache/apache2-foreground  /usr/local/bin/
+ADD https://raw.githubusercontent.com/docker-library/php/master/7.2/stretch/apache/apache2-foreground  /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/apache2-foreground \
   && LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/apache2 \
