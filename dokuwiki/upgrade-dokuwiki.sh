@@ -20,7 +20,7 @@ curl -fsSL https://download.dokuwiki.org/src/dokuwiki/dokuwiki-${DOKUWIKI_VERSIO
 chown www-data:www-data -R /var/www/html/
 chmod +x /var/www/html/bin/*.php
 find /var/www/html -name '_dummy' -delete
-grep -Ev '^($|#)' data/deleted.files | xargs --no-run-if-empty -n 1 rm -vf
+grep -Ev '^($|#)' data/deleted.files | xargs --no-run-if-empty -n 1 rm -vfr
 # purge cache
 [ -f conf/local.php ] && touch conf/local.php
 rm -fv data/cache/messages.txt
