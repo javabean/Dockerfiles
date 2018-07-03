@@ -1,5 +1,5 @@
 unexport IMG_NAME = cedrik/baseimage
-unexport IMG_VERSION = 0.9.22.1
+unexport IMG_VERSION = 0.10.0.1
 
 
 ########################################################################
@@ -7,11 +7,11 @@ unexport IMG_VERSION = 0.9.22.1
 # see also docker-compose's .env
 ########################################################################
 
-DOCKER_APT_VERSION = 17.12.*
+DOCKER_APT_VERSION = 18.04.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.19.0
+DOCKER_COMPOSE_VERSION = 1.21.2
 # url fragment
-DOCKER_MACHINE_VERSION = v0.14.0
+DOCKER_MACHINE_VERSION = v0.15.0
 
 DOCKER_FROM ?= ubuntu:16.04
 #DOCKER_FROM = arm32v7/ubuntu:16.04
@@ -58,6 +58,7 @@ pull: ## pull base Docker images from Docker Hub
 	docker image pull silverwind/droppy
 	docker image pull portainer/portainer
 	#docker image pull certbot/certbot
+	docker image pull traefik:$(TRAEFIK_VERSION)
 
 .PHONY: build
 build: ## build all Docker images
@@ -137,13 +138,15 @@ new-certificates: ## query new TLS certificates
 	docker-compose run --rm letsencrypt --authenticators certonly --non-interactive --dry-run \
 		--webroot \
 		-w /srv/owncloud/acme-challenge -d oc.cedrik.fr \
-		-w /srv/wordpress/acme-challenge -d beta.piacercanto.org -d www.piacercanto.org \
+		-w /srv/wordpress/acme-challenge -d www.piacercanto.org -d piacercanto.org -d beta.piacercanto.org \
 		-w /srv/droppy -d fichiers.piacercanto.org \
 		-w /srv/dokuwiki/acme-challenge -d wiki.cedrik.fr \
+		-w /srv/http-proxy/wiki -d wiki.cedrik.fr \
 		-w /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT -d www.cedrik.fr -d cedrik.fr -d wpad.cedrik.fr \
 		-w /srv/portainer/acme-challenge -d portainer.cedrik.fr \
-		-w /srv/http-proxy/polycarpe.fr -d polycarpe.fr -d www.polycarpe.fr \
-		-w /srv/http-proxy/html/.well-known -d paris.cedrik.fr
+		-w /srv/http-proxy/polycarpe.fr -d www.polycarpe.fr -d polycarpe.fr \
+		-w /srv/http-proxy/ebooks -d ebooks.cedrik.fr \
+		-w /srv/http-proxy/html -d paris.cedrik.fr
 
 .PHONY: renew-certificates
 renew-certificates: ## renew TLS certificates
@@ -191,6 +194,7 @@ distclean: clean
 mkdirs: ## create required directories in  /opt  and  /srv
 	mkdir -p -m 0775 \
 	/opt/consul/config     /srv/consul/data \
+	/opt/traefik \
 	/opt/http-proxy/conf-available /opt/http-proxy/conf-enabled /opt/http-proxy/conf-include /opt/http-proxy/mods-available /opt/http-proxy/mods-enabled /opt/http-proxy/sites-available /opt/http-proxy/sites-enabled /opt/http-proxy/tls \
 	                       /srv/http-proxy        /srv/logs/http-proxy/apache2 \
 	/opt/tomcat                                   /srv/logs/tomcat \
@@ -220,6 +224,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	/opt/netdata
 
 	sudo chown -R 8300:8300 /opt/consul /srv/consul
+	sudo touch /opt/traefik/acme.json /opt/traefik/htpasswd /opt/traefik/htdigest && sudo chmod 600 /opt/traefik/acme.json
 	sudo chmod g-rw,o-rwx /opt/http-proxy/tls
 	#sudo chown root:ssl-cert /opt/http-proxy/tls
 	sudo chown -R root: /opt/http-proxy/tls

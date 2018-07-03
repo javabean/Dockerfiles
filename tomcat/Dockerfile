@@ -14,7 +14,7 @@ COPY runit_tomcat /etc/service/tomcat/run
 COPY docker-entrypoint.sh consul-healthcheck.sh  /usr/local/bin/
 
 ############### FIXME  change version here! ###############
-ARG TOMCAT_VERSION=8.5.23
+ARG TOMCAT_VERSION=8.5.32
 
 # Create "tomcat" user
 RUN	if ! getent group "tomcat" > /dev/null 2>&1 ; then \

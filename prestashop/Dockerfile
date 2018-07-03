@@ -9,7 +9,7 @@ LABEL org.label-schema.schema-version="1.0" \
 # http://doc.prestashop.com/display/PS16/System+Administrator+Guide
 
 ############### FIXME  change version here! ###############
-ARG PRESTASHOP_VERSION=1.6.1.11
+ARG PRESTASHOP_VERSION=1.6.1.20
 
 COPY prestashop.conf /etc/apache2/conf-enabled/
 COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/
