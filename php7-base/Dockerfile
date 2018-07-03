@@ -12,7 +12,7 @@ ARG MYSQL_VERSION=5.7
 # If behind a restrictive firewall, use: apt-key adv --keyserver hkp://pgp.mit.edu:80 --keyserver-options http-proxy="http://<username>:<password>@<proxy_server_addr>:<proxy_port>" --recv-keys 5072E1F5
 RUN apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5
 
-RUN echo "deb http://repo.mysql.com/apt/ubuntu/ `lsb_release -cs` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
+RUN echo "deb https://repo.mysql.com/apt/ubuntu/ `lsb_release -cs` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
 
 RUN LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/php \
 	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \

@@ -30,7 +30,7 @@ COPY consul-healthcheck.sh  /usr/local/bin/
 #	&& gpg --export -a 5072E1F5 | apt-key add -
 RUN apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5
 
-RUN echo "deb http://repo.mysql.com/apt/ubuntu/ `lsb_release -cs` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
+RUN echo "deb https://repo.mysql.com/apt/ubuntu/ `lsb_release -cs` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
 
 #RUN debconf-set-selections <<< 'mysql-server mysql-server/root_password password $MYSQL_ROOT_PASSWORD'
 #RUN echo mysql-server mysql-server/root_password_again password $MYSQL_ROOT_PASSWORD | debconf-set-selections
