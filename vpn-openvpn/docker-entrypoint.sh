@@ -130,8 +130,12 @@ push "dhcp-option PROXY_HTTP 172.31.53.28 3128"
 EOF
 	# DNS
 	# Obtain the resolvers from resolv.conf and use them for OpenVPN
+	RESOLVCONF='/etc/resolv.conf'
+	if grep -q "127.0.0.53" "/etc/resolv.conf"; then
+		RESOLVCONF='/run/systemd/resolve/resolv.conf'
+	fi
 	if [ ! -z "${DNS_USE_RESOLVCONF}" ]; then
-		grep -v '#' /etc/resolv.conf | grep 'nameserver' | grep -E -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | while read line; do
+		grep -v '#' $RESOLVCONF | grep 'nameserver' | grep -E -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | while read line; do
 			echo "push \"dhcp-option DNS $line\"" >> /etc/openvpn/server.conf
 		done
 	fi
@@ -309,7 +313,10 @@ iptables -C INPUT -p ${PROTOCOL} --dport 1194 -j ACCEPT || {
 	iptables -A INPUT -p ${PROTOCOL} --dport 1194 -j ACCEPT
 }
 iptables -C FORWARD -s 10.8.0.0/24 -j ACCEPT || {
-	iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
+	iptables -I FORWARD -s 10.8.0.0/24 -j ACCEPT
+}
+iptables -C FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT || {
+	iptables -I FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
 }
 # Allow TUN interface connections to OpenVPN server
 iptables -C INPUT -i tun+ -j ACCEPT || {
@@ -317,7 +324,7 @@ iptables -C INPUT -i tun+ -j ACCEPT || {
 }
 # Allow TUN interface connections to be forwarded through other interfaces
 iptables -C FORWARD -i tun+ -j ACCEPT || {
-	iptables -A FORWARD -i tun+ -j ACCEPT
+	iptables -I FORWARD -i tun+ -j ACCEPT
 }
 # Allow TAP interface connections to OpenVPN server
 #iptables -C INPUT -i tap+ -j ACCEPT || {
@@ -325,7 +332,7 @@ iptables -C FORWARD -i tun+ -j ACCEPT || {
 #}
 # Allow TAP interface connections to be forwarded through other interfaces
 #iptables -C FORWARD -i tap+ -j ACCEPT || {
-#	iptables -A FORWARD -i tap+ -j ACCEPT
+#	iptables -I FORWARD -i tap+ -j ACCEPT
 #}
 # Force HTTP proxy; commented out since it is pushed to client
 #iptables -t nat -C PREROUTING -s 10.8.0.0/16 -p tcp --dport 80 -j DNAT --to-destination 172.31.31.28:3128 || {

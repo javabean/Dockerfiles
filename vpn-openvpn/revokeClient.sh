@@ -12,7 +12,7 @@ if [ "$NUMBEROFCLIENTS" = '0' ]; then
 	exit 6
 fi
 echo ""
-echo "Select the existing client certificate you want to revoke"
+echo "Select the existing client certificate you want to revoke:"
 tail -n +2 easy-rsa/pki/index.txt | grep "^V" | cut -d '=' -f 2 | nl -s ') '
 if [ "$NUMBEROFCLIENTS" = '1' ]; then
 	read -p "Select one client [1]: " CLIENTNUMBER
@@ -44,4 +44,4 @@ cd ..
 #env kill -s SIGUSR1 `cat /run/openvpn/server.pid`
 kill -s USR1 `cat /run/openvpn/server.pid`
 echo ""
-echo "Certificate for client $CLIENT revoked"
+echo "Certificate for client $CLIENT revoked!"

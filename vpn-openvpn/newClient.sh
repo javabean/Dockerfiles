@@ -28,9 +28,9 @@ newclient () {
 
 if [ "$#" -eq 0 ]; then
 	echo ""
-	echo "Tell me a name for the client cert"
-	echo "Please, use one word only, no special characters"
-	read -p "Client name: " -e -i client CLIENT
+	echo "Tell me a name for the client cert."
+	echo "Please, use one word only, no special characters."
+	read -p "Client name: " -e CLIENT
     set -- "$CLIENT" "$@"
 fi
 
@@ -42,6 +42,6 @@ while test "$#" -gt 0; do
 	# Generates the custom client.ovpn
 	newclient "$1"
 	echo ""
-	echo "Client $1 added, certs available at ./clients/$1.ovpn"
+	echo "Client $1 added, certs available at: ./clients/$1.ovpn"
 	shift
 done
