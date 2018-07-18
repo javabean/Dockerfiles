@@ -196,14 +196,15 @@ wait_for_aem_quiescent() {
 aem_remove_geometrixx() {
 	server=${1:-localhost:4502}
 	credentials=${2:-admin:admin}
+	sample_package=${3:-cq-geometrixx-all-pkg}
 
 	# http://${server}/crx/packmgr/list.jsp?cmd=ls
-	geometrixx_path=`curl -u"${credentials}" -fsS "http://${server}/crx/packmgr/list.jsp?q=cq-geometrixx-all-pkg"|grep -o -e 'path":"[^"]*'|awk -F'"' '{print $3}'`
-	if [ ! -z "${geometrixx_path}" ]; then
-		echo -n "Removing ${server}${geometrixx_path}: "
-		curl -fsS -u "${credentials}" -X POST http://${server}/crx/packmgr/service/.json${geometrixx_path}?cmd=uninstall
+	sample_package_path=`curl -u"${credentials}" -fsS "http://${server}/crx/packmgr/list.jsp?q=${sample_package}"|grep -o -e 'path":"[^"]*'|awk -F'"' '{print $3}'`
+	if [ ! -z "${sample_package_path}" ]; then
+		echo -n "Removing ${server}${sample_package_path}: "
+		curl -fsS -u "${credentials}" -X POST http://${server}/crx/packmgr/service/.json${sample_package_path}?cmd=uninstall
 		echo && wait_for_aem_quiescent "${server}" "${credentials}" 10
-		curl -fsS -u "${credentials}" -X POST http://${server}/crx/packmgr/service/.json${geometrixx_path}?cmd=delete
+		curl -fsS -u "${credentials}" -X POST http://${server}/crx/packmgr/service/.json${sample_package_path}?cmd=delete
 		echo && wait_for_aem_quiescent "${server}" "${credentials}" 5
 	fi
 }
@@ -229,7 +230,10 @@ install_packages() {
 
 	if [ ! -z "${REMOVE_GEOMETRIXX}" ]; then
 		echo "Removing Geometrix on ${server}..." 
-		aem_remove_geometrixx "${server}" "${credentials}"
+		# AEM <= 6.2
+		aem_remove_geometrixx "${server}" "${credentials}" "cq-geometrixx-all-pkg"
+		# AEM >= 6.3
+		aem_remove_geometrixx "${server}" "${credentials}" "we.retail.all"
 	fi
 
 	for package in `ls -1 "${PACKAGES_ROOT}"`; do
