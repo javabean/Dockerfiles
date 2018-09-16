@@ -2,7 +2,7 @@
 ---
 # https://docs.docker.com/compose/compose-file/
 
-version: '2.1'
+version: '2.4'
 
 services:
 
@@ -16,6 +16,8 @@ services:
     expose:
     - "4502"
     - "4503"
+    # https://helpx.adobe.com/experience-manager/6-4/sites/deploying/using/tarmk-cold-standby.html
+    - "8023"
     #environment:
     # See /usr/local/etc/aem6 for all possible keys
     #- CQ_AUTH=admin:admin
@@ -28,8 +30,10 @@ services:
     - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
     - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
     #- /var/log
+    #- /var/cache
+    #- /var/tmp
     - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
-   #shm_size: 64M
+    #shm_size: 64M
     #depends_on:
     #- email-relay
     #- mongodb:mongodb
@@ -44,11 +48,14 @@ services:
       options:
         max-size: "200m"
         max-file: "9"
-    #sysctls:
-    #- vm.swappiness=5
+        compress: "true"
+    sysctls:
+    - sys.kernel.mm.transparent_hugepage.enabled=never
     cpu_shares: 1024
     mem_limit: 3584m
     memswap_limit: 3584m
+    mem_swappiness: 1
+    mem_reservation: 3584m
     read_only: true
     restart: on-failure:3
 

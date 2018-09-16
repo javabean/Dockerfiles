@@ -87,13 +87,13 @@ start() {
 		gosu "${CQ_USER}" mkdir -p "${CQ_TMPDIR}"
 	fi
 	clean_tmp
+	echo "Starting AEM instance..."
 	#/srv/crx-quickstart/bin/start
 	# beware the "start" script forks...
 	gosu "${CQ_USER}" "${START}" 2>&1 >> "$CQ_GCLOGDIR/startup.log"
 }
 
 status() {
-	echo "Starting AEM instance..."
 	#/srv/crx-quickstart/bin/status
 	gosu "${CQ_USER}" "${STATUS}" 2>&1 >> "$CQ_GCLOGDIR/startup.log"
 }

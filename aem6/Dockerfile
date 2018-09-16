@@ -40,7 +40,7 @@ RUN cd /opt/aem6/ && curl -fsSLRO ${AEM_JAR_URL} && cd -
 
 #VOLUME ["/srv/aem6", "/opt/aem6/packages"]
 
-EXPOSE 4502 4503
+EXPOSE 4502 4503 8023
 
 #USER aem6
 
