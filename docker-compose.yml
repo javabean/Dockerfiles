@@ -174,7 +174,7 @@ services:
     networks:
     # "default" needed to get connectivity from outside(!)
     - default
-    #- statichttp
+    #- static-http
     - tomcat-front
     - owncloud-front
     #- prestashop-front
@@ -288,7 +288,7 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=8.5.32
+      - TOMCAT_VERSION=8.5.34
     labels:
       - "traefik.backend=tomcat"
       - "traefik.port=8080"
@@ -512,7 +512,7 @@ services:
     build:
       context: wordpress
       args:
-      #- WORDPRESS_VERSION=wordpress-4.9.6
+      #- WORDPRESS_VERSION=wordpress-4.9.9
       - WORDPRESS_VERSION=latest
     labels:
       - "traefik.backend=wordpress"

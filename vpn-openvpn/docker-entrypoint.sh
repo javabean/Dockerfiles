@@ -72,13 +72,14 @@ port 1194
 dev tun
 topology subnet
 ;tun-ipv6
-# fragment is not supported in iOS OpenVPN 1.1.1
+# fragment is not supported in iOS OpenVPN 1.x
 ;tun-mtu 12000 # default 1500
 ;fragment 0
 ;mssfix 0
 # Common values to try for mssfix/fragment: 1200, 1300, or 1400
 # Note however that fragment will exact a performance penalty.
 # Note that while mssfix only needs to be specified on one side of the connection, fragment should be specified on both.
+# mssfix is not supported in iOS OpenVPN 1.x
 ;mssfix 1450
 ;fragment 1450
 sndbuf 0
@@ -194,6 +195,7 @@ remote $IP 1194
 ;remote $IP 443 tcp-client
 ;remote-random
 proto ${PROTOCOL_CLIENT}
+# http-proxy and http-proxy-option are not supported in iOS OpenVPN 1.x
 ;http-proxy [proxy server] [proxy port]
 ;http-proxy-retry # retry on connection failures
 ;http-proxy-option AGENT "OpenVPN User-Agent"
@@ -207,6 +209,7 @@ dev tun
 # fragment is not supported in iOS OpenVPN 1.1.1
 ;tun-mtu 12000 # default 1500
 ;fragment 0
+# mssfix is not supported in iOS OpenVPN 1.x
 ;mssfix 0
 sndbuf 0
 rcvbuf 0

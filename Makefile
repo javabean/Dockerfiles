@@ -7,9 +7,9 @@ unexport IMG_VERSION = 0.10.0.1
 # see also docker-compose's .env
 ########################################################################
 
-DOCKER_APT_VERSION = 18.04.*
+DOCKER_APT_VERSION = 18.06.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.21.2
+DOCKER_COMPOSE_VERSION = 1.22.0
 # url fragment
 DOCKER_MACHINE_VERSION = v0.15.0
 
