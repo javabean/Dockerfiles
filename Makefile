@@ -7,13 +7,18 @@ unexport IMG_VERSION = 0.10.0.1
 # see also docker-compose's .env
 ########################################################################
 
-DOCKER_APT_VERSION = 18.06.*
-# url fragment
-DOCKER_COMPOSE_VERSION = 1.22.0
-# url fragment
-DOCKER_MACHINE_VERSION = v0.15.0
+include .env
+#export $(shell sed 's/=.*//' .env)
 
-DOCKER_FROM ?= ubuntu:16.04
+DOCKER_APT_VERSION = 18.09.*
+# url fragment
+DOCKER_COMPOSE_VERSION = 1.23.1
+# url fragment
+DOCKER_MACHINE_VERSION = v0.16.0
+
+DOCKER_FROM_IMAGE ?= ubuntu
+DOCKER_FROM_VERSION ?= 16.04
+DOCKER_FROM ?= $(DOCKER_FROM_IMAGE):$(DOCKER_FROM_VERSION)
 #DOCKER_FROM = arm32v7/ubuntu:16.04
 
 # Would have been much easier with Debian's redirector httpredir.debian.org...
@@ -30,9 +35,6 @@ APT_MIRROR ?= fr.archive.ubuntu.com
 ########################################################################
 # END set versions here
 ########################################################################
-
-include .env
-#export $(shell sed 's/=.*//' .env)
 
 docker_compose_build = consul http-proxy tomcat dovecot dnsmasq unbound email-relay mysql owncloud prestashop joomla wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission netdata
 .PHONY: $(docker_compose_build)
@@ -67,7 +69,7 @@ build: $(docker_compose_build)
 .PHONY: baseimage
 baseimage: ## build Docker base image
 baseimage: pull
-	docker image build --build-arg DOCKER_FROM=$(DOCKER_FROM) --build-arg APT_MIRROR=$(APT_MIRROR) -t cedrik/baseimage --rm baseimage/image
+	docker image build --build-arg DOCKER_FROM=$(DOCKER_FROM) --build-arg APT_MIRROR=$(APT_MIRROR) -t cedrik/baseimage:$(DOCKER_FROM_VERSION) --rm baseimage/image
 
 .PHONY: httpd-base
 httpd-base: ## build Docker base Apache httpd image
@@ -107,7 +109,7 @@ dnsmasq unbound: consul
 
 .PHONY: tag_latest
 tag_latest:
-	docker tag $(IMG_NAME):$(IMG_VERSION) $(IMG_NAME):latest
+	docker image tag $(IMG_NAME):$(IMG_VERSION) $(IMG_NAME):latest
 
 ########################################################################
 

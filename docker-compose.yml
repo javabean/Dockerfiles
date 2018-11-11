@@ -147,7 +147,7 @@ services:
   traefik:
     extends:
       service: base-service
-    image: traefik:${TRAEFIK_VERSION:-1.6}
+    image: traefik:${TRAEFIK_VERSION:-1.7}
     init: true
     command: ["-c", "/etc/traefik/traefik.toml", "--sendAnonymousUsage=false", "--checkNewVersion=false", "--docker"]
     ports:
@@ -288,7 +288,7 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=8.5.34
+      - TOMCAT_VERSION=8.5.35
     labels:
       - "traefik.backend=tomcat"
       - "traefik.port=8080"
@@ -382,7 +382,7 @@ services:
     build:
       context: prestashop
       args:
-      - PRESTASHOP_VERSION=1.6.1.20
+      - PRESTASHOP_VERSION=1.6.1.23
     labels:
       - "traefik.backend=prestashop"
       - "traefik.port=80"

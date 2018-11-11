@@ -1,5 +1,5 @@
 #FROM mysql/mysql-server:5.7
-FROM cedrik/baseimage:latest
+FROM cedrik/baseimage:16.04
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 

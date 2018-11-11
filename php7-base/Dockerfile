@@ -1,5 +1,5 @@
 #FROM php:7.0-apache
-FROM cedrik/httpd-base:latest
+FROM cedrik/httpd-base:16.04
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
