@@ -1,5 +1,6 @@
 #!/bin/sh
-set -eu
+#set -e
+set -u
 #set -o pipefail -o posix
 #shopt -s failglob
 #set -x
