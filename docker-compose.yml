@@ -126,13 +126,10 @@ services:
     # Consul can only work with 1 network interface... :-(
     #- tomcat-back-internal
     #- owncloud-back-internal
-    #- prestashop-back-internal
-    #- joomla-back-internal
     #- wordpress-back-internal
     #- dokuwiki-back-internal
     #- tiddlywiki-back-internal
     #- transmission
-    #- netdata
     - vpn
     mem_limit: 128m
     memswap_limit: 192m
@@ -150,6 +147,8 @@ services:
     image: traefik:${TRAEFIK_VERSION:-1.7}
     init: true
     command: ["-c", "/etc/traefik/traefik.toml", "--sendAnonymousUsage=false", "--checkNewVersion=false", "--docker"]
+#    expose:
+#    - "443"
     ports:
     - "80:80"
     - "443:443"
@@ -177,14 +176,11 @@ services:
     #- static-http
     - tomcat-front
     - owncloud-front
-    #- prestashop-front
-    #- joomla-front
     - wordpress-front
     - dokuwiki-front
     - tiddlywiki-front
     - droppy
     - transmission
-    #- netdata
     cpu_shares: 128
     mem_limit: 96m
     memswap_limit: 128m
@@ -198,27 +194,25 @@ services:
     extends:
       service: base-service
     build: apache-proxy
+#    expose:
+#    - "443"
     ports:
     - "80:80"
     - "443:443"
     #depends_on:
     #- tomcat
     #- owncloud
-    #- prestashop
     #- wordpress
     #- dokuwiki
     #- tiddlywiki
     links:
     - tomcat:tomcat
     - owncloud:owncloud
-    #- prestashop:prestashop
-    #- joomla:joomla
     - wordpress:wordpress
     #- dokuwiki:dokuwiki
     #- tiddlywiki:tiddlywiki
     - droppy:droppy
     - transmission:transmission
-    #- netdata:netdata
     - portainer:portainer
     volumes:
     #- /opt/http-proxy/mods-available:/opt/http-proxy/mods-available:ro
@@ -237,18 +231,45 @@ services:
     - default
     - tomcat-front
     - owncloud-front
-    #- prestashop-front
-    #- joomla-front
     - wordpress-front
     - dokuwiki-front
     - tiddlywiki-front
     - droppy
     - transmission
-    - netdata
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
     mem_reservation: 96m
+    read_only: true
+    restart: unless-stopped
+
+  sslh:
+    extends:
+      service: base-service
+    build: sslh
+    labels:
+      - "traefik.enable=false"
+    #command: ["--ssl", "http-proxy:443", "--openvpn", "openvpn:1194", "--on-timeout", "http-proxy:443"]
+    command: ["--tls", "http-proxy:443", "--on-timeout", "http-proxy:443"]
+    ports:
+    - "9443:443"
+    depends_on:
+      http-proxy:
+        condition: service_started
+#      openvpn:
+#        condition: service_started
+    cap_add:
+    - NET_BIND_SERVICE
+    - NET_ADMIN
+    - SETGID
+    - SETUID
+    networks:
+    - default
+#    - vpn
+    cpu_shares: 128
+    mem_limit: 64m
+    memswap_limit: 96m
+    mem_reservation: 32m
     read_only: true
     restart: unless-stopped
 
@@ -372,136 +393,6 @@ services:
     mem_reservation: 256m
     read_only: false
     restart: unless-stopped
-
-########################################################################
-
-  prestashop:
-    extends:
-      service: base-service
-    #image: prestashop/prestashop:1.6
-    build:
-      context: prestashop
-      args:
-      - PRESTASHOP_VERSION=1.6.1.23
-    labels:
-      - "traefik.backend=prestashop"
-      - "traefik.port=80"
-      #- "traefik.enable=true"
-      - "traefik.frontend.rule=Host:www.example.com"
-      # Allow general traffic (low prioriy rule)
-      - "traefik.202.frontend.rule=Host:www.example.com"
-      # Forbid admin endpoint on plain http
-      - "traefik.403.frontend.entryPoints=http"
-      - "traefik.403.frontend.rule=PathPrefix:/{re:(?i:admin|install).*}/;Host:www.example.com"
-      - "traefik.403.frontend.priority=65536"
-      - "traefik.403.port=65536"
-      # IP restriction on https admin endpoint
-      - "traefik.407.frontend.entryPoints=https"
-      - "traefik.407.frontend.rule=PathPrefix:/{re:(?i:admin|install).*}/;Host:www.example.com"
-      - "traefik.407.frontend.priority=65536"
-      - "traefik.407.frontend.whiteList.sourceRange=192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8"
-    expose:
-    - "80"
-    - "443"
-    environment:
-    - PS_FOLDER_ADMIN=admin
-    - PS_FOLDER_INSTALL=install
-    - PS_INSTALL_AUTO=0
-    - DB_SERVER=mysql
-    - DB_USER=
-    - DB_PASSWD=
-    #- DB_NAME=
-    - PS_LANGUAGE=fr
-    - PS_COUNTRY=fr
-    - PS_TIMEZONE=Europe/Paris
-    - PS_DOMAIN=www.example.com
-    - ADMIN_FIRST_NAME=Admin
-    - ADMIN_LAST_NAME=Istrator
-    - ADMIN_MAIL=prestashop-admin@example.com
-    - ADMIN_PASSWD=changeme
-    - ADMIN_NEWSLETTER=0
-    - ADMIN_SEND_EMAIL=1
-    depends_on:
-      mysql:
-        condition: service_healthy
-      email-relay:
-        condition: service_started
-    links:
-    - mysql:mysql
-    #- memcached-prestashop:memcached
-    - email-relay:email-relay
-    volumes:
-    - /srv/prestashop/acme-challenge/.well-known:/var/www/html/.well-known
-    - /srv/prestashop/htaccess:/var/www/html/.htaccess
-    - /srv/prestashop/override:/var/www/html/override
-    #- /srv/prestashop/mails:/var/www/html/mails
-    # tous les dossiers du dossier /img, sauf /img/admin et /img/jquery-ui
-    - /srv/prestashop/img:/var/www/html/img
-    # Ne copiez que les modules que vous avez ajoutés depuis que vous avez installé PrestaShop la première fois (et qui ne font donc pas partie de l'installation par défaut).
-    - /srv/prestashop/modules:/var/www/html/modules
-    #- /srv/prestashop/themes/votreTheme:/var/www/html/themes/votreTheme
-    # produits téléchargeables, les fichiers attachés, et les produits personnalisables
-    - /srv/prestashop/download:/var/www/html/download
-    - /srv/prestashop/upload:/var/www/html/upload
-    - /srv/prestashop/config:/var/www/html/config
-    #- /srv/prestashop/config/config.inc.php:/var/www/html/config/config.inc.php
-    #- /srv/prestashop/config/defines.inc.php:/var/www/html/config/defines.inc.php
-    #- /srv/prestashop/config/settings.inc.php:/var/www/html/config/settings.inc.php
-    #- /srv/prestashop/config/smarty.config.inc.php:/var/www/html/config/smarty.config.inc.php
-    #- /srv/prestashop/translations/myTranslation:/var/www/html/translations/myTranslation
-    - /srv/prestashop/translations/fr:/var/www/html/translations/fr
-    #- /srv/prestashop/admin-backups:/var/www/html/${PS_FOLDER_ADMIN:-admin}/backups/
-    - /srv/logs/prestashop:/var/log
-    networks:
-    - prestashop-front
-    - prestashop-back-internal
-    - prestashop-back
-    mem_limit: 448m
-    memswap_limit: 512m
-    mem_reservation: 416m
-    read_only: false
-    restart: unless-stopped
-
-########################################################################
-
-  joomla:
-    extends:
-      service: base-service
-    #image: joomla:3.6-apache
-    build:
-      context: joomla
-      args:
-      - JOOMLA_VERSION=3.6.5
-    expose:
-    - "80"
-    - "443"
-    environment:
-    - ENABLE_CRON=1
-    #- ENABLE_SYSLOG=1
-    #- JOOMLA_DB_HOST=mysql
-    #- JOOMLA_DB_USER=
-    #- JOOMLA_DB_PASSWORD=
-    #- JOOMLA_DB_NAME=
-    depends_on:
-      mysql:
-        condition: service_healthy
-      email-relay:
-        condition: service_started
-    links:
-    - mysql:mysql
-    #- memcached-joomla:memcached
-    - email-relay:email-relay
-    volumes:
-    - /srv/logs/joomla:/var/log
-    - /srv/joomla:/var/www/html
-    networks:
-    - joomla-front
-    - joomla-back-internal
-    - joomla-back
-    mem_limit: 384m
-    memswap_limit: 512m
-    read_only: false
-    restart: on-failure:5
 
 ########################################################################
 
@@ -695,8 +586,6 @@ services:
     networks:
     - tomcat-back
     - owncloud-back
-    - prestashop-back
-    - joomla-back
     - wordpress-back
     - dokuwiki-back
     cpu_shares: 128
@@ -750,8 +639,6 @@ services:
     networks:
     #- tomcat-back-internal
     - owncloud-back-internal
-    - prestashop-back-internal
-    - joomla-back-internal
     - wordpress-back-internal
     #ulimits:
     #  nproc: 65535
@@ -786,26 +673,12 @@ services:
     read_only: true
     restart: always
 
-  memcached-prestashop:
-    extends:
-      service: memcached
-    command: ["memcached", "-m", "96", "-p", "11211", "-c", "256"]
-    networks:
-    - prestashop-back-internal
-
   memcached-owncloud:
     extends:
       service: memcached
     command: ["memcached", "-m", "32", "-p", "11211", "-c", "256"]
     networks:
     - owncloud-back-internal
-
-  memcached-joomla:
-    extends:
-      service: memcached
-    command: ["memcached", "-m", "64", "-p", "11211", "-c", "256"]
-    networks:
-    - joomla-back-internal
 
   memcached-wordpress:
     extends:
@@ -1161,8 +1034,6 @@ services:
     - /srv/logs/letsencrypt:/var/log
     # webroot authentification lets encrypt
     - /srv/owncloud/acme-challenge:/srv/owncloud/acme-challenge
-    #- /srv/prestashop/acme-challenge:/srv/prestashop/acme-challenge
-    #- /srv/joomla/.well-known:/srv/joomla/.well-known
     - /srv/wordpress/acme-challenge:/srv/wordpress/acme-challenge
     - /srv/droppy/.well-known:/srv/droppy/.well-known
     - /srv/dokuwiki/acme-challenge:/srv/dokuwiki/acme-challenge
@@ -1179,35 +1050,6 @@ services:
       driver: "none"
     read_only: false
     restart: "no"
-
-########################################################################
-
-  netdata:
-    extends:
-      service: base-service
-    build: netdata
-    labels:
-      - "traefik.backend=netdata"
-      - "traefik.port=19999"
-      - "traefik.enable=true"
-      - "traefik.frontend.entryPoints=https"
-      - "traefik.frontend.rule=Host:www.example.com;PathPrefix:/netdata/"
-    expose:
-    - "19999"
-    volumes:
-    - /proc:/mnt/proc:ro
-    - /sys:/mnt/sys:ro
-    - /opt/netdata:/etc/netdata:ro
-    #- /srv/logs/netdata:/var/log
-    cap_add:
-    - SYS_PTRACE
-    networks:
-    - netdata
-    cpu_shares: 128
-    mem_limit: 128m
-    memswap_limit: 192m
-    read_only: false
-    restart: unless-stopped
 
 ########################################################################
 ########################################################################
@@ -1259,42 +1101,6 @@ networks:
     ipam:
       config:
       - subnet: 172.30.2.0/24
-  prestashop-front:
-    driver: bridge
-    ipam:
-      config:
-      - subnet: 172.31.3.0/24
-  prestashop-back-internal:
-    driver: bridge
-    ipam:
-      config:
-      - subnet: 172.29.3.0/24
-    driver_opts:
-      com.docker.network.bridge.enable_ip_masquerade: "false"
-    internal: true
-  prestashop-back:
-    driver: bridge
-    ipam:
-      config:
-      - subnet: 172.30.3.0/24
-  joomla-front:
-    driver: bridge
-    ipam:
-      config:
-      - subnet: 172.31.4.0/24
-  joomla-back-internal:
-    driver: bridge
-    ipam:
-      config:
-      - subnet: 172.29.4.0/24
-    driver_opts:
-      com.docker.network.bridge.enable_ip_masquerade: "false"
-    internal: true
-  joomla-back:
-    driver: bridge
-    ipam:
-      config:
-      - subnet: 172.30.4.0/24
   wordpress-front:
     driver: bridge
     ipam:
@@ -1346,11 +1152,6 @@ networks:
     ipam:
       config:
       - subnet: 172.31.9.0/24
-  netdata:
-    driver: bridge
-    ipam:
-      config:
-      - subnet: 172.31.10.0/24
   droppy:
     driver: bridge
     ipam:

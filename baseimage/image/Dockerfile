@@ -1,5 +1,5 @@
-ARG DOCKER_FROM=ubuntu:16.04
-#ARG DOCKER_FROM=arm32v7/ubuntu:16.04
+ARG DOCKER_FROM=ubuntu:18.04
+#ARG DOCKER_FROM=arm32v7/ubuntu:18.04
 FROM ${DOCKER_FROM}
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"

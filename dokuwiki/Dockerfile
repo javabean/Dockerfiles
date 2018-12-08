@@ -18,7 +18,7 @@ COPY backup_conf_local.sh restore_conf_local.sh upgrade-dokuwiki.sh cleanup.sh  
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	libapache2-mod-xsendfile \
 	php7.0-zip php7.0-bz2 \
-	libpng12-0 libjpeg62 libjpeg-turbo8 php7.0-gd \
+	libpng16-16 libjpeg62 libjpeg8 libjpeg-turbo8 libjpeg9 php7.0-gd \
 	php7.0-curl libxml2 php7.0-xml php7.0-mcrypt openssl php7.0-soap \
 	php7.0-json php7.0-intl \
 # we need sudo to upgrade DokuWiki via CLI

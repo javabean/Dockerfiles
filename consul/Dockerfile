@@ -1,5 +1,5 @@
 #FROM consul:latest
-FROM cedrik/baseimage:16.04
+FROM cedrik/baseimage:18.04
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 

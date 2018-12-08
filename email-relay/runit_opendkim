@@ -9,5 +9,8 @@ if [ "$(stat -c %u /usr/local/etc/dkim)" != "$(id -u opendkim)" ] || [ "$(stat -
 	chown -R opendkim:postfix /usr/local/etc/dkim
 fi
 
+mkdir -p /var/run/opendkim /var/spool/postfix/var/run/opendkim
+chown opendkim: /var/run/opendkim /var/spool/postfix/var/run/opendkim
+
 #exec gosu opendkim /usr/sbin/opendkim -f -x /etc/opendkim.conf
 exec /usr/sbin/opendkim -f -x /etc/opendkim.conf

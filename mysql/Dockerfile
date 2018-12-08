@@ -1,5 +1,5 @@
 #FROM mysql/mysql-server:5.7
-FROM cedrik/baseimage:16.04
+FROM cedrik/baseimage:18.04
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
@@ -17,11 +17,11 @@ COPY runit_mysql /etc/service/mysql/run
 
 COPY consul-healthcheck.sh  /usr/local/bin/
 
-# http://dev.mysql.com/downloads/repo/apt/
+# https://dev.mysql.com/downloads/repo/apt/
 # requires user interaction...
-#RUN curl -ORL http://dev.mysql.com/get/mysql-apt-config_0.8.1-1_all.deb \
-#	&& dpkg -i mysql-apt-config_0.8.1-1_all.deb
-#	&& rm mysql-apt-config_0.8.1-1_all.deb
+#RUN curl -fsSLRO https://dev.mysql.com/get/mysql-apt-config_0.8.10-1_all.deb \
+#	&& dpkg -i mysql-apt-config_0.8.10-1_all.deb
+#	&& rm mysql-apt-config_0.8.10-1_all.deb
 # Selecting a Major Release Version:
 #RUN dpkg-reconfigure mysql-apt-config
 

@@ -19,6 +19,10 @@ append_dot_mydomain = no
 # readme_directory: The location of the Postfix README files.
 readme_directory = no
 
+# See http://www.postfix.org/COMPATIBILITY_README.html -- default to 2 on
+# fresh installs.
+compatibility_level = 2
+
 # TLS parameters
 #smtpd_tls_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
 #smtpd_tls_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
@@ -31,8 +35,6 @@ readme_directory = no
 # information on enabling SSL in the smtp client.
 
 
-
-compatibility_level=2
 
 inet_interfaces = all
 inet_protocols = ipv4

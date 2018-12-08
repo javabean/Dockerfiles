@@ -10,7 +10,7 @@ LABEL org.label-schema.schema-version="1.0" \
 # http://codex.wordpress.org/Hardening_WordPress
 
 ############### FIXME  change version here! ###############
-#ARG WORDPRESS_VERSION=wordpress-4.7.5
+#ARG WORDPRESS_VERSION=wordpress-4.9.9
 ARG WORDPRESS_VERSION=latest
 
 COPY wordpress.conf /etc/apache2/conf-enabled/
@@ -18,12 +18,14 @@ COPY backup_conf_local.sh restore_conf_local.sh wp-changeDomainName.sh  /usr/loc
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	#php7.0-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
-	libpng12-0 libjpeg62 libjpeg-turbo8 php7.0-gd php7.0-mysql \
+	libpng16-16 libjpeg62 libjpeg8 libjpeg-turbo8 libjpeg9 php7.0-gd php7.0-mysql \
 	php7.0-curl libxml2 php7.0-mcrypt openssl php7.0-soap \
 	php7.0-json php7.0-intl \
 	php7.0-memcache php7.0-memcached \
 	php7.0-apcu \
 	sudo \
+	# bash is needed for 'wp shell'
+	bash \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& for m in "rewrite expires headers mime"; do a2enmod $m; done \
 	# PHP configuration
@@ -55,10 +57,10 @@ RUN curl -fsSL https://wordpress.org/${WORDPRESS_VERSION}.tar.gz | tar xz -C /va
 	&& echo "	Require all denied"  >> /var/www/html/wp-content/uploads/.htaccess \
 	&& echo "</Files>"             >> /var/www/html/wp-content/uploads/.htaccess \
 	&& chown www-data:www-data -R /var/www/html/ \
-# https://wp-cli.org/docs/installing/
+# https://make.wordpress.org/cli/handbook/installing/
 	&& curl -fsSLR -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
 	&& chmod +x /usr/local/bin/wp \
-	&& curl -fsSLR -o /etc/bash_completion.d/wp-completion.bash https://raw.githubusercontent.com/wp-cli/wp-cli/master/utils/wp-completion.bash \
+	&& if test -d /etc/bash_completion.d; then curl -fsSLR -o /etc/bash_completion.d/wp-completion.bash https://raw.githubusercontent.com/wp-cli/wp-cli/master/utils/wp-completion.bash; fi \
 # statistics tool
 	&& if test -f /usr/share/php5/apcu/apc.php; then ln -s /usr/share/php5/apcu/apc.php "/var/www/html/wp-admin/"; fi \
 	&& if test -f /usr/share/doc/php-apcu/apc.php; then ln -s /usr/share/doc/php-apcu/apc.php "/var/www/html/wp-admin/"; fi \

@@ -12,12 +12,12 @@ include .env
 
 DOCKER_APT_VERSION = 18.09.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.23.1
+DOCKER_COMPOSE_VERSION = 1.23.2
 # url fragment
 DOCKER_MACHINE_VERSION = v0.16.0
 
 DOCKER_FROM_IMAGE ?= ubuntu
-DOCKER_FROM_VERSION ?= 16.04
+DOCKER_FROM_VERSION ?= 18.04
 DOCKER_FROM ?= $(DOCKER_FROM_IMAGE):$(DOCKER_FROM_VERSION)
 #DOCKER_FROM = arm32v7/ubuntu:16.04
 
@@ -36,7 +36,7 @@ APT_MIRROR ?= fr.archive.ubuntu.com
 # END set versions here
 ########################################################################
 
-docker_compose_build = consul http-proxy tomcat dovecot dnsmasq unbound email-relay mysql owncloud prestashop joomla wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission netdata
+docker_compose_build = consul http-proxy tomcat dovecot dnsmasq unbound email-relay mysql owncloud wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission
 .PHONY: $(docker_compose_build)
 
 
@@ -76,11 +76,6 @@ httpd-base: ## build Docker base Apache httpd image
 httpd-base: baseimage
 	docker image build -t cedrik/httpd-base --rm apache-base
 
-.PHONY: php5-base
-php5-base: ## build Docker base PHP 5.6 image (Apache httpd-based) with MySQL client
-php5-base: httpd-base
-	docker image build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php5-base --rm php5-base
-
 .PHONY: php7-base
 php7-base: ## build Docker base PHP 7 image (Apache httpd-based) with MySQL client
 php7-base: httpd-base
@@ -97,9 +92,9 @@ $(docker_compose_build): baseimage
 
 tomcat: java
 http-proxy: httpd-base
-owncloud joomla wordpress prestashop dokuwiki: php7-base
+owncloud wordpress dokuwiki: php7-base
 #owncloud: memcached-owncloud redis-owncloud
-owncloud joomla wordpress prestashop: mysql email-relay
+owncloud wordpress: mysql email-relay
 dokuwiki: email-relay
 openvpn: dnsmasq web-accelerator
 unbound: dnsmasq
@@ -202,15 +197,12 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	/opt/tomcat                                   /srv/logs/tomcat \
 	/opt/owncloud/config /opt/owncloud/apps  /srv/owncloud/data     /srv/logs/owncloud/apache2 \
 	                                              /srv/redis-owncloud \
-	/opt/prestashop                               /srv/logs/prestashop/apache2 \
-	  /srv/prestashop/override /srv/prestashop/mails /srv/prestashop/img /srv/prestashop/modules /srv/prestashop/download /srv/prestashop/upload /srv/prestashop/config \
 	/opt/mysql/docker-entrypoint-initdb.d /opt/mysql/healthcheck.cnf /opt/mysql/mysql-init-complete \
 	  /srv/mysql/data /srv/mysql/backup           /srv/logs/mysql/mysql \
 	/opt/dnsmasq/dnsmasq.d                        /srv/logs/dnsmasq \
 	/opt/unbound                                  /srv/logs/unbound \
 	/opt/dovecot           /srv/dovecot           /srv/logs/dovecot \
 	/opt/email-relay/dkim/keys                    /srv/logs/email-relay \
-		            /srv/joomla/.well-known/acme-challenge  /srv/logs/joomla/apache2 \
       /srv/dokuwiki/conf  /srv/dokuwiki/lib/plugins  /srv/dokuwiki/lib/tpl  /srv/dokuwiki/data \
                                                   /srv/logs/dokuwiki/apache2 \
       /srv/tiddlywiki  \
@@ -220,10 +212,9 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	                                              /srv/logs/ziproxy \
 	  /srv/transmission \
 	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt \
-	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/prestashop/acme-challenge/.well-known/acme-challenge  /srv/joomla/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known /srv/dokuwiki/acme-challenge/.well-known \
+	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known /srv/dokuwiki/acme-challenge/.well-known \
 	/opt/droppy  /srv/droppy/.well-known/acme-challenge \
-	/opt/portainer/certs  /srv/portainer/acme-challenge/.well-known  /srv/portainer/data \
-	/opt/netdata
+	/opt/portainer/certs  /srv/portainer/acme-challenge/.well-known  /srv/portainer/data
 
 	sudo chown -R 8300:8300 /opt/consul /srv/consul
 	sudo touch /opt/traefik/acme.json /opt/traefik/htpasswd /opt/traefik/htdigest && sudo chmod 600 /opt/traefik/acme.json
@@ -231,20 +222,19 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	#sudo chown root:ssl-cert /opt/http-proxy/tls
 	sudo chown -R root: /opt/http-proxy/tls
 	sudo chown -R 8080:8080 /opt/tomcat
-	if [ ! -f /srv/joomla/configuration.php ]; then touch /srv/joomla/configuration.php; chown www-data: /srv/joomla/configuration.php; fi
+	sudo chown -R 101:102 /srv/mysql/data /srv/mysql/backup /srv/logs/mysql/mysql
 	if [ ! -f /srv/wordpress/wp-config.php ]; then touch /srv/wordpress/wp-config.php; fi
 	if [ ! -f /srv/wordpress/htaccess ]; then touch /srv/wordpress/htaccess; fi
-	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/prestashop /srv/joomla /srv/wordpress /srv/dokuwiki /srv/tiddlywiki
+	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/wordpress /srv/dokuwiki /srv/tiddlywiki
 	# if [ "$(ls -A /opt/dovecot/*.pem)" ]; then
 	if ls -A /opt/dovecot/*.pem > /dev/null 2>&1; then sudo chmod 0400 /opt/dovecot/*.pem; fi
-	# usd:gid 105:108 == dovecot
-	sudo chown -R 105:108 /opt/dovecot
+	# usd:gid 101:103 == dovecot
+	sudo chown -R 101:103 /opt/dovecot
 	sudo chown -R mail:mail /srv/dovecot
 	#sudo chown -R opendkim:postfix /opt/email-relay
-	sudo chown -R 106:108 /opt/email-relay
-	sudo chown 105:107 /srv/transmission
-	sudo chown 999:999 /opt/netdata
-	sudo chown 105:107 /srv/redis*
+	sudo chown -R 103:104 /opt/email-relay
+	sudo chown 101:102 /srv/transmission
+	sudo chown 100:101 /srv/redis*
 	sudo chown -R nobody:nogroup /srv/droppy /opt/droppy
 
 ########################################################################
@@ -279,6 +269,7 @@ install-docker-rpi: ## deprecated; install Docker on a Raspberry Pi
 .PHONY: install-docker-compose
 install-docker-compose: ## install docker-compose
 	#pip install docker-compose
+	sudo rm -f /usr/local/bin/docker-compose /etc/bash_completion.d/docker-compose
 	sudo curl -fsSLR -o /usr/local/bin/docker-compose https://github.com/docker/compose/releases/download/$(DOCKER_COMPOSE_VERSION)/docker-compose-`uname -s`-`uname -m`
 	sudo chmod +x /usr/local/bin/docker-compose
 	#sudo curl -fsSLR -o /etc/bash_completion.d/docker-compose https://raw.githubusercontent.com/docker/compose/$$(docker-compose version --short)/contrib/completion/bash/docker-compose

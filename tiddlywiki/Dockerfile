@@ -1,10 +1,10 @@
-FROM cedrik/baseimage:16.04
+FROM cedrik/baseimage:18.04
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
 COPY docker-entrypoint.sh consul-healthcheck.sh  /usr/local/bin/
 
-ARG NODEREPO=node_8.x
+ARG NODEREPO=node_10.x
 
 # To compile and install native addons from npm you may also need to install build tools: build-essential
 RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - \

@@ -1,4 +1,4 @@
-FROM cedrik/baseimage:16.04
+FROM cedrik/baseimage:18.04
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
@@ -11,7 +11,7 @@ COPY runit_opendkim /etc/service/opendkim/run
 
 ARG POSTFIX_HOSTNAME=myhost.example.net
 
-COPY dkim_new_domain.sh consul-healthcheck.sh  /usr/local/bin/
+COPY dkim_new_domain.sh dkim-stats.sh consul-healthcheck.sh  /usr/local/bin/
 
 # unattended installs an "Internet" profile
 RUN apt-get update \
@@ -42,4 +42,5 @@ EXPOSE 25
 
 # AFAIK postfix needs syslog
 ENTRYPOINT ["/usr/local/sbin/docker-init.sh"]
+# postfix start-fg
 # /usr/lib/postfix/master

@@ -45,10 +45,14 @@ if [ ! -d /etc/openvpn/easy-rsa/pki ]; then
 	# Create the PKI, set up the CA, the DH params and the server + client certificates
 	./easyrsa init-pki
 	./easyrsa --batch build-ca nopass
-	./easyrsa gen-dh
-	./easyrsa build-server-full server nopass
-#	./easyrsa build-client-full $CLIENT nopass
-	./easyrsa gen-crl
+	if [ -f /usr/local/share/tls/dhparams-ffdhe2048.pem ]; then
+		echo "Using predefined ffdhe2048 group DH parameters"
+		cp -a /usr/local/share/tls/dhparams-ffdhe2048.pem pki/dh.pem
+	else
+		./easyrsa gen-dh
+	fi
+	EASYRSA_CERT_EXPIRE=3650 ./easyrsa build-server-full server nopass
+	EASYRSA_CRL_DAYS=3650 ./easyrsa gen-crl
 	# Ensure "nobody" can read the CRL
 	chmod a+r pki/crl.pem
 	chmod a+x pki
@@ -71,7 +75,6 @@ proto ${PROTOCOL_SERVER}
 port 1194
 dev tun
 topology subnet
-;tun-ipv6
 # fragment is not supported in iOS OpenVPN 1.x
 ;tun-mtu 12000 # default 1500
 ;fragment 0
@@ -82,8 +85,8 @@ topology subnet
 # mssfix is not supported in iOS OpenVPN 1.x
 ;mssfix 1450
 ;fragment 1450
-sndbuf 0
-rcvbuf 0
+;sndbuf 0
+;rcvbuf 0
 keepalive 10 120
 ping-timer-rem
 persist-tun
@@ -105,8 +108,7 @@ verb 4
 # Silence repeating messages.
 mute 20
 ;status /dev/stdout # Can also send SIGUSR2 to output connection statistics to log file or syslog
-;compress lz4
-comp-lzo
+compress lz4
 # https://github.com/OpenVPN/openvpn/blob/master/doc/management-notes.txt
 management localhost 7505 # use telnet!
 
@@ -117,13 +119,12 @@ server 10.8.0.0 255.255.255.0
 #push "route 192.168.0.0 255.255.0.0"
 #push "route 172.16.0.0 255.240.0.0"
 #push "route 10.0.0.0 255.0.0.0"
-push "sndbuf 0"
-push "rcvbuf 0"
+#push "sndbuf 0"
+#push "rcvbuf 0"
 # force all traffic through VPN
-;push "redirect-gateway autolocal def1 ipv6 bypass-dhcp"
-push "redirect-gateway autolocal def1 bypass-dhcp"
-;push "compress lz4"
-push "comp-lzo"
+push "redirect-gateway autolocal def1 ipv6 bypass-dhcp"
+;push "redirect-gateway autolocal def1 bypass-dhcp"
+push "compress lz4"
 push "dhcp-option PROXY_HTTP 172.31.53.28 3128"
 #push "dhcp-option PROXY_HTTPS 172.31.53.28 3128"
 #push "dhcp-option PROXY_BYPASS example1.tld example2.tld example3.tld"
@@ -151,13 +152,15 @@ opt-verify
 # Data Channel Encryption Options
 # openvpn --show-digests
 ;auth SHA1    # default
-;auth SHA256
+auth SHA256
 # openvpn --show-ciphers
 ;cipher BF-CBC        # Blowfish (default; do not use: Sweet32)
 cipher AES-128-CBC   # AES cipher algorithm is well-suited for the ARM processor
 ;cipher DES-EDE3-CBC  # Triple-DES (do not use: Sweet32)
-;cipher AES-128-GCM
+;cipher AES-128-GCM   # GCM has smaller overhead: 20 bytes per packet instead of 36 for CBC
 ;cipher AES-256-GCM
+;ncp-ciphers AES-256-GCM:AES-128-GCM
+ncp-ciphers AES-128-GCM:AES-192-GCM:AES-256-GCM:AES-128-CBC:AES-192-CBC:AES-256-CBC
 # openvpn --show-engines
 ;engine [engine-name]
 
@@ -168,15 +171,14 @@ cert server.crt
 key server.key  # This file should be kept secret
 # If your clients and servers are modern (2.3.3+), they should support TLSv1.2 just fine
 # Note that this will break OpenVPN versions 2.3.2 and earlier, which only expect TLSv1.0 handshake signatures.
-;tls-version-min 1.2 or-highest
+tls-version-min 1.2 or-highest
 ;tls-version-min 1.2
 # openvpn --show-tls
 ;tls-cipher TLS-DHE-RSA-WITH-AES-128-GCM-SHA256
 ;tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384
 ;tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256:TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256:TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-CBC-SHA256
 tls-exit
-# OpenVPN 2.4: replace tls-auth with "tls-crypt ta.key" and remove "key-direction"
-tls-auth ta.key 0 # This file is secret
+tls-crypt ta.key # This file is secret
 remote-cert-tls client
 crl-verify crl.pem
 EOF
@@ -197,7 +199,6 @@ remote $IP 1194
 proto ${PROTOCOL_CLIENT}
 # http-proxy and http-proxy-option are not supported in iOS OpenVPN 1.x
 ;http-proxy [proxy server] [proxy port]
-;http-proxy-retry # retry on connection failures
 ;http-proxy-option AGENT "OpenVPN User-Agent"
 ;socks-proxy server [port]
 resolv-retry infinite
@@ -211,8 +212,8 @@ dev tun
 ;fragment 0
 # mssfix is not supported in iOS OpenVPN 1.x
 ;mssfix 0
-sndbuf 0
-rcvbuf 0
+;sndbuf 0
+;rcvbuf 0
 ;keepalive 10 60 # pushed by server
 ping-timer-rem
 persist-tun
@@ -221,25 +222,24 @@ persist-key
 verb 2
 # Silence repeating messages
 mute 20
-;compress lz4
-comp-lzo
+compress lz4
 
 # Server Mode
 push-peer-info
 
 # Client Mode
 client
+allow-recursive-routing
 
 # Data Channel Encryption Options
-key-direction 1 # since tls-auth is inline
 # openvpn --show-digests
 ;auth SHA1    # default
-;auth SHA256
+auth SHA256
 # openvpn --show-ciphers
 ;cipher BF-CBC        # Blowfish (default; do not use: Sweet32)
 cipher AES-128-CBC   # AES cipher algorithm is well-suited for the ARM processor
 ;cipher DES-EDE3-CBC  # Triple-DES (do not use: Sweet32)
-;cipher AES-128-GCM
+;cipher AES-128-GCM   # GCM has smaller overhead: 20 bytes per packet instead of 36 for CBC
 ;cipher AES-256-GCM
 # common false alarm on WiFi networks
 mute-replay-warnings
@@ -250,16 +250,14 @@ mute-replay-warnings
 ;key
 # If your clients and servers are modern (2.3.3+), they should support TLSv1.2 just fine
 # Note that this will break OpenVPN versions 2.3.2 and earlier, which only expect TLSv1.0 handshake signatures.
-;tls-version-min 1.2 or-highest
+tls-version-min 1.2 or-highest
 ;tls-version-min 1.2
 # openvpn --show-tls
 ;tls-cipher TLS-DHE-RSA-WITH-AES-128-GCM-SHA256
 ;tls-cipher TLS-DHE-RSA-WITH-AES-256-GCM-SHA384
 ;tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256:TLS-ECDHE-ECDSA-WITH-AES-128-GCM-SHA256:TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384:TLS-DHE-RSA-WITH-AES-256-CBC-SHA256
 tls-exit
-# OpenVPN 2.4: replace tls-auth with "tls-crypt ta.key" and remove "key-direction"
-;tls-auth ta.key 1
-;ns-cert-type server # Netscape extensions are deprecated
+;tls-crypt ta.key
 remote-cert-tls server
 
 # Windows-Specific Options
@@ -300,6 +298,9 @@ if [ ! -e /dev/net/tun ]; then
 fi
 
 modprobe -v tun
+
+# SELinux: if using port != 1194;
+#semanage port -a -t openvpn_port_t -p "$PROTOCOL" "$PORT"
 
 # configure firewall
 

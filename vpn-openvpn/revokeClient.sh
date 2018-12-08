@@ -22,7 +22,7 @@ fi
 CLIENT=$(tail -n +2 easy-rsa/pki/index.txt | grep "^V" | cut -d '=' -f 2 | sed -n "$CLIENTNUMBER"p)
 cd easy-rsa/
 ./easyrsa --batch revoke "$CLIENT"
-./easyrsa gen-crl
+EASYRSA_CRL_DAYS=3650 ./easyrsa gen-crl
 # Ensure "nobody" can read the CRL
 chmod a+r pki/crl.pem
 chmod a+x pki

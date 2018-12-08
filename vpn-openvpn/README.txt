@@ -8,7 +8,7 @@ Known issue: no separation between CA management and vpn server
 Reference documentation:
 * https://community.openvpn.net/openvpn/wiki/HOWTO
 * https://community.openvpn.net/openvpn/wiki/FAQ
-* https://community.openvpn.net/openvpn/wiki/Openvpn23ManPage
+* https://community.openvpn.net/openvpn/wiki/Openvpn24ManPage
 
 Credits:
 * https://github.com/Nyr/openvpn-install

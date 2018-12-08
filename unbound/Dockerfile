@@ -1,4 +1,4 @@
-FROM cedrik/baseimage:16.04
+FROM cedrik/baseimage:18.04
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
@@ -14,7 +14,7 @@ RUN apt-get update \
 		curl -fsSL -o /etc/unbound/icannbundle.pem https://data.iana.org/root-anchors/icannbundle.pem ; \
 	fi \
 	&& if ! [ -f /var/lib/unbound/root.key ]; then \
-		unbound-anchor -a /var/lib/unbound/root.key -v 2>&1 ; \
+		unbound-anchor -a /var/lib/unbound/root.key -c /etc/unbound/icannbundle.pem -v 2>&1 ; \
 		chown unbound:unbound /var/lib/unbound/root.key ; \
 	fi \
 	&& if ! [ -f /etc/unbound/unbound_server.pem -o -f /etc/unbound/unbound_control.pem ]; then \

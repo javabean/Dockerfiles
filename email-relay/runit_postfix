@@ -5,5 +5,6 @@ set -eu
 #shopt -s failglob
 #set -x
 
+#exec postfix start-fg
 #exec gosu postfix /usr/lib/postfix/sbin/master
 exec /usr/lib/postfix/sbin/master

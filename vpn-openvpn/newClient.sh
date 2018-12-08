@@ -21,9 +21,9 @@ newclient () {
 	echo "<key>"            >> ${CLIENT_CERT}
 	cat easy-rsa/pki/private/$1.key >> ${CLIENT_CERT}
 	echo "</key>"           >> ${CLIENT_CERT}
-	echo "<tls-auth>"       >> ${CLIENT_CERT}
+	echo "<tls-crypt>"       >> ${CLIENT_CERT}
 	cat ta.key              >> ${CLIENT_CERT}
-	echo "</tls-auth>"      >> ${CLIENT_CERT}
+	echo "</tls-crypt>"      >> ${CLIENT_CERT}
 }
 
 if [ "$#" -eq 0 ]; then
@@ -37,7 +37,7 @@ fi
 while test "$#" -gt 0; do
 	echo "Generating client certificate for: $1"
 	cd easy-rsa
-	./easyrsa build-client-full "$1" nopass
+	EASYRSA_CERT_EXPIRE=3650 ./easyrsa build-client-full "$1" nopass
 	cd ..
 	# Generates the custom client.ovpn
 	newclient "$1"

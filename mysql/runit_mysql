@@ -5,7 +5,7 @@ set -eu
 #set -x
 
 mkdir -p /var/log/mysql /var/run/mysqld
-chown mysql:adm /var/log/mysql /var/run/mysqld
+chown -R mysql:adm /var/log/mysql /var/run/mysqld
 
 # https://dev.mysql.com/doc/refman/5.7/en/server-parameters.html
 

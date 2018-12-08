@@ -36,6 +36,8 @@ run_startup_files() {
 	# Run /etc/rc.local.
 #	echo "Running /etc/rc.local..."
 	[ -x /etc/rc.local ] && /etc/rc.local
+	# Ubuntu 18.04: in case /etc/rc.local does not exist, need a noop to avoid crashing(!)
+	:
 }
 
 run_pre_shutdown_scripts() {

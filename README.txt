@@ -28,8 +28,6 @@ baseimage
 		http-proxy
 		php7-base
 			owncloud	(requires email-relay, redis, memcached[, mysql])
-			prestashop	(requires mysql, email-relay[, memcached])
-			joomla 		(requires mysql, email-relay[, memcached])
 			wordpress	(requires mysql, email-relay[, memcached])
 			dokuwiki	(requires email-relay)
 	tiddlywiki*
@@ -40,7 +38,7 @@ baseimage
 	openvpn	(requires dnsmasq, ziproxy)
 	ziproxy
 	transmission
-	netdata
+	sslh
 * = not ready yet
 
 For dependencies and additional usage notes, go read `docker-compose.yml` :-)
@@ -62,14 +60,6 @@ MAINTENANCE
 `vpn-openvpn/Dockerfile`: check and adjust EasyRSA version
 
 ownCloud: manually `/usr/local/bin/ownCloudUpgrade.sh` after Docker image upgrade
-
-Prestashop: online upgrade before upgrading Docker image, then re-install translation via back-office
-	html/mails/fr/
-	html/themes/default-bootstrap/lang/fr.php
-	html/translations/fr/
-
-Joomla: online upgrade before upgrading Docker image
-	https://docs.joomla.org/Portal:Upgrading_Versions
 
 WordPress: online upgrade before upgrading Docker image
 
