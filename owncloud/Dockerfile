@@ -1,12 +1,12 @@
 #FROM owncloud:latest
-#FROM php:7.0-apache
+#FROM php:7.1-apache
 FROM cedrik/php7-base:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
 # see https://github.com/docker-library/owncloud/blob/master/9.1/apache/Dockerfile
-# https://doc.owncloud.org/server/9.1/admin_manual/installation/source_installation.html#prerequisites
-# https://doc.owncloud.org/server/9.1/admin_manual/configuration_server/performance_tuning.html
+# https://doc.owncloud.org/server/10.0/admin_manual/installation/source_installation.html#prerequisites
+# https://doc.owncloud.com/server/10.0/admin_manual/configuration/server/oc_server_tuning.html
 
 
 COPY owncloud.conf /etc/apache2/conf-enabled/
@@ -25,11 +25,11 @@ RUN curl -fsSL https://download.owncloud.org/download/repositories/${OWNCLOUD_VE
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	curl bzip2 openssl file sqlite3 \
 	libapache2-mod-xsendfile \
-	php7.0-gd php7.0-json php7.0-mysql php7.0-curl php7.0-intl php7.0-mcrypt php7.0-imagick php7.0-xml \
-	php7.0 php7.0-cli php7.0-readline php7.0-sqlite3 php7.0-mbstring php7.0-zip php7.0-bz2 \
-	#php7.0-pgsql libapache2-mod-php7.0 php7.0-ldap php7.0-imap php-smbclient php7.0-gmp \
-	#php7.0-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
-	php7.0-apcu php7.0-memcached php7.0-redis \
+	php7.1-common php7.1-gd php7.1-json php7.1-mysql php7.1-curl php7.1-intl php7.1-mcrypt php7.1-imagick php7.1-xml \
+	php7.1 php7.1-cli php7.1-readline php7.1-sqlite3 php7.1-mbstring php7.1-zip php7.1-bz2 \
+	#php7.1-pgsql libapache2-mod-php7.1 php7.1-ldap php7.1-imap php-smbclient php-ssh2 php7.1-gmp \
+	#php7.1-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
+	php7.1-apcu php7.1-memcached php7.1-redis \
 	owncloud-files \
 # we need sudo to upgrade DB between OwnCloud versions
 	sudo \
@@ -43,11 +43,11 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh \
 # PHP configuration
-	&& echo "\n\n\napc.enable_cli=1" >> /etc/php/7.0/cli/php.ini \
+	&& echo "\n\n\napc.enable_cli=1" >> /etc/php/7.1/cli/php.ini \
 #	&& sed -i'.bak' \
 #		-e 's%\(memory_limit\) = .*M%\1 = 256M%' \
 #		-e 's%\(max_file_uploads\) = 20%\1 = 200%' \
-#		  /etc/php/7.0/apache2/php.ini \
+#		  /etc/php/7.1/apache2/php.ini \
 # statistics tool
 	&& if test -f /usr/share/php5/apcu/apc.php; then ln -s /usr/share/php5/apcu/apc.php /var/www/owncloud/; fi \
 	&& if test -f /usr/share/doc/php-apcu/apc.php; then ln -s /usr/share/doc/php-apcu/apc.php /var/www/owncloud/; fi

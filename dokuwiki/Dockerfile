@@ -1,4 +1,4 @@
-#FROM php:7.0-apache
+#FROM php:7.1-apache
 FROM cedrik/php7-base:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
@@ -6,7 +6,7 @@ LABEL org.label-schema.schema-version="1.0" \
 # https://www.dokuwiki.org/
 
 ############### FIXME  change version here! ###############
-#ARG DOKUWIKI_VERSION=2017-02-19a
+#ARG DOKUWIKI_VERSION=2018-04-22a
 ARG DOKUWIKI_VERSION=stable
 # Languages to keep (delete all others)
 ARG STRIP_LANGS_KEEP=
@@ -17,10 +17,10 @@ COPY backup_conf_local.sh restore_conf_local.sh upgrade-dokuwiki.sh cleanup.sh  
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	libapache2-mod-xsendfile \
-	php7.0-zip php7.0-bz2 \
-	libpng16-16 libjpeg62 libjpeg8 libjpeg-turbo8 libjpeg9 php7.0-gd \
-	php7.0-curl libxml2 php7.0-xml php7.0-mcrypt openssl php7.0-soap \
-	php7.0-json php7.0-intl \
+	php7.1-zip php7.1-bz2 \
+	libpng16-16 libjpeg62 libjpeg8 libjpeg-turbo8 libjpeg9 php7.1-gd \
+	php7.1-curl libxml2 php7.1-xml php7.1-mcrypt openssl php7.1-soap \
+	php7.1-json php7.1-intl \
 # we need sudo to upgrade DokuWiki via CLI
 	sudo \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
@@ -49,7 +49,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 		-e 's%\(post_max_size\) = .*M%\1 = 15M%' \
 		-e 's%\(session.use_cookies\) = .*%\1 = 1%' \
 #		-e 's%\(session.cache_limiter\) = .*%\1 = nocache%' \
-		/etc/php/7.0/apache2/php.ini
+		/etc/php/7.1/apache2/php.ini
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
