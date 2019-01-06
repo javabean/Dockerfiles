@@ -21,7 +21,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 	&& ln -s /opt/dovecot/local.conf /etc/dovecot/ \
 	&& ln -s /opt/dovecot/passwd /etc/dovecot/users
 
-#VOLUME ["/opt/dovecot" "/var/log"]
+#VOLUME ["/opt/dovecot", "/var/log"]
 
 EXPOSE 143 993 4190
 

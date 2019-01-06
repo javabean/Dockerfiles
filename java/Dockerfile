@@ -37,10 +37,10 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 #	&& mv -v /tmp/UnlimitedJCEPolicyJDK8/*.jar /opt/jdk8/jre/lib/security/ \
 #	&& rm -r /tmp/jce_policy-8.zip /tmp/UnlimitedJCEPolicyJDK
 
-# Java 8 (Ubuntu PPA)
+# Java 8 (Ubuntu PPA): add-apt-repository -y ppa:webupd8team/java
 ##RUN echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu `lsb_release -cs` main" | tee /etc/apt/sources.list.d/webupd8team-java.list \
 ##	&& echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu `lsb_release -cs` main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list \
-##	&& apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 \
+##	&& apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C2518248EEA14886 \
 #RUN LC_ALL=C.UTF-8  add-apt-repository -y ppa:webupd8team/java \
 #	&& apt-get update \
 #	&& echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections \

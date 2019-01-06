@@ -23,8 +23,8 @@ export_envvars() {
 	# read-only filesystem...
 	#env | grep -v ... > /etc/environment
 	env | grep -v -e 'HOME' -e 'USER' -e 'LOGNAME' -e 'GROUP' -e 'UID' -e 'GID' -e 'SHELL' -e 'PWD' -e 'SHLVL' > /run/environment
-	chown root /run/environment || true
-	chgrp docker_env /run/environment || true
+	chown root /run/environment
+	chgrp docker_env /run/environment
 	chmod 640 /run/environment
 }
 
@@ -127,7 +127,7 @@ main() {
 		chmod a+rwx,+t /run/lock
 	fi
 
-	export_envvars
+	export_envvars || true
 
 	run_startup_files
 

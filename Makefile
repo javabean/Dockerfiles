@@ -36,7 +36,7 @@ APT_MIRROR ?= fr.archive.ubuntu.com
 # END set versions here
 ########################################################################
 
-docker_compose_build = consul http-proxy tomcat dovecot dnsmasq unbound email-relay mysql owncloud wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission
+docker_compose_build = consul http-proxy http-static tomcat dovecot dnsmasq unbound email-relay mysql owncloud wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission sslh
 .PHONY: $(docker_compose_build)
 
 
@@ -58,6 +58,7 @@ pull: ## pull base Docker images from Docker Hub
 	docker image pull memcached:1.5-alpine
 	docker image pull redis:3-alpine
 	docker image pull silverwind/droppy
+	#docker image pull silverwind/armhf-droppy
 	docker image pull portainer/portainer
 	#docker image pull certbot/certbot
 	docker image pull traefik:$(TRAEFIK_VERSION)
@@ -211,6 +212,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	/opt/openvpn                                  /srv/logs/openvpn \
 	                                              /srv/logs/ziproxy \
 	  /srv/transmission \
+	  /srv/bitwarden \
 	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt \
 	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known /srv/dokuwiki/acme-challenge/.well-known \
 	/opt/droppy  /srv/droppy/.well-known/acme-challenge \

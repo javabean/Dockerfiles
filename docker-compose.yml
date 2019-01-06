@@ -88,9 +88,9 @@ services:
     cpu_shares: 1024
     mem_limit: 128m
     memswap_limit: 192m
-    mem_swappiness: 10
+    mem_swappiness: 1
     #mem_reservation: 128m
-    #read_only: true
+    read_only: true
     restart: "no"
 
 ########################################################################
@@ -100,6 +100,8 @@ services:
       service: base-service
     build:
       context: consul
+    #ports:
+    #- "8500:8500"
     expose:
     - "8300"
     - "8301"
@@ -117,7 +119,7 @@ services:
     #- CONSUL_OPTS=-dev
     - CONSUL_OPTS=-bootstrap-expect 1 -datacenter dc1
     volumes:
-    - /opt/consul/config:/usr/local/etc/consul:ro
+    - /opt/consul/config:/usr/local/etc/consul.d:ro
     - /srv/consul/data:/srv/consul/data
     #- /lib/modules:/lib/modules:ro
     #cap_add:
@@ -134,7 +136,6 @@ services:
     mem_limit: 128m
     memswap_limit: 192m
     mem_reservation: 64m
-    read_only: true
     restart: always
 
 ########################################################################
@@ -147,13 +148,12 @@ services:
     image: traefik:${TRAEFIK_VERSION:-1.7}
     init: true
     command: ["-c", "/etc/traefik/traefik.toml", "--sendAnonymousUsage=false", "--checkNewVersion=false", "--docker"]
-#    expose:
-#    - "443"
+    expose:
+    - "8080"
+    - "8443"
     ports:
     - "80:80"
     - "443:443"
-    - "8080:8080"
-    - "8443:8443"
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock:ro
     - /opt/traefik/traefik.toml:/etc/traefik/traefik.toml
@@ -173,7 +173,7 @@ services:
     networks:
     # "default" needed to get connectivity from outside(!)
     - default
-    #- static-http
+    - http-static
     - tomcat-front
     - owncloud-front
     - wordpress-front
@@ -181,14 +181,45 @@ services:
     - tiddlywiki-front
     - droppy
     - transmission
-    cpu_shares: 128
+    #- bitwarden
+    cpu_shares: 256
     mem_limit: 96m
     memswap_limit: 128m
     mem_reservation: 32m
-    read_only: true
     restart: unless-stopped
 
-#  http-static:
+  http-static:
+    extends:
+      service: base-service
+    build: apache-static
+    labels:
+      - "traefik.backend=http-static"
+      - "traefik.port=80"
+      - "traefik.enable=true"
+      #- "traefik.frontend.rule=Host:www1.example.com,www2.example.com"
+      - "traefik.frontend.entryPoints=http,https"
+      #- "traefik.frontend.redirect.entryPoint=https"
+    expose:
+    - "80"
+    volumes:
+    #- /opt/http-static/mods-available:/opt/http-static/mods-available:ro
+    - /opt/http-static/mods-enabled:/opt/http-static/mods-enabled:ro
+    #- /opt/http-static/conf-available:/opt/http-static/conf-available:ro
+    - /opt/http-static/conf-enabled:/opt/http-static/conf-enabled:ro
+    - /opt/http-static/conf-include:/opt/http-static/conf-include:ro
+    #- /opt/http-static/sites-available:/opt/http-static/sites-available:ro
+    - /opt/http-static/sites-enabled:/opt/http-static/sites-enabled:ro
+    #- /opt/http-static/tls:/opt/http-static/tls:ro
+    #- /opt/letsencrypt:/etc/letsencrypt:ro
+    - /srv/http-static:/var/www:ro
+    - /srv/logs/http-static:/var/log
+    networks:
+    - http-static
+    cpu_shares: 256
+    mem_limit: 128m
+    memswap_limit: 192m
+    mem_reservation: 96m
+    restart: unless-stopped
 
   http-proxy:
     extends:
@@ -236,11 +267,11 @@ services:
     - tiddlywiki-front
     - droppy
     - transmission
+    #- bitwarden
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
     mem_reservation: 96m
-    read_only: true
     restart: unless-stopped
 
   sslh:
@@ -270,12 +301,13 @@ services:
     mem_limit: 64m
     memswap_limit: 96m
     mem_reservation: 32m
-    read_only: true
     restart: unless-stopped
 
 ########################################################################
 
   portainer:
+    extends:
+      service: base-service
     image: portainer/portainer
     init: true
     labels:
@@ -298,7 +330,6 @@ services:
     mem_limit: 64m
     memswap_limit: 96m
     mem_reservation: 32m
-    read_only: true
     restart: unless-stopped
 
 ########################################################################
@@ -309,7 +340,7 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=8.5.35
+      - TOMCAT_VERSION=8.5.37
     labels:
       - "traefik.backend=tomcat"
       - "traefik.port=8080"
@@ -338,7 +369,6 @@ services:
     memswap_limit: 1024m
     mem_swappiness: 1
     mem_reservation: 1024m
-    read_only: true
     restart: on-failure:2
 
 ########################################################################
@@ -527,14 +557,16 @@ services:
     mem_limit: 384m
     memswap_limit: 512m
     mem_reservation: 256m
-    read_only: true
     restart: on-failure:5
 
 ########################################################################
 
   # https://github.com/silverwind/droppy
   droppy:
+    extends:
+      service: base-service
     image: silverwind/droppy
+#    image: silverwind/armhf-droppy
     init: true
     labels:
       - "traefik.backend=droppy"
@@ -563,7 +595,6 @@ services:
     mem_limit: 192m
     memswap_limit: 256m
     mem_reservation: 128m
-    read_only: true
     restart: unless-stopped
 
 ########################################################################
@@ -588,6 +619,7 @@ services:
     - owncloud-back
     - wordpress-back
     - dokuwiki-back
+    - bitwarden
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
@@ -649,7 +681,6 @@ services:
     mem_limit: 448m
     memswap_limit: 512m
     mem_reservation: 416m
-    read_only: true
     restart: unless-stopped
 
 ########################################################################
@@ -756,8 +787,89 @@ services:
     mem_limit: 128m
     memswap_limit: 192m
     mem_reservation: 96m
-    read_only: true
     restart: unless-stopped
+
+########################################################################
+
+  # https://github.com/dani-garcia/bitwarden_rs/wiki
+  bitwarden:
+    extends:
+      service: base-service
+    #image: mprasil/bitwarden:latest
+    image: mprasil/bitwarden:alpine
+    #image: mprasil/bitwarden:raspberry
+    init: true
+    labels:
+      - "traefik.backend=bitwarden"
+      - "traefik.port=80"
+      #- "traefik.enable=true"
+      - "traefik.frontend.rule=Host:vault.example.com"
+      - "traefik.frontend.entryPoints=https"
+      #- "traefik.frontend.redirect.entryPoint=https"
+      - "traefik.web.frontend.rule=Host:vault.example.local"
+      - "traefik.web.port=80"
+      - "traefik.hub.frontend.rule=Path:/notifications/hub"
+      - "traefik.hub.port=3012"
+      - "traefik.negotiate.frontend.rule=Path:/notifications/hub/negotiate"
+      - "traefik.negotiate.port=80"
+      # IP restriction on https admin endpoint
+      - "traefik.407.frontend.entryPoints=https"
+      - "traefik.407.frontend.rule=PathPrefix:/admin"
+      - "traefik.407.frontend.priority=65536"
+      - "traefik.407.frontend.whiteList.sourceRange=192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8"
+    expose:
+    - "80"
+    - "3012"
+    # See https://github.com/dani-garcia/bitwarden_rs/blob/master/.env
+    environment:
+    #- DOMAIN=https://bw.example.com
+    - SIGNUPS_ALLOWED=false
+    - INVITATIONS_ALLOWED=false
+    # generate token: e.g. `openssl rand -base64 48`
+    #- ADMIN_TOKEN=Vy2VyYTTsKPv8W5aEOWUbB/Bt3DEKePbHmI4m9VcemUMS2rEviDowNAFqYi1xjmp
+    #- WEB_VAULT_ENABLED=true
+    - WEBSOCKET_ENABLED=true
+    #- SHOW_PASSWORD_HINT=true
+    #- ROCKET_PORT=80
+    #- ROCKET_LIMITS={json=10485760}
+    #- ROCKET_WORKERS=10
+    - ROCKET_ENV=production
+    - SMTP_HOST=email-relay
+    - SMTP_FROM=bitwarden@example.com
+    - SMTP_PORT=25
+    - SMTP_SSL=false
+    #- SMTP_USERNAME=
+    #- SMTP_PASSWORD=
+    # Logging to file; it is recommended to also set 'ROCKET_CLI_COLORS=off'
+    #- LOG_FILE=/data/bitwarden.log
+    depends_on:
+      email-relay:
+        condition: service_started
+    volumes:
+    - /srv/bitwarden:/data
+    #- /opt/bitwarden/web-vault:/web-vault:ro
+    networks:
+    - bitwarden
+    cpu_shares: 512
+    mem_limit: 128m
+    memswap_limit: 192m
+    mem_reservation: 32m
+    restart: unless-stopped
+
+  # https://gitlab.com/1O/bitwarden_rs-backup
+  bitwarden-db-backup:
+    extends:
+      service: base-service
+    image: registry.gitlab.com/1o/bitwarden_rs-backup:latest
+    #image: registry.gitlab.com/1o/bitwarden_rs-backup:rpi3
+    init: true
+    #environment:
+    #- CRON_TIME=0 5 * * *
+    #- DB_FILE=/data/db.sqlite3
+    #- BACKUP_FILE=/data/db-backup/backup.sqlite3
+    #- TIMESTAMP=false
+    volumes:
+    - /srv/bitwarden:/data
 
 ########################################################################
 
@@ -767,7 +879,7 @@ services:
       service: base-service
     build: dnsmasq
     # Can not use "command: [...]" since we need to start runit as main process (dnsmasq is started via runit)
-    #command: ["/usr/sbin/dnsmasq", "--log-facility=-", "--cache-size=150", "--no-hosts", "-H", "/opt/dnsmasq/hosts", "-r", "/opt/dnsmasq/resolv.conf", "--rebind-domain-ok=/plex.direct/gestionbbox.lan/"]
+    #command: ["/usr/sbin/dnsmasq", "--log-facility=-", "--cache-size=150", "--bind-interfaces", "--no-hosts", "-H", "/opt/dnsmasq/hosts", "-r", "/opt/dnsmasq/resolv.conf", "--rebind-domain-ok=/plex.direct/gestionbbox.lan/"]
     expose:
     - "53/tcp"
     - "53/udp"
@@ -776,7 +888,7 @@ services:
     - CONSUL_NO_DNS_53=1
     # -log-facility=/dev/null
     # --log-queries --log-facility=-
-    - DNSMASQ_EXTRA_OPTS=--cache-size=150 --log-facility=- --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
+    - DNSMASQ_EXTRA_OPTS=--cache-size=150 --log-facility=- --bind-interfaces --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
     tmpfs:
     # mount writable dir for consul (configuration file built according to env vars)
     - /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
@@ -787,10 +899,8 @@ services:
     mem_limit: 192m
     memswap_limit: 256m
     mem_reservation: 160m
-    read_only: true
     restart: always
 
-  # dnsmasq is our internal (since no ACL) DNS server
   dnsmasq:
     extends:
       service: dnsmasq-base
@@ -798,7 +908,7 @@ services:
     # also publish service on gateway IP since docker-compose 1.6 can't assign a fixed IP to this container
     - "172.31.53.254:53:53/udp"
     environment:
-    - DNSMASQ_EXTRA_OPTS=--cache-size=900 --log-facility=/dev/null --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
+    - DNSMASQ_EXTRA_OPTS=--cache-size=900 --log-facility=/dev/null --bind-interfaces --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
     depends_on:
       consul:
         condition: service_healthy
@@ -823,7 +933,7 @@ services:
       service: dnsmasq-base
     environment:
     - CONSUL_TAG=shalla
-    - DNSMASQ_EXTRA_OPTS=--cache-size=50 --log-facility=/dev/null --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
+    - DNSMASQ_EXTRA_OPTS=--cache-size=50 --log-facility=/dev/null --bind-interfaces --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
     depends_on:
       consul:
         condition: service_healthy
@@ -842,7 +952,7 @@ services:
       service: dnsmasq-base
     environment:
     - CONSUL_TAG=urlblacklist
-    - DNSMASQ_EXTRA_OPTS=--cache-size=50 --log-facility=/dev/null --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
+    - DNSMASQ_EXTRA_OPTS=--cache-size=50 --log-facility=/dev/null --bind-interfaces --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
     depends_on:
       consul:
         condition: service_healthy
@@ -850,7 +960,7 @@ services:
     volumes:
     - /opt/dnsmasq-urlblacklist:/opt/dnsmasq
     - /opt/dnsmasq-urlblacklist/dnsmasq.d:/etc/dnsmasq.d:ro
-#    - /srv/logs/dnsmasq-urlblacklist:/var/log
+    #- /srv/logs/dnsmasq-urlblacklist:/var/log
     networks:
     - vpn
 
@@ -887,7 +997,6 @@ services:
     mem_limit: 64m
     memswap_limit: 96m
     mem_reservation: 64m
-    read_only: true
     restart: always
 
 ########################################################################
@@ -909,7 +1018,6 @@ services:
     mem_limit: 128m
     memswap_limit: 192m
     mem_reservation: 32m
-    read_only: true
     restart: unless-stopped
 
 ########################################################################
@@ -981,7 +1089,6 @@ services:
     mem_limit: 64m
     memswap_limit: 96m
     mem_reservation: 32m
-    read_only: true
     restart: unless-stopped
 
 ########################################################################
@@ -1014,7 +1121,6 @@ services:
     memswap_limit: 192m
     mem_reservation: 96m
     #blkio-weight: 10
-    read_only: true
     restart: "no"
 
 ########################################################################
@@ -1055,6 +1161,13 @@ services:
 ########################################################################
 
 #volumes:
+#    my-nfs-mount:
+#        driver: local
+#        driver_opts:
+#            type: "nfs"
+#            o: "addr=192.0.2.111,ro"
+#            #o: "addr=192.0.2.111,vers=4,soft,timeo=180,bg,tcp,ro"
+#            device: ":/path/to/server/nfs/share"
 
 ########################################################################
 ########################################################################
@@ -1157,6 +1270,16 @@ networks:
     ipam:
       config:
       - subnet: 172.31.11.0/24
+  bitwarden:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.12.0/24
+  http-static:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.13.0/24
   vpn:
     driver: bridge
     ipam:
