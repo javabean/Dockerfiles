@@ -14,7 +14,7 @@ DOCKER_APT_VERSION = 18.09.*
 # url fragment
 DOCKER_COMPOSE_VERSION = 1.23.2
 # url fragment
-DOCKER_MACHINE_VERSION = v0.16.0
+DOCKER_MACHINE_VERSION = v0.16.1
 
 DOCKER_FROM_IMAGE ?= ubuntu
 DOCKER_FROM_VERSION ?= 18.04
@@ -25,6 +25,7 @@ DOCKER_FROM ?= $(DOCKER_FROM_IMAGE):$(DOCKER_FROM_VERSION)
 #APT_MIRROR ?= mirrors.online.net
 #APT_MIRROR ?= mirror.scaleway.com
 #APT_MIRROR ?= mirror.cloud.online.net # internal network only, does not work for containers!
+#APT_MIRROR ?= azure.archive.ubuntu.com
 #APT_MIRROR ?= us-west1.gce.archive.ubuntu.com
 APT_MIRROR ?= fr.archive.ubuntu.com
 # arm
@@ -111,19 +112,19 @@ tag_latest:
 
 .PHONY: stats
 stats: ## display running containers statistics
-	docker stats --no-stream $$(docker ps --format='{{.Names}}')
+	docker container stats --no-stream $$(docker ps --format='{{.Names}}')
 
 .PHONY: ip
 ip:
-	@#docker inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(filter-out $@,$(MAKECMDGOALS))
-	@#docker inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(NAME)
-	docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $$(docker ps -f name=$(NAME) -q)
+	@#docker container inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(filter-out $@,$(MAKECMDGOALS))
+	@#docker container inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(NAME)
+	docker container inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $$(docker ps -f name=$(NAME) -q)
 
 .PHONY: health
 health: ## Print out the text of the last 5 checks. Use with:  NAME=<container_name>  make health
 health:
-	@#docker inspect --format='{{json .State.Health}}' $(NAME)
-	docker inspect -f '{{ range .State.Health.Log }}{{ println "======\nStart:" .Start }}{{ .Output }}{{end}}' $(NAME)
+	@#docker container inspect --format='{{json .State.Health}}' $(NAME)
+	docker container inspect -f '{{ range .State.Health.Log }}{{ println "======\nStart:" .Start }}{{ .Output }}{{end}}' $(NAME)
 
 #%:
 #	@:
