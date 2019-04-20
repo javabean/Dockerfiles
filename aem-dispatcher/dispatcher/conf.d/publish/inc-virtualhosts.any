@@ -1,0 +1,15 @@
+# https://helpx.adobe.com/experience-manager/dispatcher/using/dispatcher-configuration.html#IdentifyingVirtualHostsvirtualhosts
+
+    # Hostname globbing for farm selection (virtual domain addressing)
+    /virtualhosts
+      {
+      # Entries will be compared against the "Host" request header
+      # and an optional request URL prefix.
+      #
+      # Examples:
+      #
+      #   www.company.com
+      #   intranet.*
+      #   myhost:8888/mysite
+      "*"
+      }

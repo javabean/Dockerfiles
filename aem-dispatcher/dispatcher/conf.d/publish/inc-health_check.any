@@ -1,0 +1,8 @@
+# https://helpx.adobe.com/experience-manager/dispatcher/using/dispatcher-configuration.html#HandlingRenderConnectionErrors
+
+    # URL that is checked for 500 status code
+#    /health_check
+#      {
+#      # Page gets contacted when an instance returns a 500
+#      /url "/health_check.html"
+#      }

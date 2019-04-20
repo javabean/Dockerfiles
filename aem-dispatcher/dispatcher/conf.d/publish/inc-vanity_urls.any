@@ -1,0 +1,7 @@
+# https://helpx.adobe.com/experience-manager/dispatcher/using/dispatcher-configuration.html#EnablingAccesstoVanityURLsvanityurls
+
+    #/vanity_urls {
+    #  /url "/libs/granite/dispatcher/content/vanityUrls.html"
+    #  /file "/tmp/aem_vanity_urls"
+    #  /delay 300
+    #}

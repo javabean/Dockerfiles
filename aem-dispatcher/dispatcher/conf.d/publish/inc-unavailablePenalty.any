@@ -1,0 +1,3 @@
+# https://helpx.adobe.com/experience-manager/dispatcher/using/dispatcher-configuration.html#HandlingRenderConnectionErrors
+
+#    /numberOfRetries "5"

@@ -1,0 +1,45 @@
+# https://helpx.adobe.com/experience-manager/dispatcher/using/permissions-cache.html
+# https://helpx.adobe.com/experience-manager/kb/PSCachingDelivery.html
+
+    # Authorization checker: before a page in the cache is delivered, a HEAD
+    # request is sent to the URL specified in /url with the query string
+    # '?uri='. If the response status is 200 (OK), the page is returned
+    # from the cache. Otherwise, the request is forwarded to the render and
+    # its response returned.
+    #
+    # Only pages matching the /filter section below are checked, all other pages
+    # get delivered unchecked.
+    #
+    # All header lines returned from the auth_checker's HEAD request that match
+    # the /headers section will be returned as well.
+    #
+    #/auth_checker
+    #  {
+    #  /url "/bin/permissioncheck.html"
+    #  /filter
+    #    {
+    #    /0000
+    #      {
+    #      /glob "*"
+    #      /type "deny"
+    #      }
+    #    /0001
+    #      {
+    #      /glob "*.html"
+    #      /type "allow"
+    #      }
+    #    }
+    #  /headers
+    #    {
+    #    /0000
+    #      {
+    #      /glob "*"
+    #      /type "deny"
+    #      }
+    #    /0001
+    #      {
+    #      /glob "Set-Cookie:*"
+    #      /type "allow"
+    #      }
+    #    }
+    #  }

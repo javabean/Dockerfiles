@@ -1,0 +1,10 @@
+# https://helpx.adobe.com/experience-manager/dispatcher/using/dispatcher-configuration.html#SpecifyingtheHTTPHeaderstoPassThroughclientheaders
+
+    # Request headers that should be forwarded to the remote server.
+    /clientheaders
+      {
+      # Forward all request headers that are end-to-end. If you want
+      # to forward a specific set of headers, you'll have to list
+      # them here.
+      "*"
+      }

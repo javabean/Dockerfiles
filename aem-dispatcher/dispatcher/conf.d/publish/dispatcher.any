@@ -1,0 +1,58 @@
+# https://helpx.adobe.com/experience-manager/dispatcher/using/dispatcher-configuration.html
+# https://helpx.adobe.com/experience-manager/dispatcher/using/dispatcher-domains.html
+# Each farm configures a set of load balanced renders (i.e. remote servers)
+# You should place your default virtual host at the top of the virtualhosts property in the topmost farm of your dispatcher.any file
+/farms
+  {
+
+  # Cache invalidation farm entry
+  /publish
+    {
+    # The headers from the client HTTP request to pass through
+    $include "inc-clientheaders.any"
+
+    # The virtual hosts for this farm
+    $include "inc-virtualhosts.any"
+
+    # Support for session management and authentication
+    $include "inc-sessionmanagement.any"
+
+    # The servers that provide rendered pages (typically AEM publish instances)
+    $include "inc-renders.any"
+
+    # Defines the URLs to which Dispatcher enables access
+    $include "inc-filter.any"
+
+    # Configures access to vanity URLs
+    $include "inc-vanity_urls.any"
+
+    # Support for the forwarding of syndication requests
+    $include "inc-propagateSyndPost.any"
+
+    # Configures caching behavior
+    $include "inc-cache.any"
+
+    # Defining statistic categories for load-balancing calculations
+    $include "inc-statistics.any"
+
+    # The folder that contains sticky documents
+    $include "inc-stickyConnectionsFor.any"
+
+    # The URL to use to determine server availability
+    $include "inc-health_check.any"
+
+    # The delay before retrying a failed connection
+    $include "inc-retryDelay.any"
+
+    # Penalties that affect statistics for load-balancing calculations
+    $include "inc-unavailablePenalty.any"
+
+    # Resend requests to different renders when the original request fails
+    $include "inc-failover.any"
+
+    $include "inc-auth_checker.any"
+    }
+
+  $include "farm_*.any"
+
+  }

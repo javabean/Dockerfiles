@@ -1,0 +1,26 @@
+#!/bin/sh
+set -e
+set -u
+#(set -o | grep -q pipefail) && set -o pipefail
+#(set -o | grep -q posix) && set -o posix
+#shopt -s failglob
+#set -x
+
+# Checks if a new RewriteMap is available on AEM author, and if so update Apache httpd's RewriteMap with the new version.
+
+##############################################################################
+
+main() {
+	[ -f /usr/local/etc/cron/cron-commands.txt ] || touch /usr/local/etc/cron/cron-commands.txt
+
+	while IFS=$'\n' read -r CRON_COMMAND; do
+
+		CONTAINERS=$(docker container ps --format '{{.Names}}' --filter "label=dispatcher" --filter="status=running" --filter="health=healthy")
+		for CONTAINER_NAME in $CONTAINERS; do
+			# shellcheck disable=SC2086
+			docker container exec -ti "${CONTAINER_NAME}" ${CRON_COMMAND}
+		done
+
+	done < /usr/local/etc/cron/cron-commands.txt
+}
+main "$@"

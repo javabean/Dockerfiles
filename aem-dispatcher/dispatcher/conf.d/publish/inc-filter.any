@@ -1,0 +1,139 @@
+# https://helpx.adobe.com/experience-manager/dispatcher/using/dispatcher-configuration.html#ConfiguringAccesstoContentfilter
+
+    # The filter section defines the requests that should be handled by the dispatcher.
+    #
+    # Entries can be either specified using globs, or elements of the request line:
+    #
+    # (1) globs will be compared against the entire request line, e.g.:
+    #
+    #       /0001 { /type "deny" /glob "* /index.html *" }
+    #
+    #     denies request "GET /index.html HTTP/1.1" but not "GET /index.html?a=b HTTP/1.1".
+    #
+    # (2) method/url/query/protocol/path/selectors/extension/suffix will be compared
+    #     against the respective elements of  the request line, e.g.:
+    #
+    #       /0001 { /type "deny" /method "GET" /url "/index.html" }
+    #
+    #     denies both "GET /index.html" and "GET /index.html?a=b HTTP/1.1".
+    #
+    # (3) all elements of the request line can also be specified as regular expressions,
+    #     which are identified by using single quotes, e.g.
+    #
+    #       /0001 { /type "allow" /method '(GET|HEAD)' }
+    #
+    #     allows GET or HEAD requests, or:
+    #
+    #       /0002 { /type "deny" /extension '()' }
+    #
+    #     denies requests having no extension.
+    #
+    # Note: specifying elements of the request line is the preferred method.
+    #
+    /filter
+      {
+      # Deny everything first and then allow specific entries
+      #/0001 { /type "deny" /glob "*" }
+      # Allow by default, since we are in a multiple virtual hosts environment (Sling Mapping to /content/my-site)
+      # The following should be configured as Sling Mapping (/etc/map/http[s]/<site_id>): /libs, /etc/designs, /etc/clientlibs, /etc, /etc.clientlibs, /conf, (?:content/)?/dam, (?:content/)?/<site_id>
+      # Hint: sling:match <site_id>\.\\d+\.\\d+\.\\d+\.\\d+\.xip\.io\.\\d+
+      # See https://helpx.adobe.com/experience-manager/dispatcher/using/dispatcher-domains.html
+      # See https://sling.apache.org/documentation/the-sling-engine/mappings-for-resource-resolution.html
+      /0001 { /type "allow" /url "*" }
+      /0001a { /type "deny" /url "/apps/*" }
+      /0001b { /type "deny" /url "/bin/*" }
+      /0001c { /type "deny" /url "/conf/*" }
+      #/0001d { /type "allow" /url "/content/*" }
+      /0001e { /type "deny" /url "/etc/*" }
+      /0001f { /type "deny" /url "/home/*" }
+      #/0001g { /type "deny" /url "/jcr:system/*" }
+      /0001h { /type "deny" /url "/libs/*" }
+      /0001i { /type "deny" /url "/oak:index/*" }
+      /0001j { /type "deny" /url "/rep:policy/*" }
+      /0001k { /type "deny" /url "/rep:repoPolicy/*" }
+      #/0001l { /type "deny" /url "/system/*" }
+      /0001m { /type "deny" /url "/tmp/*" }
+      /0001n { /type "deny" /url "/var/*" }
+      /0001o { /type "deny" /url "/services/*" }
+      /0001p { /type "deny" /url "/admin/*"  }  # deny servlet engine admin
+      /0001q { /type "deny" /url "/crx/*"    }  # deny content repository
+      /0001r { /type "deny" /url "/system/*" }  # deny OSGi console
+      /0002 { /type "deny" /url "/dav/crx.default" }
+      /0003 { /type "deny" /url "/jcr:system/*" }
+      /0004 { /type "deny" /url "/_jcr_system/*" }
+      
+      # Open consoles
+#     /0011 { /type "allow" /url "/admin/*"  }  # allow servlet engine admin
+#     /0012 { /type "allow" /url "/crx/*"    }  # allow content repository
+#     /0013 { /type "allow" /url "/system/*" }  # allow OSGi console
+      
+      # Allow non-public content directories
+#     /0021 { /type "allow" /url "/apps/*"   }  # allow apps access
+      /0022 { /type "deny"  /url "/apps/sling/config/*" }
+#     /0022 { /type "allow" /url "/bin/*"    }
+      /0023 { /type "allow" /url "/content*" }  # disable this rule to allow mapped content only
+      
+#     /0024 { /type "allow" /url "/libs/*"   }
+      /0025 { /type "deny"  /url "/libs/shindig/proxy*" } # if you enable /libs close access to proxy
+
+#     /0026 { /type "allow" /url "/home/*"   }
+#     /0027 { /type "allow" /url "/tmp/*"    }
+#     /0028 { /type "allow" /url "/var/*"    }
+
+      /0030 { /type "allow" /url "/etc/designs/*" }
+      /0031 { /type "allow" /url "/libs/settings/wcm/designs/*" } # AEM >= 6.4 https://helpx.adobe.com/es/experience-manager/6-4/sites/deploying/using/repository-restructuring-in-aem64.html
+      /0032 { /type "allow" /url "/etc/clientlibs/*" }
+      /0033 { /type "allow" /url "/libs/clientlibs/*" }   # AEM >= 6.4 https://helpx.adobe.com/es/experience-manager/6-4/sites/deploying/using/repository-restructuring-in-aem64.html
+      /0034 { /type "allow" /url "/libs/*/clientlibs/*" } # AEM >= 6.4 https://helpx.adobe.com/es/experience-manager/6-4/sites/deploying/using/repository-restructuring-in-aem64.html
+      /0035 { /type "allow" /url "/etc.clientlibs/*" }
+      /0036 { /type "allow" /url "/etc/segmentation.segment.js" }
+      /0037 { /type "allow" /url "/libs/cq/personalization/components/clickstreamcloud/content/config.json" }
+      /0038 { /type "allow" /url "/libs/wcm/stats/tracker.js" }
+      /0039 { /type "allow" /url "/libs/cq/personalization/*"              }  # JS, CSS and JSON
+      /0040 { /type "allow" /url "/libs/cq/security/userinfo.json"         }  # CQ user information
+      /0041 { /type "allow" /url "/libs/granite/security/currentuser.json" }  # data must not be cached
+      /0042 { /type "allow" /url "/libs/cq/i18n/*"                         }  # Internalization
+
+      # Enable extensions in non-public content directories, using a regular expression
+      /0050
+        {
+        /type "allow"
+        /extension '(clientlibs|css|gif|ico|js|png|swf|jpe?g|woff2?)'
+        }
+
+      # Enable features 
+      /0062 { /type "allow" /url "/libs/cq/personalization/*"  }  # enable personalization
+
+      # Deny content grabbing, on all accessible pages, using regular expressions
+      /0081
+        {
+        /type "deny"
+        /selectors '((sys|doc)view|query|[0-9-]+)'
+        /extension '(json|xml)'
+        }
+      # Deny content grabbing for /content
+      /0082
+        {
+        /type "deny"
+        /path "/content"
+        /selectors '(feed|rss|pages|languages|blueprint|infinity|tidy)'
+        /extension '(json|xml|html)'
+        }
+      /0083
+        {
+        /type "deny"
+        /path "/"
+        /selectors '(feed|rss|pages|languages|blueprint|infinity|tidy)'
+        /extension '(json|xml|html)'
+        }
+
+      # Uncomment the following to allow one-level json requests
+#     /0087 { /type "allow" /method "GET" /extension "json" /selectors "1" }
+
+      /0990 { /type "deny" /url "/etc/replication.xml*"           } # Deny access to the replication configuration so it cannot be seen
+      /0991 { /type "deny" /url "/etc/replication.infinity.json*" } # Deny access to the replication configuration so it cannot be seen
+      /0992 { /type "deny" /url "/etc/reports/*"                  } # Deny access to reports in a publish environment
+      /0995 { /type "deny" /url "/libs/opensocial/proxy*"         } # Deny access to the Google Gadgets reverse proxy
+      # https://helpx.adobe.com/experience-manager/dispatcher/using/configuring-dispatcher-to-prevent-csrf.html
+      /0999 { /type "allow" /url "/libs/granite/csrf/token.json*" }
+      }

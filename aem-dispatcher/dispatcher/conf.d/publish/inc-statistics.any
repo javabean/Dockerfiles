@@ -1,0 +1,18 @@
+# https://helpx.adobe.com/experience-manager/dispatcher/using/dispatcher-configuration.html#ConfiguringLoadBalancingstatistics
+
+    # The statistics sections dictates how the load should be balanced among the
+    # renders according to the media-type. 
+    #/statistics
+    #  {
+    #  /categories
+    #    {
+    #    /html
+    #      {
+    #      /glob "*.html"
+    #      }
+    #    /others
+    #      {
+    #      /glob "*"
+    #      }
+    #    }
+    #  }

@@ -1,0 +1,111 @@
+%YAML 1.2
+---
+# https://docs.docker.com/compose/compose-file/
+
+version: '2.4'
+
+services:
+
+  dispatcher-author:
+    build:
+      context: dispatcher
+      args:
+      - DISPATCHER_URL=http://download.macromedia.com/dispatcher/download/dispatcher-apache2.4-linux-x86_64-4.3.2.tar.gz
+      #- DISPATCHER_URL=file:///usr/src/docker_build/dispatcher-apache2.4-linux-x86_64-4.3.2.tar.gz
+      # "author" or "publish"
+      - AEM_AP_RUNMODE=author
+    init: true
+    expose:
+    - "80"
+    - "443"
+    ports:
+    - "80:80"
+    environment:
+    # Docker tip: use service DNS entry here instead of ip!
+#    - AEM_ENDPOINT=192.0.2.2
+    - AEM_ENDPOINT=host.docker.internal
+    - HEALTHCHECK_PATH=/libs/granite/core/content/login.nocache.html
+    #depends_on:
+    #- aem6-author
+    volumes:
+    - /srv/dispatcher-author/cache:/usr/local/apache2/htdocs
+    - /srv/dispatcher-author/logs:/usr/local/apache2/logs
+    cpu_shares: 1024
+    mem_limit: 768m
+    memswap_limit: 1024m
+    mem_swappiness: 10
+    mem_reservation: 512m
+#    read_only: true
+    restart: on-failure:3
+
+  dispatcher-publish:
+    build:
+      context: dispatcher
+      args:
+      - DISPATCHER_URL=http://download.macromedia.com/dispatcher/download/dispatcher-apache2.4-linux-x86_64-4.3.2.tar.gz
+      #- DISPATCHER_URL=file:///usr/src/docker_build/dispatcher-apache2.4-linux-x86_64-4.3.2.tar.gz
+      # "author" or "publish"
+      - AEM_AP_RUNMODE=publish
+      labels:
+        # The "dispatcher" label will enable RewriteMap updates via external cron container
+        # Note: this only makes sense on publish instances (i.e. remove the "dispatcher" label for author)
+        dispatcher: ""
+    init: true
+    expose:
+    - "80"
+    - "443"
+    ports:
+    - "80:80"
+    environment:
+    # Docker tip: use service DNS entry here instead of ip!
+#    - AEM_ENDPOINT=192.0.2.2
+    - AEM_ENDPOINT=host.docker.internal
+    # "|"-delimited list of parameters to pass to dispatcher-add-domain.sh at startup
+    - DISPATCHER_ADD_DOMAIN=-n we-retail -d localhost -d we-retail.localhost.cedrik.fr
+        |-n geometrixx -d geometrixx.localhost.cedrik.fr
+    - HEALTHCHECK_PATH=/libs/granite/core/content/login.nocache.html
+    depends_on:
+    - dispatcher-publish-cron
+    #- aem6-publish
+    volumes:
+    - /srv/dispatcher-publish/cache:/usr/local/apache2/htdocs
+    - /srv/dispatcher-publish/logs:/usr/local/apache2/logs
+    - /srv/dispatcher-publish-cron:/usr/local/etc/cron
+    cpu_shares: 1024
+    mem_limit: 768m
+    memswap_limit: 1024m
+    mem_swappiness: 10
+    mem_reservation: 512m
+#    read_only: true
+    restart: on-failure:3
+
+  dispatcher-publish-cron:
+    build:
+      context: cron
+    init: true
+    #depends_on:
+    #- dispatcher-publish
+    #- aem6-author
+#    volumes_from:
+#    - dispatcher-publish
+    volumes:
+    - /srv/dispatcher-publish-cron:/usr/local/etc/cron
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    cpu_shares: 256
+    mem_limit: 64m
+    memswap_limit: 128m
+    mem_swappiness: 10
+    mem_reservation: 8m
+    read_only: true
+    restart: on-failure:3
+
+########################################################################
+########################################################################
+
+#volumes:
+
+########################################################################
+########################################################################
+
+#networks:
+...
