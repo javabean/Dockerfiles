@@ -17,12 +17,12 @@ set -e -o pipefail -o posix
 # This script will:
 # * create an Apache httpd virtual host associated with given domain(s) (`/etc/httpd/conf.d/farm_${PRIMARY_DOMAIN}.conf`)
 # * configure AEM dispatcher for this (those) domain(s) (`/etc/httpd/conf.d/*${PRIMARY_DOMAIN}.any`)
-# * add a `root` cron job to update RewriteMap rules from author instance (`/etc/httpd/conf/farm_${PRIMARY_DOMAIN}.*`)
+# * add a `root` cron job to update RewriteMap rules from publish instance (`/etc/httpd/conf/farm_${PRIMARY_DOMAIN}.*`)
 # 
 # Implementation notes:
 # 
 # While we would like to automate creating `/etc/map` and AEM Commons configuration, this is made difficult since we don't know:
-# * author IP (from publish dispatcher instance, to fetch updated RewriteMap files)
+# * publish IP (from publish dispatcher instance, to fetch updated RewriteMap files)
 # * author admin credentials
 # * publish admin credentials
 # this is somehow mitigated by the knowledge of the associated instance IP (either publish in `inc-renders.any` or author in `dispatcher.any`), but without the credentials (except when dispatcher runs on the same server as AEM).
@@ -133,13 +133,13 @@ print_usage() {
 	cat << EOT
 Configures a new (set of) domain in Apache httpd + AEM dispatcher
 Usage
-    ${0##*/} -n <base AEM node name> -d <domain> -d <domain> ... [-r <rewrite_map_url_author>]
+    ${0##*/} -n <base AEM node name> -d <domain> -d <domain> ... [-r <rewrite_map_url_publish>]
     -n base AEM node name: JCR node name under which the AEM site resides; e.g. "mysite" for node /content/mysite
     -d domain; 1st will be the main one (other ones are aliases)
-    -r URL of RewriteMap rules (acs-commons) on author instance
+    -r URL of RewriteMap rules (acs-commons) on publish instance
     -c credentials to fetch RewriteMap rules url
     E.g. (without rewrite map): ${0##*/} -n mysite -d example.com -d www.example.com
-    E.g. (with a rewrite map):  ${0##*/} -n mysite -d example.com -d www.example.com -c admin:admin -r http://author.example:4502/etc/acs-commons/redirect-maps/\${MAP_FILE}/jcr:content.redirectmap.txt
+    E.g. (with a rewrite map):  ${0##*/} -n mysite -d example.com -d www.example.com -c admin:admin -r http://publish.example:4503/etc/acs-commons/redirect-maps/\${MAP_FILE}/jcr:content.redirectmap.txt
 EOT
 }
 

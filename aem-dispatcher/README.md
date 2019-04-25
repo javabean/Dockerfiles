@@ -62,11 +62,11 @@ where `${MAP_FILE}` is the tenant main site domaine name (i.e. Redirect Map page
 
 On each (publish) dispatcher instance:
 
-		sudo sh dispatcher-add-domain.sh -n aem_node_name -d example.com -d www.example.com -c admin:${ADMIN_PASSWD} -r http://${AUTHOR_HOST}:4502/etc/acs-commons/redirect-maps/${MAP_FILE}/jcr:content.redirectmap.txt"
+		sudo sh dispatcher-add-domain.sh -n aem_node_name -d example.com -d www.example.com -c admin:${ADMIN_PASSWD} -r http://${PUBLISH_HOST}:4503/etc/acs-commons/redirect-maps/${MAP_FILE}/jcr:content.redirectmap.txt"
 
 `aem_node_name` is the AEM node name under `/content` which is the web site root. For example, for We.Retail, this would be `we-retail` since the site node lives at `/content/we-retail`.
 
-`-c` and `-r` are only to be used if you configured and ACS AEM Commons RedirectMap on author.
+`-c` and `-r` are only to be used if you configured and ACS AEM Commons RedirectMap on author (and published the associated page).
 
 Should you need to modify / add another domain to the tenant, the configuration files to edit will be `${HTTPD_CONF_D}/farm_${PRIMARY_DOMAIN}.conf` (`ServerName` & `ServerAlias`) and `${HTTPD_CONF_D}/inc-virtualhosts_${PRIMARY_DOMAIN}.any`.
 
@@ -171,4 +171,4 @@ Each (publish) tenant configuration is in files:
 * `${HTTPD_CONF_D}/farm_${PRIMARY_DOMAIN}.conf`
 * `${HTTPD_CONF_D}/*${PRIMARY_DOMAIN}.any`
 
-The associated httpd `RewriteMap` configuration is in files `${HTTPD_CONF}/farm_${PRIMARY_DOMAIN}.*` and is updated by a root cron (CentOS) | external cron container (Docker) `httpd-rewritemap-update.sh` which will regularly fetch it on the AEM author instance (`-c` & `-r` parameters of `dispatcher-add-domain.sh`).
+The associated httpd `RewriteMap` configuration is in files `${HTTPD_CONF}/farm_${PRIMARY_DOMAIN}.*` and is updated by a root cron (CentOS) | external cron container (Docker) `httpd-rewritemap-update.sh` which will regularly fetch it on the AEM publish instance (`-c` & `-r` parameters of `dispatcher-add-domain.sh`).
