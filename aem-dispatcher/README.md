@@ -77,6 +77,9 @@ You will need to code the AEM / Sling `/etc/map` configuration and deploy it on 
 /etc/map/https/<site_id>
 	sling:match	www\.example\.com\.\\d+
 	sling:internalRedirect	[ /content/<site_id> , / ]
+/etc/map/https/<site_id>/home
+	sling:match	$
+	sling:internalRedirect	/content/<site_id>/index.html
 /etc/map/https/<site_id>/libs
 	sling:internalRedirect	/libs
 /etc/map/https/<site_id>/etc
@@ -90,7 +93,7 @@ You will need to code the AEM / Sling `/etc/map` configuration and deploy it on 
 /etc/map/https/<site_id>/conf
 	sling:internalRedirect	/conf
 /etc/map/https/<site_id>/content-dam
-	sling:match	(?:content/)?dam
+	sling:match	content/dam
 	sling:internalRedirect	/content/dam
 ```
 Should you need to remove the `.html` extension on URLs:
@@ -100,6 +103,8 @@ Should you need to remove the `.html` extension on URLs:
 	sling:internalRedirect	/content/<site_id>/(.+)\.html
 ```
 Copy the same hierarchy to `/etc/map/http`.
+
+Tip: you can test you Sling Mapping via the JCR ResourceResolver: `http://${PUBLISH_HOST}:4503/system/console/jcrresolver`
 
 ([AEM documentation](https://helpx.adobe.com/experience-manager/6-4/sites/deploying/using/resource-mapping.html)
 | [Sling documentation](https://sling.apache.org/documentation/the-sling-engine/mappings-for-resource-resolution.html)

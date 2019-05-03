@@ -81,6 +81,12 @@ httpd_install() {
 		semanage fcontext -a -t httpd_sys_content_t "${HTTPD_HTDOCS}(/.*)?"
 	}
 
+	# 7. Setup minimal filesystem hierarchy to enable multi-tenant
+	# (see httpd_virtualhost_install in dispatcher-add-domain.sh)
+	for d in etc etc.clientlibs libs conf content/dam content/campaigns content/projects content/experience-fragments content/catalogs content/screens; do
+		mkdir -p "${HTTPD_HTDOCS}/${d}"
+	done
+
 	chown -R "${HTTPD_USER}": "${HTTPD_HTDOCS}" "${HTTPD_LOGS}"
 	chmod -R a+rX "${HTTPD_HTDOCS}" "${HTTPD_LOGS}"
 

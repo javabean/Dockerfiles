@@ -50,6 +50,12 @@ httpd_virtualhost_install() {
 		fi
 	done
 	mkdir -p "${HTTPD_HTDOCS}/content/${JCR_CONTENT_NODE_NAME}"
+	# Setup symbolic links so that common data is cached only once and at the place it will be flushed
+	# (see step 7 in install-dispatcher.sh)
+	mkdir -p "${HTTPD_HTDOCS}/content/${JCR_CONTENT_NODE_NAME}/content"
+	for d in etc etc.clientlibs libs conf content/dam content/campaigns content/projects content/experience-fragments content/catalogs content/screens; do
+		ln -s ../../"${d}" "${HTTPD_HTDOCS}/content/${JCR_CONTENT_NODE_NAME}/${d}"
+	done
 	chown "${HTTPD_USER}": "${HTTPD_HTDOCS}/content" "${HTTPD_HTDOCS}/content/${JCR_CONTENT_NODE_NAME}"
 	chmod a+rX "${HTTPD_HTDOCS}/content" "${HTTPD_HTDOCS}/content/${JCR_CONTENT_NODE_NAME}"
 	cp -a "${HTTPD_CONF_D}"/farm-default.conf "${HTTPD_CONF_D}"/farm_"${PRIMARY_DOMAIN}".conf

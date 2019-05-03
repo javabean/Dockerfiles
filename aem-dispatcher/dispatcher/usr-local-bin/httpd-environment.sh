@@ -62,7 +62,6 @@ _httpd_install_pre_docker() {
 	apt-get update
 	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests apt-utils
 	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests tar curl liblz4-tool gzip pigz xz-utils zstd
-	apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 	mkdir "${HTTPD_CONF_MODULES_D}" "${HTTPD_CONF_D}"
 	sed -i --follow-symlinks \
 		-e 's/^\(Include .*httpd-ssl.conf\)/\1/' \
@@ -80,7 +79,7 @@ _httpd_install_pre_docker() {
 }
 
 _httpd_install_post_docker() {
-	:
+	apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 }
 
 _httpd_restart_docker() {
