@@ -1,7 +1,7 @@
 What? (purpose)
 ===============
 
-Tomcat 7 server
+Tomcat 8 server
 
 Running user is tomcat:tomcat (uid: 8080 guid: 8080)
 
@@ -27,7 +27,6 @@ Where? (volumes)
 
     volumes:
     - /opt/tomcat:/opt/tomcat
-    - /srv/logs/tomcat:/var/log
 
 
 Where? (ports)
@@ -46,7 +45,7 @@ build-time
 
     build:
       args:
-      - TOMCAT_VERSION=8.5.20
+      - DOCKER_FROM_VERSION=8.5-jre8-slim
 
 runtime
 -------

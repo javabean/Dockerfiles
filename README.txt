@@ -19,11 +19,10 @@ All HTTP(s) services are behind a front HTTP proxy (aptly named `http-proxy`).
 As much as I would like to separate all services, there is only a single MySQL container. I don't have enough RAM for multiple MySQL instances… :-/
 
 Images hierarchy:
+tomcat
 baseimage
 	consul
 	dovecot
-	java
-		tomcat
 	apache-base
 		http-proxy
 		php7-base

@@ -12,7 +12,7 @@ include .env
 
 DOCKER_APT_VERSION = 18.09.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.23.2
+DOCKER_COMPOSE_VERSION = 1.24.0
 # url fragment
 DOCKER_MACHINE_VERSION = v0.16.1
 
@@ -83,16 +83,10 @@ php7-base: ## build Docker base PHP 7 image (Apache httpd-based) with MySQL clie
 php7-base: httpd-base
 	docker image build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php7-base --rm php7-base
 
-.PHONY: java
-java: ## build Docker base Java image
-java: baseimage
-	docker image build -t cedrik/java --rm java
-
 
 $(docker_compose_build): baseimage
 	docker-compose build $@
 
-tomcat: java
 http-proxy: httpd-base
 owncloud wordpress dokuwiki: php7-base
 #owncloud: memcached-owncloud redis-owncloud
@@ -112,7 +106,7 @@ tag_latest:
 
 .PHONY: stats
 stats: ## display running containers statistics
-	docker container stats --no-stream $$(docker ps --format='{{.Names}}')
+	docker container stats --no-stream $$(docker container ps --format='{{.Names}}')
 
 .PHONY: ip
 ip:
@@ -137,6 +131,7 @@ new-certificates: ## query new TLS certificates
 	docker-compose run --rm letsencrypt --authenticators certonly --non-interactive --dry-run \
 		--webroot \
 		-w /srv/owncloud/acme-challenge -d oc.cedrik.fr \
+		-w /srv/nextcloud/acme-challenge -d nc.cedrik.fr \
 		-w /srv/wordpress/acme-challenge -d www.piacercanto.org -d piacercanto.org -d beta.piacercanto.org \
 		-w /srv/droppy -d fichiers.piacercanto.org \
 		-w /srv/dokuwiki/acme-challenge -d wiki.cedrik.fr \
@@ -199,6 +194,8 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	/opt/tomcat                                   /srv/logs/tomcat \
 	/opt/owncloud/config /opt/owncloud/apps  /srv/owncloud/data     /srv/logs/owncloud/apache2 \
 	                                              /srv/redis-owncloud \
+	/opt/nextcloud/config /opt/nextcloud/custom_apps /opt/nextcloud/themes  /srv/nextcloud/data     /srv/logs/nextcloud/apache2 \
+	                                              /srv/redis-nextcloud \
 	/opt/mysql/docker-entrypoint-initdb.d /opt/mysql/healthcheck.cnf /opt/mysql/mysql-init-complete \
 	  /srv/mysql/data /srv/mysql/backup           /srv/logs/mysql/mysql \
 	/opt/dnsmasq/dnsmasq.d                        /srv/logs/dnsmasq \
@@ -215,7 +212,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	  /srv/transmission \
 	  /srv/bitwarden \
 	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt \
-	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known /srv/dokuwiki/acme-challenge/.well-known \
+	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/nextcloud/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known /srv/dokuwiki/acme-challenge/.well-known \
 	/opt/droppy  /srv/droppy/.well-known/acme-challenge \
 	/opt/portainer/certs  /srv/portainer/acme-challenge/.well-known  /srv/portainer/data
 
