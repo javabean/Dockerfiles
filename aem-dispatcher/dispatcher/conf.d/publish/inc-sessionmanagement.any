@@ -1,2 +1,10 @@
 # https://helpx.adobe.com/experience-manager/dispatcher/using/dispatcher-configuration.html#EnablingSecureSessionssessionmanagement
 
+    # Enabling Secure Sessions
+#    /sessionmanagement
+#      {
+#      /directory "/usr/local/apache/.sessions"
+#      #/header "HTTP:authorization"
+#      /header "Cookie:login-token"
+#      /timeout "800"
+#      }

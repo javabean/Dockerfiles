@@ -59,18 +59,24 @@ main() {
 		REWRITE_MAP_URL_CREDENTIALS="-u $REWRITE_MAP_URL_CREDENTIALS"
 	fi
 
+	rm -f /tmp/farm_"${PRIMARY_DOMAIN}".txt
 	# shellcheck disable=SC2086
-	curl -fsSLRo /tmp/rewritemap-"${PRIMARY_DOMAIN}".txt $REWRITE_MAP_URL_CREDENTIALS "${REWRITE_MAP_URL}"
+	curl -fsSLRo /tmp/farm_"${PRIMARY_DOMAIN}".txt $REWRITE_MAP_URL_CREDENTIALS "${REWRITE_MAP_URL}"
 	set +e
-	if ! diff -q /tmp/rewritemap-"${PRIMARY_DOMAIN}".txt "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".txt; then
+	if ! diff -q /tmp/farm_"${PRIMARY_DOMAIN}".txt "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".txt; then
 		set -e
-		mv /tmp/rewritemap-"${PRIMARY_DOMAIN}".txt "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".txt
+		mv /tmp/farm_"${PRIMARY_DOMAIN}".txt "${HTTPD_CONF}"/
+		# httxt2dbm: If the output file already exists, it will not be truncated. New keys will be added and existing keys will be updated.
+		# The looked-up keys are cached by httpd until the mtime (modified time) of the mapfile changes, or the httpd server is restarted.
+		# We thus need to truncate the database file first.
+		> "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".dbm.dir
+		> "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".dbm.pag
 		httxt2dbm -i "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".txt -o "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".dbm
-		chown "${HTTPD_USER}": "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".*
 		chmod a+r "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".*
+		chown "${HTTPD_USER}": "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".*
 	else
 		set -e
-		rm /tmp/rewritemap-"${PRIMARY_DOMAIN}".txt
+		rm -f /tmp/farm_"${PRIMARY_DOMAIN}".txt
 	fi
 }
 main "$@"

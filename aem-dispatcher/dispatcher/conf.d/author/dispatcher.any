@@ -5,6 +5,9 @@
   # First farm entry
   /author
     {
+    # Include X-Cache-Info response header if X-Dispatcher-Info is in request header
+    #/info "1"
+
     # Request headers that should be forwarded to the remote server.
     /clientheaders
       {

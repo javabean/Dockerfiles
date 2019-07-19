@@ -8,6 +8,9 @@
   # Cache invalidation farm entry
   /publish
     {
+    # Include X-Cache-Info response header if X-Dispatcher-Info is in request header
+    #/info "1"
+
     # The headers from the client HTTP request to pass through
     $include "inc-clientheaders.any"
 

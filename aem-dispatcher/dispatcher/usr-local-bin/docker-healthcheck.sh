@@ -16,9 +16,9 @@ set -eu
 
 
 ## httpd process
-#num_processes=`pgrep -cx httpd`
+#num_processes=`pgrep -cx apache2`
 #if [ "$num_processes" -eq 0 ]; then
-#	echo "No httpd process!"
+#	echo "No httpd|apache2 process!"
 #	exit 1
 #fi
 

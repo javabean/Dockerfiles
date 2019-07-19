@@ -28,7 +28,7 @@ main() {
 	if [ -s "${old_log_file}" ]; then
 		if [ -x "$(command -v pzstd)" ]; then
 			pzstd -q --rm "${old_log_file}"
-		elif [ -x "$(command -v pigz)" ]; then
+		elif [ -x "$(command -v zstd)" ]; then
 			zstd -q --rm "${old_log_file}"
 		elif [ -x "$(command -v pigz)" ]; then
 			pigz "${old_log_file}"
