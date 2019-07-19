@@ -19,16 +19,16 @@ COPY consul-healthcheck.sh  /usr/local/bin/
 
 # https://dev.mysql.com/downloads/repo/apt/
 # requires user interaction...
-#RUN curl -fsSLRO https://dev.mysql.com/get/mysql-apt-config_0.8.10-1_all.deb \
-#	&& dpkg -i mysql-apt-config_0.8.10-1_all.deb
-#	&& rm mysql-apt-config_0.8.10-1_all.deb
+#RUN curl -fsSLRO https://dev.mysql.com/get/mysql-apt-config_0.8.12-1_all.deb \
+#	&& dpkg -i mysql-apt-config_0.8.12-1_all.deb
+#	&& rm mysql-apt-config_0.8.12-1_all.deb
 # Selecting a Major Release Version:
 #RUN dpkg-reconfigure mysql-apt-config
 
 # http://dev.mysql.com/doc/refman/5.7/en/checking-gpg-signature.html
 #RUN gpg --keyserver keys.gnupg.net --recv-keys 5072E1F5 \
 #	&& gpg --export -a 5072E1F5 | apt-key add -
-RUN apt-key adv --keyserver pgp.mit.edu --recv-keys 5072E1F5
+RUN apt-key adv --keyserver ipv4.pool.sks-keyservers.net --recv-keys 5072E1F5
 
 RUN echo "deb https://repo.mysql.com/apt/ubuntu/ `lsb_release -cs` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
 
