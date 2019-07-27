@@ -19,7 +19,7 @@ set -eu
 # Any other code - Check is failing (critical)
 
 # Docker
-# https://docs.docker.com/engine/reference/builder/#/healthcheck
+# https://docs.docker.com/engine/reference/builder/#healthcheck
 # 
 # The command's exit status indicates the health status of the container. The possible values are:
 # 

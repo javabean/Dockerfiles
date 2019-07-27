@@ -12,7 +12,7 @@ include .env
 
 DOCKER_APT_VERSION = 18.09.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.24.0
+DOCKER_COMPOSE_VERSION = 1.24.1
 # url fragment
 DOCKER_MACHINE_VERSION = v0.16.1
 
@@ -37,7 +37,7 @@ APT_MIRROR ?= fr.archive.ubuntu.com
 # END set versions here
 ########################################################################
 
-docker_compose_build = consul http-proxy http-static tomcat dovecot dnsmasq unbound email-relay mysql owncloud wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission sslh
+docker_compose_build = consul http-proxy http-static tomcat dovecot dnsmasq unbound email-relay mysql owncloud nextcloud wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission sslh
 .PHONY: $(docker_compose_build)
 
 
@@ -56,13 +56,13 @@ help: ## Display this help menu
 pull: ## pull base Docker images from Docker Hub
 	docker image pull $(DOCKER_FROM)
 	#docker-compose pull
-	docker image pull memcached:1.5-alpine
-	docker image pull redis:3-alpine
-	docker image pull silverwind/droppy
+	#docker image pull memcached:1.5-alpine
+	docker image pull redis:5-alpine
+	#docker image pull silverwind/droppy
 	#docker image pull silverwind/armhf-droppy
-	docker image pull portainer/portainer
+	#docker image pull portainer/portainer
 	#docker image pull certbot/certbot
-	docker image pull traefik:$(TRAEFIK_VERSION)
+	#docker image pull traefik:$(TRAEFIK_VERSION)
 
 .PHONY: build
 build: ## build all Docker images
@@ -71,7 +71,7 @@ build: $(docker_compose_build)
 .PHONY: baseimage
 baseimage: ## build Docker base image
 baseimage: pull
-	docker image build --build-arg DOCKER_FROM=$(DOCKER_FROM) --build-arg APT_MIRROR=$(APT_MIRROR) -t cedrik/baseimage:$(DOCKER_FROM_VERSION) --rm baseimage/image
+	docker image build --build-arg BASE_IMAGE=$(DOCKER_FROM) --build-arg APT_MIRROR=$(APT_MIRROR) -t cedrik/baseimage:$(DOCKER_FROM_VERSION) --rm baseimage/image
 
 .PHONY: httpd-base
 httpd-base: ## build Docker base Apache httpd image
@@ -250,21 +250,10 @@ install-docker: ## install Docker; this target also works for a Raspberry Pi
 	if [ ! -f /etc/apt/sources.list.d/docker.list ]; then \
 		curl -fsSL https://get.docker.com/ | sudo sh; \
 		sudo usermod -aG docker `whoami`; \
+		sudo apt-get install nfs-common; \
 	else \
 		sudo apt-get install docker-ce=$(DOCKER_APT_VERSION); \
 	fi
-
-.PHONY: install-docker-rpi
-install-docker-rpi: ## deprecated; install Docker on a Raspberry Pi
-	if [ ! -f /etc/apt/sources.list.d/Hypriot_Schatzkiste.list ]; then \
-		sudo apt-get install apt-transport-https \
-		sudo curl -fRL -o /etc/apt/sources.list.d/Hypriot_Schatzkiste.list "https://packagecloud.io/install/repositories/Hypriot/Schatzkiste/config_file.list?os=raspbian&dist=8&source=script" \
-		curl -fsSL https://packagecloud.io/Hypriot/Schatzkiste/gpgkey | sudo apt-key add - \
-		sudo usermod -aG docker `whoami`; \
-	fi
-#	echo "overlay" | sudo tee -a /etc/modules \
-	sudo apt-get update && sudo apt-get install docker-hypriot=$(DOCKER_APT_VERSION)
-	sudo systemctl enable docker
 
 .PHONY: install-docker-compose
 install-docker-compose: ## install docker-compose

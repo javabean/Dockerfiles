@@ -4,4 +4,9 @@ set -eu
 #shopt -s failglob
 #set -x
 
+# Touch cron files to fix 'NUMBER OF HARD LINKS > 1' issue. See  https://github.com/phusion/baseimage-docker/issues/198
+touch -c /var/spool/cron/crontabs/* || true
+touch -c /etc/crontab || true
+touch -c /etc/cron.d/* /etc/cron.daily/* /etc/cron.hourly/* /etc/cron.monthly/* /etc/cron.weekly/* || true
+
 exec /usr/sbin/cron -f
