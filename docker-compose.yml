@@ -38,15 +38,15 @@ services:
       # because: (?!re)	before text not matching re (NOT SUPPORTED) (https://github.com/google/re2/wiki/Syntax)
       # Workaround (ugly, but it works): use Services labels to override port:
       # # Allow general traffic (low prioriy rule)
-      # - "traefik.202.frontend.rule=www.example.com"
+      # - "traefik.202.frontend.rule=Host:www.example.com"
       # # Forbid admin endpoint on plain http
       # - "traefik.403.frontend.entryPoints=http"
-      # - "traefik.403.frontend.rule=PathPrefix:/{re:(?i:admin|install).*}/;Host:www.example.com"
+      # - "traefik.403.frontend.rule=Host:www.example.com;PathPrefix:/{re:(?i:admin|install).*}/;Host:www.example.com"
       # - "traefik.403.frontend.priority=65536"
       # - "traefik.403.port=65536"
       # # IP restriction on https admin endpoint
       # - "traefik.407.frontend.entryPoints=https"
-      # - "traefik.407.frontend.rule=PathPrefix:/{re:(?i:admin|install).*}/;Host:www.example.com"
+      # - "traefik.407.frontend.rule=Host:www.example.com;PathPrefix:/{re:(?i:admin|install).*}/;Host:www.example.com"
       # - "traefik.407.frontend.priority=65536"
       # - "traefik.407.frontend.whiteList.sourceRange=192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8"
     expose:
@@ -156,14 +156,14 @@ services:
     - "443:443"
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock:ro
-    - /opt/traefik/traefik.toml:/etc/traefik/traefik.toml
+    - /opt/traefik/traefik.toml:/etc/traefik/traefik.toml:ro
     # create with: touch /opt/traefik/acme.json && chmod 600 /opt/traefik/acme.json
     - /opt/traefik/acme.json:/acme.json
     # docker container run --rm -ti httpd:2.4-alpine htpasswd -n <user> >> /opt/traefik/htpasswd
-    # docker container run --rm -ti -v /opt/traefik/htpasswd:/.htpasswd httpd:2.4-alpine htpassw /.htpasswd <user>
-    - /opt/traefik/htpasswd:/.htpasswd
+    # docker container run --rm -ti -v /opt/traefik/htpasswd:/.htpasswd httpd:2.4-alpine htpasswd /.htpasswd <user>
+    - /opt/traefik/htpasswd:/.htpasswd:ro
     # docker container run --rm -ti -v /opt/traefik/htdigest:/.htdigest httpd:2.4-alpine htdigest /.htdigest <realm> <username>
-    - /opt/traefik/htdigest:/.htdigest
+    - /opt/traefik/htdigest:/.htdigest:ro
     healthcheck:
       test: ["CMD", "/traefik", "healthcheck"]
       interval: 240s
@@ -176,17 +176,18 @@ services:
     - http-static
     - tomcat-front
     - owncloud-front
+    - nextcloud-front
     - wordpress-front
     - dokuwiki-front
     - tiddlywiki-front
     - droppy
     - transmission
-    #- bitwarden
+    - bitwarden
     cpu_shares: 256
     mem_limit: 96m
     memswap_limit: 128m
     mem_reservation: 32m
-    restart: unless-stopped
+    restart: always
 
   http-static:
     extends:
@@ -243,7 +244,7 @@ services:
     #- dokuwiki:dokuwiki
     #- tiddlywiki:tiddlywiki
     - droppy:droppy
-    - transmission:transmission
+    #- transmission:transmission
     - portainer:portainer
     volumes:
     #- /opt/http-proxy/mods-available:/opt/http-proxy/mods-available:ro
@@ -262,6 +263,7 @@ services:
     - default
     - tomcat-front
     - owncloud-front
+    - nextcloud-front
     - wordpress-front
     - dokuwiki-front
     - tiddlywiki-front
@@ -272,7 +274,7 @@ services:
     mem_limit: 128m
     memswap_limit: 192m
     mem_reservation: 96m
-    restart: unless-stopped
+    restart: always
 
   sslh:
     extends:
@@ -340,7 +342,8 @@ services:
     build:
       context: tomcat
       args:
-      - TOMCAT_VERSION=8.5.37
+      - DOCKER_FROM_VERSION=9-jdk11-openjdk-slim
+    init: true
     labels:
       - "traefik.backend=tomcat"
       - "traefik.port=8080"
@@ -353,6 +356,7 @@ services:
     # See $CATALINA_HOME/bin/catalina.sh for available env vars,
     # and $CATALINA_BASE/bin/setenv.sh for additional configuration
     - CATALINA_BASE=/opt/tomcat/my-instance
+    user: tomcat
     depends_on:
       email-relay:
         condition: service_started
@@ -360,7 +364,6 @@ services:
     - email-relay:email-relay
     volumes:
     - /opt/tomcat:/opt/tomcat
-    - /srv/logs/tomcat:/var/log
     networks:
     - tomcat-front
     - tomcat-back-internal
@@ -376,12 +379,12 @@ services:
   owncloud:
     extends:
       service: base-service
-    #image: owncloud:latest
+    #image: owncloud/server:latest
     build:
       context: owncloud
       args:
       # https://owncloud.org/release-channels/
-      #- OWNCLOUD_VERSION=10.0
+      #- OWNCLOUD_VERSION=10.2
       #- OWNCLOUD_VERSION=stable
       - OWNCLOUD_VERSION=production
     labels:
@@ -410,7 +413,7 @@ services:
     volumes:
     - /srv/owncloud/acme-challenge/.well-known:/var/www/owncloud/.well-known
     - /opt/owncloud/config:/var/www/owncloud/config
-    - /opt/owncloud/apps:/var/www/owncloud/apps2
+    - /opt/owncloud/apps:/var/www/owncloud/apps-external
     - /opt/owncloud/ip-restriction.conf:/etc/apache2/conf-enabled/ip-restriction.conf:ro
     - /srv/owncloud:/srv/owncloud
     - /srv/logs/owncloud:/var/log
@@ -426,6 +429,99 @@ services:
 
 ########################################################################
 
+  nextcloud:
+    extends:
+      service: base-service
+    #image: nextcloud:latest
+    build:
+      context: nextcloud
+      args:
+      # https://nextcloud.com/release-channels/
+      #- DOCKER_FROM_TAG=16-apache
+      #- DOCKER_FROM_TAG=stable-apache
+      - DOCKER_FROM_TAG=production-apache
+    init: true
+    labels:
+      - "traefik.backend=nextcloud"
+      - "traefik.port=80"
+      - "traefik.enable=true"
+      - "traefik.frontend.entryPoints=https"
+      - "traefik.frontend.rule=Host:www.example.com"
+      - "traefik.frontend.redirect.permanent: 'true'"
+      - "traefik.frontend.redirect.regex: https://(.*)/.well-known/(card|cal)dav"
+      - "traefik.frontend.redirect.replacement: https://$$1/remote.php/dav/"
+    expose:
+    - "80"
+    - "443"
+    # https://github.com/nextcloud/docker/blob/master/README.md
+    environment:
+    - MYSQL_HOST=mysql
+    - MYSQL_DATABASE=nextcloud
+    #- MYSQL_USER=nextcloud
+    #- MYSQL_PASSWORD=HJ79WetJELxrbgc3rwed9Jzh
+    - REDIS_HOST=redis-nextcloud
+    #- REDIS_HOST_PORT=6379
+    - SMTP_HOST=email-relay
+    - MAIL_FROM_ADDRESS=nextcloud-noreply
+    - MAIL_DOMAIN=example.com
+    #- NEXTCLOUD_ADMIN_USER=admin
+    #- NEXTCLOUD_ADMIN_PASSWORD=x4uhbXqGsG9qU43mPBrvAYE8
+    - NEXTCLOUD_DATA_DIR=/srv/nextcloud/data
+    - NEXTCLOUD_TABLE_PREFIX=nc_
+    #- NEXTCLOUD_TRUSTED_DOMAINS="example.com www.example.com"
+    # Launch a cron daemon in the background (instead of relying on an external cron)
+    #- ENABLE_CRON=1
+    depends_on:
+      redis-nextcloud:
+        condition: service_healthy
+      email-relay:
+        condition: service_started
+    links:
+    - mysql:mysql
+    #- memcached-nextcloud:memcached
+    - redis-nextcloud:redis
+    - email-relay:email-relay
+    volumes:
+    - /srv/nextcloud/acme-challenge/.well-known:/var/www/html/.well-known
+    - /opt/nextcloud/config:/var/www/html/config
+    - /opt/nextcloud/custom_apps:/var/www/html/custom_apps
+    - /opt/nextcloud/themes:/var/www/html/themes
+    - /srv/nextcloud/data:/srv/nextcloud/data
+    networks:
+    - nextcloud-front
+    - nextcloud-back-internal
+    - nextcloud-back
+    mem_limit: 384m
+    memswap_limit: 512m
+    mem_reservation: 256m
+    read_only: false
+    restart: unless-stopped
+
+  nextcloud-cron:
+    image: nextcloud:production-apache
+    init: true
+    depends_on:
+      nextcloud:
+        condition: service_healthy
+      email-relay:
+        condition: service_started
+    links:
+    - mysql:mysql
+    - email-relay:email-relay
+    volumes_from:
+    - nextcloud
+    command: [ "/cron.sh" ]
+    networks:
+    - nextcloud-back-internal
+    - nextcloud-back
+    mem_limit: 384m
+    memswap_limit: 512m
+    mem_reservation: 256m
+    read_only: true
+    restart: unless-stopped
+
+########################################################################
+
   wordpress:
     extends:
       service: base-service
@@ -433,7 +529,7 @@ services:
     build:
       context: wordpress
       args:
-      #- WORDPRESS_VERSION=wordpress-4.9.9
+      #- WORDPRESS_VERSION=wordpress-5.2.3
       - WORDPRESS_VERSION=latest
     labels:
       - "traefik.backend=wordpress"
@@ -492,7 +588,7 @@ services:
     build:
       context: dokuwiki
       args:
-      #- DOKUWIKI_VERSION=2018-04-22a
+      #- DOKUWIKI_VERSION=2018-04-22b
       - DOKUWIKI_VERSION=stable
       # Languages to keep (delete all others)
       #- STRIP_LANGS_KEEP=en,fr
@@ -545,11 +641,13 @@ services:
     expose:
     - "8080"
     environment:
+    # See docker-entrypoint.sh for the full list
     - WIKI_FOLDER=wiki
+    - PATHPREFIX=
     - PORT=8080
+    - ANON_USERNAME=
     - USERNAME=
     - PASSWORD=
-    - PATHPREFIX=
     volumes:
     - /srv/tiddlywiki:/srv
     networks:
@@ -617,6 +715,7 @@ services:
     networks:
     - tomcat-back
     - owncloud-back
+    - nextcloud-back
     - wordpress-back
     - dokuwiki-back
     - bitwarden
@@ -636,7 +735,6 @@ services:
     build:
       context: mysql
       args:
-      #- MYSQL_VERSION=5.7
       - MYSQL_VERSION=${MYSQL_VERSION:-5.7}
     expose:
     - "3306"
@@ -671,6 +769,7 @@ services:
     networks:
     #- tomcat-back-internal
     - owncloud-back-internal
+    - nextcloud-back-internal
     - wordpress-back-internal
     #ulimits:
     #  nproc: 65535
@@ -721,9 +820,10 @@ services:
 ########################################################################
 
   redis:
-    image: redis:3-alpine
+    image: redis:5-alpine
     init: true
-    command: ["--daemonize", "no", "--port", "6379", "--tcp-backlog", "511", "--loglevel", "notice", "--logfile", "", "--databases", "1", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--stop-writes-on-bgsave-error", "yes", "--dbfilename", "dump.rdb", "--dir", "/data", "--maxclients", "100", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction", "--slowlog-log-slower-than", "10000", "--slowlog-max-len", "128"]
+    # https://raw.githubusercontent.com/antirez/redis/5.0/redis.conf
+    command: ["--daemonize", "no", "--protected-mode", "no", "--tcp-backlog", "511", "--loglevel", "notice", "--logfile", "", "--databases", "1", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--stop-writes-on-bgsave-error", "yes", "--dbfilename", "dump.rdb", "--dir", "/data", "--maxclients", "100", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction", "--slowlog-log-slower-than", "10000", "--slowlog-max-len", "128"]
     expose:
     - "6379"
     #volumes:
@@ -736,6 +836,7 @@ services:
       start_period: 2s
     #sysctls:
     #- sys.net.core.somaxconn=511
+    #- sys.net.core.tcp_max_syn_backlog=511
     #- vm.overcommit_memory=1
     #- sys.kernel.mm.transparent_hugepage.enabled=never
     cpu_shares: 128
@@ -748,12 +849,18 @@ services:
   redis-owncloud:
     extends:
       service: redis
-    command: ["--daemonize", "no", "--port", "6379", "--tcp-backlog", "511", "--loglevel", "notice", "--logfile", "", "--databases", "1", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--stop-writes-on-bgsave-error", "yes", "--dbfilename", "dump.rdb", "--dir", "/data", "--maxclients", "100", "--maxmemory", "32mb", "--maxmemory-policy", "noeviction", "--slowlog-log-slower-than", "10000", "--slowlog-max-len", "128"]
     volumes:
     - /srv/redis-owncloud:/data
     networks:
     - owncloud-back-internal
-    mem_reservation: 48m
+
+  redis-nextcloud:
+    extends:
+      service: redis
+    volumes:
+    - /srv/redis-nextcloud:/data
+    networks:
+    - nextcloud-back-internal
 
 ########################################################################
 
@@ -795,9 +902,9 @@ services:
   bitwarden:
     extends:
       service: base-service
-    #image: mprasil/bitwarden:latest
-    image: mprasil/bitwarden:alpine
-    #image: mprasil/bitwarden:raspberry
+    #image: bitwardenrs/server:latest
+    image: bitwardenrs/server:alpine
+    #image: bitwardenrs/server:raspberry
     init: true
     labels:
       - "traefik.backend=bitwarden"
@@ -808,19 +915,19 @@ services:
       #- "traefik.frontend.redirect.entryPoint=https"
       - "traefik.web.frontend.rule=Host:vault.example.local"
       - "traefik.web.port=80"
-      - "traefik.hub.frontend.rule=Path:/notifications/hub"
+      - "traefik.hub.frontend.rule=Host:vault.example.local;Path:/notifications/hub"
       - "traefik.hub.port=3012"
-      - "traefik.negotiate.frontend.rule=Path:/notifications/hub/negotiate"
+      - "traefik.negotiate.frontend.rule=Host:vault.example.local;Path:/notifications/hub/negotiate"
       - "traefik.negotiate.port=80"
       # IP restriction on https admin endpoint
       - "traefik.407.frontend.entryPoints=https"
-      - "traefik.407.frontend.rule=PathPrefix:/admin"
+      - "traefik.407.frontend.rule=Host:vault.example.local;PathPrefix:/admin"
       - "traefik.407.frontend.priority=65536"
       - "traefik.407.frontend.whiteList.sourceRange=192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8"
     expose:
     - "80"
     - "3012"
-    # See https://github.com/dani-garcia/bitwarden_rs/blob/master/.env
+    # See https://github.com/dani-garcia/bitwarden_rs/blob/master/.env.template
     environment:
     #- DOMAIN=https://bw.example.com
     - SIGNUPS_ALLOWED=false
@@ -830,6 +937,9 @@ services:
     #- WEB_VAULT_ENABLED=true
     - WEBSOCKET_ENABLED=true
     #- SHOW_PASSWORD_HINT=true
+    #- DISABLE_ICON_DOWNLOAD=false
+    #- ICON_CACHE_TTL=2592000
+    #- ICON_CACHE_NEGTTL=259200
     #- ROCKET_PORT=80
     #- ROCKET_LIMITS={json=10485760}
     #- ROCKET_WORKERS=10
@@ -972,6 +1082,9 @@ services:
     #ports:
     #- "192.0.2.1:53:53/tcp"
     #- "192.0.2.1:53:53/udp"
+    expose:
+    - "53/tcp"
+    - "53/udp"
     environment:
     - ENABLE_CONSUL=1
     - CONSUL_NO_DNS_53=1
@@ -1130,7 +1243,8 @@ services:
       service: base-service
     image: certbot/certbot:latest
     #build: letsencrypt
-    command: --authenticators
+    init: true
+    command: [ "--authenticators" ]
     #ports:
     #- "80:80"
     #- "443:443"
@@ -1140,6 +1254,7 @@ services:
     - /srv/logs/letsencrypt:/var/log
     # webroot authentification lets encrypt
     - /srv/owncloud/acme-challenge:/srv/owncloud/acme-challenge
+    - /srv/nextcloud/acme-challenge:/srv/nextcloud/acme-challenge
     - /srv/wordpress/acme-challenge:/srv/wordpress/acme-challenge
     - /srv/droppy/.well-known:/srv/droppy/.well-known
     - /srv/dokuwiki/acme-challenge:/srv/dokuwiki/acme-challenge
@@ -1164,7 +1279,7 @@ services:
 #    my-nfs-mount:
 #        driver: local
 #        driver_opts:
-#            type: "nfs"
+#            type: "nfs4"
 #            o: "addr=192.0.2.111,ro"
 #            #o: "addr=192.0.2.111,vers=4,soft,timeo=180,bg,tcp,ro"
 #            device: ":/path/to/server/nfs/share"
@@ -1214,6 +1329,24 @@ networks:
     ipam:
       config:
       - subnet: 172.30.2.0/24
+  nextcloud-front:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.3.0/24
+  nextcloud-back-internal:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.29.3.0/24
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+    internal: true
+  nextcloud-back:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.30.3.0/24
   wordpress-front:
     driver: bridge
     ipam:

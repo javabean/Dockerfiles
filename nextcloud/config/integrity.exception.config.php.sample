@@ -1,0 +1,11 @@
+<?php
+$CONFIG = array (
+  //'integrity.ignore.missing.app.signature' => []
+  //'integrity.ignore.missing.app.signature' => ['theme-1']
+  //'integrity.ignore.missing.app.signature' =>
+  //  array(
+  //    'theme-1',
+  //  )
+  'integrity.ignore.missing.app.signature' => ['notes']
+);
+

@@ -1,0 +1,9 @@
+<?php
+$CONFIG = array (
+  'trusted_domains' => 
+  array (
+    0 => 'localhost',
+    1 => 'nextcloud.example.net:443',
+    2 => '*.192.0.2.1.xip.io',
+  ),
+);

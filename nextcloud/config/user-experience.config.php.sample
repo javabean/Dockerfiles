@@ -1,0 +1,6 @@
+<?php
+$CONFIG = array (
+  // https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/language_configuration.html
+  'default_language' => 'fr',
+);
+
