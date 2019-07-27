@@ -82,6 +82,22 @@ runtime
     #- WORDPRESS_NONCE_SALT=
 
 
+Securing
+========
+
+Be sure to follow https://wordpress.org/support/article/hardening-wordpress/ after first installation:
+* https://wordpress.org/support/article/hardening-wordpress/  
+  (at least "Securing wp-includes", "Securing wp-config.php" & "Disable File Editing")
+* https://wordpress.org/support/article/brute-force-attacks/
+* https://wordpress.org/support/article/administration-over-ssl/
+
+
+Monitoring
+==========
+
+You can use URL http://www.example.com/wp-includes/wlwmanifest.xml or https://www.example.com/wp-cron.php (in which case be sure to `define( 'DISABLE_WP_CRON', true );`)
+
+
 Upgrading version
 =================
 

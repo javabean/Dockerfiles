@@ -37,8 +37,8 @@ $AUTOCONFIG = array(
 			'writable' => false,
 		),
 		array(
-			'path'=> OC::$SERVERROOT.'/apps2',
-			'url' => '/apps2',
+			'path'=> OC::$SERVERROOT.'/apps-external',
+			'url' => '/apps-external',
 			'writable' => true,
 		),
 	),

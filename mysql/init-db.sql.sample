@@ -1,6 +1,5 @@
 CREATE DATABASE IF NOT EXISTS `my_db` DEFAULT CHARACTER SET = 'utf8mb4';
--- MySQL 5.7: CREATE USER IF NOT EXISTS 'my_user'@'%' IDENTIFIED BY 'my_password';
-CREATE USER 'my_user'@'%' IDENTIFIED BY 'my_password';
+CREATE USER IF NOT EXISTS 'my_user'@'%' IDENTIFIED BY 'my_password';
 GRANT ALL ON `my_db`.* TO 'my_user'@'%' IDENTIFIED BY 'my_password';
 FLUSH PRIVILEGES;
 

@@ -1,5 +1,5 @@
 ############### FIXME  change version here! ###############
-ARG DOCKER_FROM_VERSION=9-jre11-slim
+ARG DOCKER_FROM_VERSION=9-jdk11-openjdk-slim
 
 FROM tomcat:${DOCKER_FROM_VERSION}
 LABEL org.label-schema.schema-version="1.0" \

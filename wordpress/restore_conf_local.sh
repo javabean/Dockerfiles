@@ -49,6 +49,11 @@ if [ ! -s /var/www/html/wp-config.php ]; then
 		if [ ! -s .htaccess ]; then
 			# NOTE: The "Indexes" option is disabled in the php:apache base image
 			cat > .htaccess <<-'EOF'
+				# http://codex.wordpress.org/Hardening_WordPress#Securing_wp-config.php
+				<Files wp-config.php>
+				    Require all denied
+				</Files>
+
 				# Block the include-only files.
 				# http://codex.wordpress.org/Hardening_WordPress#Securing_wp-includes
 				# Note that this won't work well on Multisite, as RewriteRule ^wp-includes/[^/]+\.php$ - [F,L] would prevent the ms-files.php file from generating images. Omitting that line will allow the code to work, but offers less security.
@@ -61,11 +66,6 @@ if [ ! -s /var/www/html/wp-config.php ]; then
 					RewriteRule ^wp-includes/js/tinymce/langs/.+\.php - [F,L]
 					RewriteRule ^wp-includes/theme-compat/ - [F,L]
 				</IfModule>
-
-				# http://codex.wordpress.org/Hardening_WordPress#Securing_wp-config.php
-				<Files wp-config.php>
-				    Require all denied
-				</Files>
 
 				# BEGIN WordPress
 				<IfModule mod_rewrite.c>
