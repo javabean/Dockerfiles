@@ -9,14 +9,16 @@
       # to deliver them just like static files.
       /docroot "/usr/local/var/www"
 
-      # Sets the level upto which files named ".stat" will be created in the 
-      # document root of the webserver. When an activation request for some 
-      # page is received, only files within the same subtree are affected 
+      # Sets the level upto which files named ".stat" will be created in the
+      # document root of the webserver. When an activation request for some
+      # page is received, only files within the same subtree are affected
       # by the invalidation.
       /statfileslevel "4"
       
       # Flag indicating whether to cache responses to requests that contain
       # authorization information.
+      # One must ensure that the cache rules section below does not include
+      # resources with user specific information.
       #/allowAuthorized "0"
       
       # Flag indicating whether the dispatcher should serve stale content if
@@ -56,8 +58,8 @@
         }
         
       # The invalidate section defines the pages that are "invalidated" after
-      # any activation. Please note that the activated page itself and all 
-      # related documents are flushed on an modification. For example: if the 
+      # any activation. Please note that the activated page itself and all
+      # related documents are flushed on an modification. For example: if the
       # page /foo/bar is activated, all /foo/bar.* files are removed from the
       # cache.
       /invalidate
@@ -133,7 +135,7 @@
       # should be ignored when determining whether some request's output can be
       # cached or delivered from cache.
       #
-      # In this example configuration, the "q" parameter will be ignored. 
+      # In this example configuration, the "q" parameter will be ignored.
       #/ignoreUrlParams
       #  {
       #  /0001 { /glob "*" /type "deny" }

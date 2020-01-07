@@ -61,6 +61,7 @@
       /0002 { /type "deny" /url "/dav/crx.default" }
       /0003 { /type "deny" /url "/jcr:system/*" }
       /0004 { /type "deny" /url "/_jcr_system/*" }
+      /0009 { /type "allow" /url "/system/sling/logout*" }
       
       # Open consoles
 #     /0011 { /type "allow" /url "/admin/*"  }  # allow servlet engine admin

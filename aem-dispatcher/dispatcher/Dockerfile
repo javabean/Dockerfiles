@@ -3,7 +3,7 @@ LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
 ############### FIXME  change URL here! ###############
-ARG DISPATCHER_URL=http://download.macromedia.com/dispatcher/download/dispatcher-apache2.4-linux-x86_64-4.3.2.tar.gz
+ARG DISPATCHER_URL=https://download.macromedia.com/dispatcher/download/dispatcher-apache2.4-linux-x86_64-4.3.3.tar.gz
 ARG AEM_ENDPOINT=127.0.0.1
 # "author" | "publish"
 ARG AEM_AP_RUNMODE=

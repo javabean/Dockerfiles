@@ -10,8 +10,8 @@ services:
     build:
       context: dispatcher
       args:
-      - DISPATCHER_URL=http://download.macromedia.com/dispatcher/download/dispatcher-apache2.4-linux-x86_64-4.3.2.tar.gz
-      #- DISPATCHER_URL=file:///usr/src/docker_build/dispatcher-apache2.4-linux-x86_64-4.3.2.tar.gz
+      - DISPATCHER_URL=https://download.macromedia.com/dispatcher/download/dispatcher-apache2.4-linux-x86_64-4.3.3.tar.gz
+      #- DISPATCHER_URL=file:///usr/src/docker_build/dispatcher-apache2.4-linux-x86_64-4.3.3.tar.gz
       # "author" or "publish"
       - AEM_AP_RUNMODE=author
     init: true
