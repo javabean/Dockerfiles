@@ -1,6 +1,0 @@
-server:
-	# The following line will configure unbound to perform cryptographic
-	# DNSSEC validation using the root trust anchor.
-	# root key file, automatically updated
-	auto-trust-anchor-file: "/var/lib/unbound/root.key"
-

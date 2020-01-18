@@ -5,7 +5,7 @@ LABEL org.label-schema.schema-version="1.0" \
 COPY 60-ipsec.conf /etc/sysctl.d/
 COPY docker-entrypoint.sh consul-healthcheck.sh newClient.sh revokeClient.sh openvpn-status.sh  /usr/local/bin/
 
-ARG EASYRSA_VERSION=3.0.5
+ARG EASYRSA_VERSION=3.0.6
 # stable|testing|release/2.3|release/2.4
 ARG OPENVPN_VERSION=stable
 
@@ -26,7 +26,7 @@ RUN curl -fsSL https://swupdate.openvpn.net/repos/repo-public.gpg | apt-key add 
 	&& dpkg --install --ignore-depends=initscripts openvpn*.deb \
 	&& rm openvpn*.deb \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-	&& curl -fsSL https://github.com/OpenVPN/easy-rsa/releases/download/v${EASYRSA_VERSION}/EasyRSA-nix-${EASYRSA_VERSION}.tgz | tar xz -C /usr/local/ \
+	&& curl -fsSL https://github.com/OpenVPN/easy-rsa/releases/download/v${EASYRSA_VERSION}/EasyRSA-unix-v${EASYRSA_VERSION}.tgz | tar xz -C /usr/local/ \
 	&& ln -s /usr/local/EasyRSA-* /usr/local/easy-rsa \
 # OpenVPN requires TUN/TAP driver support in the kernel. You'll also need a 
 # tun device file. If it's not present on your system, you may create one

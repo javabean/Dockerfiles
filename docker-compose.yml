@@ -7,48 +7,10 @@ version: '2.4'
 
 services:
 
-  dummy-service-for-yaml-reference:
-    build: .
-    links: &consul_link
-    - consul:consul
-
   base-service:
     build: .
     labels:
-      #- "traefik.backend=xxx"
-      #- "traefik.backend.loadbalancer.stickiness=true"
-      #- "traefik.backend.loadbalancer.stickiness.cookieName=JSESSIONID"
-      #- "traefik.port=80"
       - "traefik.enable=false"
-      #- "traefik.frontend.rule=Host:www.example.com"
-      - "traefik.frontend.passHostHeader=true"
-      #- "traefik.frontend.entryPoints=http,https"
-      #- "traefik.frontend.redirect.entryPoint=https"
-      #- >-
-      #    traefik.frontend.whiteList.sourceRange=192.168.0.0/16, 172.16.0.0/12,
-      #    10.0.0.0/8
-      #- "traefik.frontend.headers.STSSeconds=15768000"
-      - "traefik.frontend.headers.STSIncludeSubdomains=false"
-      - "traefik.frontend.headers.STSPreload=false"
-      - "traefik.frontend.headers.customFrameOptionsValue=sameorigin"
-      - "traefik.frontend.headers.browserXSSFilter=true"
-      - "traefik.frontend.headers.contentSecurityPolicy=frame-ancestors 'self' example.com *.example.net ; object-src 'none' ; connect-src 'self' * ;"
-      # To disallow /admin path, one can not simply use negative lookaround:
-      #   "traefik.frontend.rule=Host:www.example.com;PathPrefix:/{re:(?!admin|manager).*}/"
-      # because: (?!re)	before text not matching re (NOT SUPPORTED) (https://github.com/google/re2/wiki/Syntax)
-      # Workaround (ugly, but it works): use Services labels to override port:
-      # # Allow general traffic (low prioriy rule)
-      # - "traefik.202.frontend.rule=Host:www.example.com"
-      # # Forbid admin endpoint on plain http
-      # - "traefik.403.frontend.entryPoints=http"
-      # - "traefik.403.frontend.rule=Host:www.example.com;PathPrefix:/{re:(?i:admin|install).*}/;Host:www.example.com"
-      # - "traefik.403.frontend.priority=65536"
-      # - "traefik.403.port=65536"
-      # # IP restriction on https admin endpoint
-      # - "traefik.407.frontend.entryPoints=https"
-      # - "traefik.407.frontend.rule=Host:www.example.com;PathPrefix:/{re:(?i:admin|install).*}/;Host:www.example.com"
-      # - "traefik.407.frontend.priority=65536"
-      # - "traefik.407.frontend.whiteList.sourceRange=192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8"
     expose:
     # Consul agent ports
     - "8301"
@@ -95,68 +57,119 @@ services:
 
 ########################################################################
 
-  consul:
-    extends:
-      service: base-service
-    build:
-      context: consul
-    #ports:
-    #- "8500:8500"
-    expose:
-    - "8300"
-    - "8301"
-    - "8301/udp"
-    - "8302"
-    - "8302/udp"
-    - "8400"
-    - "8500"
-    - "8600"
-    - "8600/udp"
-    - "53"
-    - "53/udp"
-    environment:
-    # See https://www.consul.io/docs/agent/options.html
-    #- CONSUL_OPTS=-dev
-    - CONSUL_OPTS=-bootstrap-expect 1 -datacenter dc1
-    volumes:
-    - /opt/consul/config:/usr/local/etc/consul.d:ro
-    - /srv/consul/data:/srv/consul/data
-    #- /lib/modules:/lib/modules:ro
-    #cap_add:
-    #- NET_ADMIN
-    networks:
-    # Consul can only work with 1 network interface... :-(
-    #- tomcat-back-internal
-    #- owncloud-back-internal
-    #- wordpress-back-internal
-    #- dokuwiki-back-internal
-    #- tiddlywiki-back-internal
-    #- transmission
-    - vpn
-    mem_limit: 128m
-    memswap_limit: 192m
-    mem_reservation: 64m
-    restart: always
-
-########################################################################
-
-  # to configure backends: https://docs.traefik.io/configuration/backends/docker/
+  # to configure backends: https://docs.traefik.io/providers/docker/
   # to extract Let'sEncrypt certificates: https://github.com/containous/traefik/blob/master/contrib/scripts/dumpcerts.sh
   traefik:
     extends:
       service: base-service
-    image: traefik:${TRAEFIK_VERSION:-1.7}
+    image: traefik:${TRAEFIK_VERSION:-2.1}
     init: true
-    command: ["-c", "/etc/traefik/traefik.toml", "--sendAnonymousUsage=false", "--checkNewVersion=false", "--docker"]
+    # https://docs.traefik.io/v2.1/reference/dynamic-configuration/docker/
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-http.rule=Host(`traefik.docker.localhost`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.traefik-http.entrypoints=http"
+      - "traefik.http.routers.traefik-http.middlewares=403"
+      - "traefik.http.routers.traefik-https.rule=Host(`traefik.docker.localhost`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.traefik-https.entrypoints=https"
+      - "traefik.http.routers.traefik-https.middlewares=std-ipwhitelist,traefik-authentication,defaultchain-https"
+      - "traefik.http.routers.traefik-https.service=api@internal"
+      - "traefik.http.routers.traefik-https.tls=true"
+      - "traefik.http.routers.traefik-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik-https.tls.options=default"
+      #- "traefik.http.routers.traefik-https.priority=42"
+      - "traefik.http.middlewares.traefik-authentication.basicauth.usersFile=.htpasswd"
+      - "traefik.http.middlewares.traefik-authentication.basicauth.realm=traefik"
+      #- "traefik.http.middlewares.traefik-authentication.digestauth.usersFile=.htdigest"
+      #- "traefik.http.middlewares.traefik-authentication.digestauth.realm=traefik"
+      #- "traefik.http.services.traefik-service.loadbalancer.sticky=true"
+      #- "traefik.http.services.traefik-service.loadbalancer.sticky.cookie.httponly=true"
+      #- "traefik.http.services.traefik-service.loadbalancer.sticky.cookie.secure=true"
+      #- "traefik.http.services.traefik-service.loadbalancer.server.port=8000"
+
+      #####################################################
+      # Standard middlewares, available to all containers #
+      #####################################################
+      - "traefik.http.middlewares.redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect.redirectscheme.permanent=true"
+      - "traefik.http.middlewares.compress.compress=true"
+      - "traefik.http.middlewares.std-headers.headers.addvaryheader=true"
+      - "traefik.http.middlewares.std-headers.headers.browserxssfilter=true"
+      - "traefik.http.middlewares.std-headers.headers.contentsecuritypolicy=frame-ancestors 'self' example.com *.example.net ; object-src 'none' ; connect-src 'self' * ;"
+      - "traefik.http.middlewares.std-headers.headers.contenttypenosniff=true"
+      - "traefik.http.middlewares.std-headers.headers.framedeny=true"
+      - "traefik.http.middlewares.std-headers.headers.customFrameOptionsValue=sameorigin"
+      - "traefik.http.middlewares.std-headers.headers.stspreload=false"
+      #- "traefik.http.middlewares.std-headers.headers.customresponseheaders.name0=foobar"
+      - >-
+          traefik.http.middlewares.std-ipwhitelist.ipwhitelist.sourcerange=192.168.0.0/16, 172.16.0.0/12,
+          10.0.0.0/8
+      - "traefik.http.middlewares.403.ipwhitelist.sourcerange=127.1.2.7"
+      - "traefik.http.middlewares.defaultchain-http.chain.middlewares=std-headers,redirect"
+      - "traefik.http.middlewares.defaultchain-https.chain.middlewares=std-headers,compress"
+      - "traefik.tls.options.default.minVersion=VersionTLS12"
+      #- "traefik.tls.options.default.sniStrict=true"
+      #- "traefik.docker.network=default"
+      
+      # To disallow /admin path, one can not simply use negative lookaround:
+      #   "traefik.http.routers.http.rule=Host(`example.com`) && PathPrefix(`/{re:(?!admin|manager).*}/`)"
+      # because: (?!re)	before text not matching re (NOT SUPPORTED) (https://github.com/google/re2/wiki/Syntax)
+      # Workaround (ugly, but it works): use deny-all middleware:
+      # # Allow general traffic (low prioriy rule)
+      # - "traefik.http.routers.http.rule=Host(`example.com`)"
+      # # Forbid admin endpoint on plain http
+      # - "traefik.http.routers.my-403.rule=Host(`example.com`) && PathPrefix(`/{re:(?i:admin|install).*}`)"
+      # - "traefik.http.routers.my-403.entrypoints=http"
+      # - "traefik.http.routers.my-403.priority=65535"
+      # - "traefik.http.routers.my-403.middlewares=403"
+      # # IP restriction on https admin endpoint
+      # - "traefik.http.routers.my-407.rule=Host(`example.com`) && PathPrefix(`/{re:(?i:admin|install).*}`)"
+      # - "traefik.http.routers.my-407.entrypoints=https"
+      # - "traefik.http.routers.my-407.priority=65535"
+      # - "traefik.http.routers.my-407.tls=true"
+      # - "traefik.http.routers.my-407.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.my-407.tls.options=default"
+      # - "traefik.http.routers.my-407.middlewares=std-ipwhitelist,defaultchain-https"
     expose:
     - "8080"
-    - "8443"
     ports:
     - "80:80"
     - "443:443"
+    environment:
+    # https://docs.traefik.io/v2.1/reference/static-configuration/env/
+    - TRAEFIK_GLOBAL_CHECKNEWVERSION=false
+    - TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE=false
+    - TRAEFIK_PROVIDERS_PROVIDERSTHROTTLEDURATION=2
+    - TRAEFIK_PROVIDERS_DOCKER=true
+    - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
+    #- TRAEFIK_PROVIDERS_DOCKER_NETWORK=
+    - TRAEFIK_API=true
+    - TRAEFIK_API_DASHBOARD=true
+    - TRAEFIK_PING=true
+    - TRAEFIK_PING_ENTRYPOINT=http
+    - TRAEFIK_ENTRYPOINTS_traefik=true
+    - TRAEFIK_ENTRYPOINTS_traefik_ADDRESS=:8080
+    - TRAEFIK_ENTRYPOINTS_http=true
+    - TRAEFIK_ENTRYPOINTS_http_ADDRESS=:80
+    - TRAEFIK_ENTRYPOINTS_https=true
+    - TRAEFIK_ENTRYPOINTS_https_ADDRESS=:443
+    - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt=true
+    #- TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_EMAIL=me@example.com
+    #- TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_TLSCHALLENGE=true
+    - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_HTTPCHALLENGE=true
+    - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_HTTPCHALLENGE_ENTRYPOINT=http
+    - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_STORAGE=/acme.json
+    - TRAEFIK_LOG=true
+    # PANIC, FATAL, ERROR, WARN, INFO, DEBUG
+    - TRAEFIK_LOG_LEVEL=WARN
+    #- TRAEFIK_ACCESSLOG=true
+    #- TRAEFIK_ACCESSLOG_BUFFERINGSIZE=100
+    #- TRAEFIK_ACCESSLOG_FILTERS_MINDURATION=500ms
+    #- TRAEFIK_ACCESSLOG_FILTERS_STATUSCODES="200, 300-302"
+    - TRAEFIK_SERVERSTRANSPORT_INSECURESKIPVERIFY=true
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock:ro
-    - /opt/traefik/traefik.toml:/etc/traefik/traefik.toml:ro
+    #- /opt/traefik/traefik.toml:/etc/traefik/traefik.toml:ro
     # create with: touch /opt/traefik/acme.json && chmod 600 /opt/traefik/acme.json
     - /opt/traefik/acme.json:/acme.json
     # docker container run --rm -ti httpd:2.4-alpine htpasswd -n <user> >> /opt/traefik/htpasswd
@@ -165,7 +178,7 @@ services:
     # docker container run --rm -ti -v /opt/traefik/htdigest:/.htdigest httpd:2.4-alpine htdigest /.htdigest <realm> <username>
     - /opt/traefik/htdigest:/.htdigest:ro
     healthcheck:
-      test: ["CMD", "/traefik", "healthcheck"]
+      test: ["CMD", "/usr/local/bin/traefik", "healthcheck"]
       interval: 240s
       timeout: 5s
       retries: 1
@@ -177,16 +190,18 @@ services:
     - tomcat-front
     - owncloud-front
     - nextcloud-front
+    - ttrss-front
     - wordpress-front
     - dokuwiki-front
     - tiddlywiki-front
     - droppy
     - transmission
     - bitwarden
+    - vpn
     cpu_shares: 256
     mem_limit: 96m
     memswap_limit: 128m
-    mem_reservation: 32m
+    mem_reservation: 16m
     restart: always
 
   http-static:
@@ -194,12 +209,17 @@ services:
       service: base-service
     build: apache-static
     labels:
-      - "traefik.backend=http-static"
-      - "traefik.port=80"
       - "traefik.enable=true"
-      #- "traefik.frontend.rule=Host:www1.example.com,www2.example.com"
-      - "traefik.frontend.entryPoints=http,https"
-      #- "traefik.frontend.redirect.entryPoint=https"
+      - "traefik.http.routers.http-static-http.rule=Host(`example.com`,`example.net`)"
+      - "traefik.http.routers.http-static-http.entrypoints=http"
+      - "traefik.http.routers.http-static-http.middlewares=defaultchain-http"
+      - "traefik.http.routers.http-static-https.rule=Host(`example.com`,`example.net`)"
+      - "traefik.http.routers.http-static-https.entrypoints=https"
+      - "traefik.http.routers.http-static-https.middlewares=defaultchain-https"
+      - "traefik.http.routers.http-static-https.tls=true"
+      - "traefik.http.routers.http-static-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.http-static-https.tls.options=default"
+      - "traefik.http.services.http-static-service.loadbalancer.server.port=80"
     expose:
     - "80"
     volumes:
@@ -243,7 +263,7 @@ services:
     - wordpress:wordpress
     #- dokuwiki:dokuwiki
     #- tiddlywiki:tiddlywiki
-    - droppy:droppy
+    #- droppy:droppy
     #- transmission:transmission
     - portainer:portainer
     volumes:
@@ -264,12 +284,14 @@ services:
     - tomcat-front
     - owncloud-front
     - nextcloud-front
+    - ttrss-front
     - wordpress-front
     - dokuwiki-front
     - tiddlywiki-front
     - droppy
     - transmission
     #- bitwarden
+    - vpn
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
@@ -280,8 +302,6 @@ services:
     extends:
       service: base-service
     build: sslh
-    labels:
-      - "traefik.enable=false"
     #command: ["--ssl", "http-proxy:443", "--openvpn", "openvpn:1194", "--on-timeout", "http-proxy:443"]
     command: ["--tls", "http-proxy:443", "--on-timeout", "http-proxy:443"]
     ports:
@@ -313,11 +333,17 @@ services:
     image: portainer/portainer
     init: true
     labels:
-      - "traefik.backend=portainer"
-      - "traefik.port=9000"
       - "traefik.enable=true"
-      - "traefik.frontend.entryPoints=https"
-      - "traefik.frontend.rule=Host:www.example.com"
+      - "traefik.http.routers.portainer-http.rule=Host(`portainer.docker.localhost`)"
+      - "traefik.http.routers.portainer-http.entrypoints=http"
+      - "traefik.http.routers.portainer-http.middlewares=403"
+      - "traefik.http.routers.portainer-https.rule=Host(`portainer.docker.localhost`)"
+      - "traefik.http.routers.portainer-https.entrypoints=https"
+      - "traefik.http.routers.portainer-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.portainer-https.tls=true"
+      - "traefik.http.routers.portainer-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.portainer-https.tls.options=default"
+      - "traefik.http.services.portainer-service.loadbalancer.server.port=9000"
     #command: ["--tlsverify", "--tlscacert", "/certs/ca.pem", "--tlscert", "/certs/cert.pem", "--tlskey", "/certs/key.pem"]
     #command: ["--templates", "https://raw.githubusercontent.com/portainer/templates/master/templates.json"]
     command: ["--no-analytics"]
@@ -345,10 +371,17 @@ services:
       - DOCKER_FROM_VERSION=9-jdk11-openjdk-slim
     init: true
     labels:
-      - "traefik.backend=tomcat"
-      - "traefik.port=8080"
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host:www.example.com"
+      - "traefik.http.routers.tomcat-http.rule=Host(`example.com`,`example.net`)"
+      - "traefik.http.routers.tomcat-http.entrypoints=http"
+      - "traefik.http.routers.tomcat-http.middlewares=403"
+      - "traefik.http.routers.tomcat-https.rule=Host(`example.com`,`example.net`)"
+      - "traefik.http.routers.tomcat-https.entrypoints=https"
+      - "traefik.http.routers.tomcat-https.middlewares=defaultchain-https"
+      - "traefik.http.routers.tomcat-https.tls=true"
+      - "traefik.http.routers.tomcat-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.tomcat-https.tls.options=default"
+      - "traefik.http.services.tomcat-service.loadbalancer.server.port=8080"
     expose:
     - "8080"
     - "8443"
@@ -384,15 +417,25 @@ services:
       context: owncloud
       args:
       # https://owncloud.org/release-channels/
-      #- OWNCLOUD_VERSION=10.2
+      #- OWNCLOUD_VERSION=10.3
       #- OWNCLOUD_VERSION=stable
       - OWNCLOUD_VERSION=production
     labels:
-      - "traefik.backend=owncloud"
-      - "traefik.port=80"
       - "traefik.enable=true"
-      - "traefik.frontend.entryPoints=https"
-      - "traefik.frontend.rule=Host:www.example.com"
+      - "traefik.http.routers.owncloud-http.rule=Host(`owncloud.example.net`)"
+      - "traefik.http.routers.owncloud-http.entrypoints=http"
+      - "traefik.http.routers.owncloud-http.middlewares=defaultchain-http"
+      - "traefik.http.routers.owncloud-https.rule=Host(`owncloud.example.net`)"
+      - "traefik.http.routers.owncloud-https.entrypoints=https"
+      - "traefik.http.routers.owncloud-https.middlewares=std-ipwhitelist,owncloud-dav-redirect,defaultchain-https"
+      - "traefik.http.routers.owncloud-https.tls=true"
+      - "traefik.http.routers.owncloud-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.owncloud-https.tls.options=default"
+      - "traefik.http.services.owncloud-service.loadbalancer.server.port=80"
+      # redirect DAV well-known endpoints
+      - "traefik.http.middlewares.owncloud-dav-redirect.redirectregex.permanent=true"
+      - "traefik.http.middlewares.owncloud-dav-redirect.redirectregex.regex=https://(.*)/.well-known/(card|cal)dav"
+      - "traefik.http.middlewares.owncloud-dav-redirect.redirectregex.replacement=https://$$1/remote.php/dav/"
     expose:
     - "80"
     - "443"
@@ -411,7 +454,7 @@ services:
     - redis-owncloud:redis
     - email-relay:email-relay
     volumes:
-    - /srv/owncloud/acme-challenge/.well-known:/var/www/owncloud/.well-known
+    - /srv/owncloud/acme-challenge/.well-known:/var/www/owncloud/.well-known:ro
     - /opt/owncloud/config:/var/www/owncloud/config
     - /opt/owncloud/apps:/var/www/owncloud/apps-external
     - /opt/owncloud/ip-restriction.conf:/etc/apache2/conf-enabled/ip-restriction.conf:ro
@@ -437,19 +480,26 @@ services:
       context: nextcloud
       args:
       # https://nextcloud.com/release-channels/
-      #- DOCKER_FROM_TAG=16-apache
+      #- DOCKER_FROM_TAG=17-apache
       #- DOCKER_FROM_TAG=stable-apache
       - DOCKER_FROM_TAG=production-apache
     init: true
     labels:
-      - "traefik.backend=nextcloud"
-      - "traefik.port=80"
       - "traefik.enable=true"
-      - "traefik.frontend.entryPoints=https"
-      - "traefik.frontend.rule=Host:www.example.com"
-      - "traefik.frontend.redirect.permanent: 'true'"
-      - "traefik.frontend.redirect.regex: https://(.*)/.well-known/(card|cal)dav"
-      - "traefik.frontend.redirect.replacement: https://$$1/remote.php/dav/"
+      - "traefik.http.routers.nextcloud-http.rule=Host(`nextcloud.example.net`)"
+      - "traefik.http.routers.nextcloud-http.entrypoints=http"
+      - "traefik.http.routers.nextcloud-http.middlewares=defaultchain-http"
+      - "traefik.http.routers.nextcloud-https.rule=Host(`nextcloud.example.net`)"
+      - "traefik.http.routers.nextcloud-https.entrypoints=https"
+      - "traefik.http.routers.nextcloud-https.middlewares=std-ipwhitelist,nextcloud-dev-redirect,defaultchain-https"
+      - "traefik.http.routers.nextcloud-https.tls=true"
+      - "traefik.http.routers.nextcloud-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.nextcloud-https.tls.options=default"
+      - "traefik.http.services.nextcloud-service.loadbalancer.server.port=80"
+      # redirect DAV well-known endpoints
+      - "traefik.http.middlewares.nextcloud-dav-redirect.redirectregex.permanent=true"
+      - "traefik.http.middlewares.nextcloud-dav-redirect.redirectregex.regex=https://(.*)/.well-known/(card|cal)dav"
+      - "traefik.http.middlewares.nextcloud-dav-redirect.redirectregex.replacement=https://$$1/remote.php/dav/"
     expose:
     - "80"
     - "443"
@@ -482,7 +532,7 @@ services:
     - redis-nextcloud:redis
     - email-relay:email-relay
     volumes:
-    - /srv/nextcloud/acme-challenge/.well-known:/var/www/html/.well-known
+    - /srv/nextcloud/acme-challenge/.well-known:/var/www/html/.well-known:ro
     - /opt/nextcloud/config:/var/www/html/config
     - /opt/nextcloud/custom_apps:/var/www/html/custom_apps
     - /opt/nextcloud/themes:/var/www/html/themes
@@ -529,13 +579,34 @@ services:
     build:
       context: wordpress
       args:
-      #- WORDPRESS_VERSION=wordpress-5.2.3
+      #- WORDPRESS_VERSION=wordpress-5.2.5
       - WORDPRESS_VERSION=latest
     labels:
-      - "traefik.backend=wordpress"
-      - "traefik.port=80"
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host:www.example.com"
+      - "traefik.http.routers.wordpress-http.rule=Host(`wordpress.example.net`)"
+      - "traefik.http.routers.wordpress-http.entrypoints=http"
+      - "traefik.http.routers.wordpress-http.middlewares=defaultchain-http"
+      - "traefik.http.routers.wordpress-https.rule=Host(`wordpress.example.net`)"
+      - "traefik.http.routers.wordpress-https.entrypoints=https"
+      - "traefik.http.routers.wordpress-https.middlewares=defaultchain-https"
+      - "traefik.http.routers.wordpress-https.tls=true"
+      - "traefik.http.routers.wordpress-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.wordpress-https.tls.options=default"
+      - "traefik.http.services.wordpress-service.loadbalancer.server.port=80"
+      # IP restriction on https /admin endpoint
+      # Forbid admin endpoint on plain http
+      - "traefik.http.routers.wordpress-403.rule=Host(`wordpress.example.net`) && PathPrefix(`/{re:(?i:wp-admin|wp-login|xmlrpc|wp-json).*}`)"
+      - "traefik.http.routers.wordpress-403.entrypoints=http"
+      - "traefik.http.routers.wordpress-403.priority=65535"
+      - "traefik.http.routers.wordpress-403.middlewares=403"
+      # IP restriction on https admin endpoint
+      - "traefik.http.routers.wordpress-407.rule=Host(`wordpress.example.net`) && PathPrefix(`/{re:(?i:wp-admin|wp-login|xmlrpc|wp-json).*}`)"
+      - "traefik.http.routers.wordpress-407.entrypoints=https"
+      - "traefik.http.routers.wordpress-407.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.wordpress-407.priority=65535"
+      - "traefik.http.routers.wordpress-407.tls=true"
+      - "traefik.http.routers.wordpress-407.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.wordpress-407.tls.options=default"
     expose:
     - "80"
     - "443"
@@ -564,7 +635,7 @@ services:
     #- memcached-wordpress:memcached
     - email-relay:email-relay
     volumes:
-    - /srv/wordpress/acme-challenge/.well-known:/var/www/html/.well-known
+    - /srv/wordpress/acme-challenge/.well-known:/var/www/html/.well-known:ro
     - /srv/wordpress/htaccess:/var/www/html/.htaccess
     - /srv/wordpress/wp-config.php:/var/www/html/wp-config.php
     - /srv/wordpress/wp-content:/var/www/html/wp-content
@@ -593,11 +664,18 @@ services:
       # Languages to keep (delete all others)
       #- STRIP_LANGS_KEEP=en,fr
     labels:
-      - "traefik.backend=dokuwiki"
-      - "traefik.port=80"
       - "traefik.enable=true"
-      - "traefik.frontend.redirect.entryPoint=https"
-      - "traefik.frontend.rule=Host:www.example.com"
+      - "traefik.http.routers.dokuwiki-http.rule=Host(`dokuwiki.example.net`)"
+      - "traefik.http.routers.dokuwiki-http.entrypoints=http"
+      - "traefik.http.routers.dokuwiki-http.middlewares=defaultchain-http"
+      - "traefik.http.routers.dokuwiki-https.rule=Host(`dokuwiki.example.net`)"
+      - "traefik.http.routers.dokuwiki-https.entrypoints=https"
+      - "traefik.http.routers.dokuwiki-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.dokuwiki-https.tls=true"
+      - "traefik.http.routers.dokuwiki-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.dokuwiki-https.tls.options=default"
+      - "traefik.http.services.dokuwiki-service.loadbalancer.server.port=80"
+      # ToDo ip-whitelist on /admin
     expose:
     - "80"
     - "443"
@@ -609,7 +687,7 @@ services:
     links:
     - email-relay:email-relay
     volumes:
-    - /srv/dokuwiki/acme-challenge/.well-known:/var/www/html/.well-known
+    - /srv/dokuwiki/acme-challenge/.well-known:/var/www/html/.well-known:ro
     - /srv/dokuwiki/conf:/var/www/html/conf
     - /srv/dokuwiki/lib/plugins:/var/www/html/lib/plugins
     #- /srv/dokuwiki/lib/tpl:/var/www/html/lib/tpl
@@ -633,11 +711,17 @@ services:
     build:
       context: tiddlywiki
     labels:
-      - "traefik.backend=tiddlywiki"
-      - "traefik.port=8080"
       - "traefik.enable=true"
-      - "traefik.frontend.redirect.entryPoint=https"
-      - "traefik.frontend.rule=Host:www.example.com"
+      - "traefik.http.routers.tiddlywiki-http.rule=Host(`tiddlywiki.example.net`)"
+      - "traefik.http.routers.tiddlywiki-http.entrypoints=http"
+      - "traefik.http.routers.tiddlywiki-http.middlewares=defaultchain-http"
+      - "traefik.http.routers.tiddlywiki-https.rule=Host(`tiddlywiki.example.net`)"
+      - "traefik.http.routers.tiddlywiki-https.entrypoints=https"
+      - "traefik.http.routers.tiddlywiki-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.tiddlywiki-https.tls=true"
+      - "traefik.http.routers.tiddlywiki-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.tiddlywiki-https.tls.options=default"
+      - "traefik.http.services.tiddlywiki-service.loadbalancer.server.port=8080"
     expose:
     - "8080"
     environment:
@@ -667,10 +751,17 @@ services:
 #    image: silverwind/armhf-droppy
     init: true
     labels:
-      - "traefik.backend=droppy"
-      - "traefik.port=8989"
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host:www.example.com"
+      - "traefik.http.routers.droppy-http.rule=Host(`droppy.example.net`)"
+      - "traefik.http.routers.droppy-http.entrypoints=http"
+      - "traefik.http.routers.droppy-http.middlewares=defaultchain-http"
+      - "traefik.http.routers.droppy-https.rule=Host(`droppy.example.net`)"
+      - "traefik.http.routers.droppy-https.entrypoints=https"
+      - "traefik.http.routers.droppy-https.middlewares=defaultchain-https"
+      - "traefik.http.routers.droppy-https.tls=true"
+      - "traefik.http.routers.droppy-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.droppy-https.tls.options=default"
+      - "traefik.http.services.droppy-service.loadbalancer.server.port=8989"
     command: ["/usr/bin/droppy", "start", "--color", "-f", "/files", "-c", "/config"]
     expose:
     - "8989"
@@ -716,6 +807,7 @@ services:
     - tomcat-back
     - owncloud-back
     - nextcloud-back
+    - ttrss-back
     - wordpress-back
     - dokuwiki-back
     - bitwarden
@@ -770,6 +862,7 @@ services:
     #- tomcat-back-internal
     - owncloud-back-internal
     - nextcloud-back-internal
+    - ttrss-back-internal
     - wordpress-back-internal
     #ulimits:
     #  nproc: 65535
@@ -907,23 +1000,51 @@ services:
     #image: bitwardenrs/server:raspberry
     init: true
     labels:
-      - "traefik.backend=bitwarden"
-      - "traefik.port=80"
-      #- "traefik.enable=true"
-      - "traefik.frontend.rule=Host:vault.example.com"
-      - "traefik.frontend.entryPoints=https"
-      #- "traefik.frontend.redirect.entryPoint=https"
-      - "traefik.web.frontend.rule=Host:vault.example.local"
-      - "traefik.web.port=80"
-      - "traefik.hub.frontend.rule=Host:vault.example.local;Path:/notifications/hub"
-      - "traefik.hub.port=3012"
-      - "traefik.negotiate.frontend.rule=Host:vault.example.local;Path:/notifications/hub/negotiate"
-      - "traefik.negotiate.port=80"
+      - "traefik.enable=true"
+      - "traefik.http.routers.bitwarden-http.rule=Host(`vault.example.net`)"
+      - "traefik.http.routers.bitwarden-http.entrypoints=http"
+      - "traefik.http.routers.bitwarden-http.middlewares=403"
+      - "traefik.http.routers.bitwarden-https.rule=Host(`vault.example.net`)"
+      - "traefik.http.routers.bitwarden-https.entrypoints=https"
+      - "traefik.http.routers.bitwarden-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.bitwarden-https.service=bitwarden-web"
+      - "traefik.http.routers.bitwarden-https.tls=true"
+      - "traefik.http.routers.bitwarden-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.bitwarden-https.tls.options=default"
+      - "traefik.http.services.bitwarden-web.loadbalancer.server.port=80"
+      
+      - "traefik.http.routers.bitwarden-hub.rule=Host(`vault.example.net`) && PathPrefix(`/notifications/hub`)"
+      - "traefik.http.routers.bitwarden-hub.entrypoints=https"
+      - "traefik.http.routers.bitwarden-hub.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.bitwarden-hub.tls=true"
+      - "traefik.http.routers.bitwarden-hub.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.bitwarden-hub.tls.options=default"
+      - "traefik.http.routers.bitwarden-hub.service=bitwarden-hub"
+      - "traefik.http.services.bitwarden-hub.loadbalancer.server.port=3012"
+      
+      - "traefik.http.routers.bitwarden-negociate.rule=Host(`vault.example.net`) && PathPrefix(`/notifications/hub/negotiate`)"
+      - "traefik.http.routers.bitwarden-negociate.entrypoints=https"
+      - "traefik.http.routers.bitwarden-negociate.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.bitwarden-negociate.service=bitwarden-negociate"
+      - "traefik.http.routers.bitwarden-negociate.tls=true"
+      - "traefik.http.routers.bitwarden-negociate.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.bitwarden-negociate.tls.options=default"
+      - "traefik.http.services.bitwarden-negociate.loadbalancer.server.port=80"
+      
+      # IP restriction on https /admin endpoint
+      # Forbid admin endpoint on plain http
+      - "traefik.http.routers.bitwarden-403.rule=Host(`vault.example.net`) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.bitwarden-403.entrypoints=http"
+      - "traefik.http.routers.bitwarden-403.priority=65535"
+      - "traefik.http.routers.bitwarden-403.middlewares=403"
       # IP restriction on https admin endpoint
-      - "traefik.407.frontend.entryPoints=https"
-      - "traefik.407.frontend.rule=Host:vault.example.local;PathPrefix:/admin"
-      - "traefik.407.frontend.priority=65536"
-      - "traefik.407.frontend.whiteList.sourceRange=192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8"
+      - "traefik.http.routers.bitwarden-407.rule=Host(`vault.example.net`) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.bitwarden-407.entrypoints=https"
+      - "traefik.http.routers.bitwarden-407.priority=65535"
+      - "traefik.http.routers.bitwarden-407.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.bitwarden-407.tls=true"
+      - "traefik.http.routers.bitwarden-407.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.bitwarden-407.tls.options=default"
     expose:
     - "80"
     - "3012"
@@ -940,6 +1061,7 @@ services:
     #- DISABLE_ICON_DOWNLOAD=false
     #- ICON_CACHE_TTL=2592000
     #- ICON_CACHE_NEGTTL=259200
+    - ICON_BLACKLIST_REGEX=192\.168\.[1-2]?[0-9]?[0-9]\.[0-9].*^
     #- ROCKET_PORT=80
     #- ROCKET_LIMITS={json=10485760}
     #- ROCKET_WORKERS=10
@@ -983,133 +1105,55 @@ services:
 
 ########################################################################
 
-  # dnsmasq is our internal (since no ACL) DNS server
-  dnsmasq-base:
-    extends:
-      service: base-service
-    build: dnsmasq
-    # Can not use "command: [...]" since we need to start runit as main process (dnsmasq is started via runit)
-    #command: ["/usr/sbin/dnsmasq", "--log-facility=-", "--cache-size=150", "--bind-interfaces", "--no-hosts", "-H", "/opt/dnsmasq/hosts", "-r", "/opt/dnsmasq/resolv.conf", "--rebind-domain-ok=/plex.direct/gestionbbox.lan/"]
+  # AdGuard Home is our internal + external (ACLs) DNS server
+  adguard-home:
+    image: adguard/adguardhome:latest
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.adguardhome-http.rule=Host(`adguard.docker.localhost`)"
+      - "traefik.http.routers.adguardhome-http.entrypoints=403"
+      - "traefik.http.routers.adguardhome-http.middlewares=defaultchain-http"
+      - "traefik.http.routers.adguardhome-https.rule=Host(`adguard.docker.localhost`)"
+      - "traefik.http.routers.adguardhome-https.entrypoints=https"
+      - "traefik.http.routers.adguardhome-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.adguardhome-https.tls=true"
+      - "traefik.http.routers.adguardhome-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.adguardhome-https.tls.options=default"
+      - "traefik.http.services.adguardhome-service.loadbalancer.server.port=3000"
+    ports:
+    #- "192.0.2.1:53:53/tcp"
+    #- "192.0.2.1:53:53/udp"
+    #- "67:67/udp"
+    #- "68:68/udp"
+    #- "80:80/tcp"
+    #- "443:443/tcp"
+    - "853:853/tcp"
+    #- "3000:3000/tcp"
     expose:
     - "53/tcp"
     - "53/udp"
-    environment:
-    - ENABLE_CONSUL=1
-    - CONSUL_NO_DNS_53=1
-    # -log-facility=/dev/null
-    # --log-queries --log-facility=-
-    - DNSMASQ_EXTRA_OPTS=--cache-size=150 --log-facility=- --bind-interfaces --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
-    tmpfs:
-    # mount writable dir for consul (configuration file built according to env vars)
-    - /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
-    cap_add:
-    - NET_ADMIN
-    #- NET_RAW already in base capabilities: https://github.com/docker/docker/blob/master/daemon/execdriver/native/template/default_template_linux.go#L16-L29
-    cpu_shares: 128
-    mem_limit: 192m
-    memswap_limit: 256m
-    mem_reservation: 160m
-    restart: always
-
-  dnsmasq:
-    extends:
-      service: dnsmasq-base
-    ports:
-    # also publish service on gateway IP since docker-compose 1.6 can't assign a fixed IP to this container
-    - "172.31.53.254:53:53/udp"
-    environment:
-    - DNSMASQ_EXTRA_OPTS=--cache-size=900 --log-facility=/dev/null --bind-interfaces --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
-    depends_on:
-      consul:
-        condition: service_healthy
-    #  dnsmasq-shalla:
-    #    condition: service_started
-      dnsmasq-urlblacklist:
-        condition: service_started
-    links: *consul_link
+    - "67/udp"
+    - "68/udp"
+    - "80"
+    - "443"
+    - "853/tcp"
+    - "3000"
     volumes:
-    - /opt/dnsmasq:/opt/dnsmasq
-    - /opt/dnsmasq/dnsmasq.d:/etc/dnsmasq.d:ro
-    #- /srv/logs/dnsmasq:/var/log
+    - /opt/adguard-home:/opt/adguardhome/conf
+    - /srv/adguard-home:/opt/adguardhome/work
+    user: nobody
+    working_dir: /opt/adguardhome/work
+    cap_add:
+    - NET_BIND_SERVICE
     networks:
       vpn:
         ipv4_address: 172.31.53.53
-    mem_limit: 96m
-    memswap_limit: 128m
-    mem_reservation: 96m
-
-  dnsmasq-shalla:
-    extends:
-      service: dnsmasq-base
-    environment:
-    - CONSUL_TAG=shalla
-    - DNSMASQ_EXTRA_OPTS=--cache-size=50 --log-facility=/dev/null --bind-interfaces --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
-    depends_on:
-      consul:
-        condition: service_healthy
-      dnsmasq-urlblacklist:
-        condition: service_started
-    links: *consul_link
-    volumes:
-    - /opt/dnsmasq-shalla:/opt/dnsmasq
-    - /opt/dnsmasq-shalla/dnsmasq.d:/etc/dnsmasq.d:ro
-    #- /srv/logs/dnsmasq-shalla:/var/log
-    networks:
-    - vpn
-
-  dnsmasq-urlblacklist:
-    extends:
-      service: dnsmasq-base
-    environment:
-    - CONSUL_TAG=urlblacklist
-    - DNSMASQ_EXTRA_OPTS=--cache-size=50 --log-facility=/dev/null --bind-interfaces --no-hosts -H /opt/dnsmasq/hosts -r /opt/dnsmasq/resolv.conf --rebind-domain-ok=/plex.direct/gestionbbox.lan/
-    depends_on:
-      consul:
-        condition: service_healthy
-    links: *consul_link
-    volumes:
-    - /opt/dnsmasq-urlblacklist:/opt/dnsmasq
-    - /opt/dnsmasq-urlblacklist/dnsmasq.d:/etc/dnsmasq.d:ro
-    #- /srv/logs/dnsmasq-urlblacklist:/var/log
-    networks:
-    - vpn
-
-  # Unbound is our external DNS gateway, with ACL
-  unbound:
-    extends:
-      service: base-service
-    build: unbound
-    #ports:
-    #- "192.0.2.1:53:53/tcp"
-    #- "192.0.2.1:53:53/udp"
-    expose:
-    - "53/tcp"
-    - "53/udp"
-    environment:
-    - ENABLE_CONSUL=1
-    - CONSUL_NO_DNS_53=1
-    depends_on:
-      consul:
-        condition: service_healthy
-      dnsmasq:
-        condition: service_started
-    links: *consul_link
-    dns:
-    - 172.31.53.53
-    volumes:
-    - /opt/unbound:/etc/unbound/unbound.conf.d
-    #- /srv/logs/unbound:/var/log
-    tmpfs:
-    # we need to write the Consul configuration file according to env vars
-    - /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
-    # for unbound autotrust file
-    - /var/lib/unbound:rw,nosuid,nodev,noexec,size=128k
-    networks:
-    - vpn
-    cpu_shares: 128
-    mem_limit: 64m
-    memswap_limit: 96m
+    cpu_shares: 512
+    mem_limit: 384m
+    memswap_limit: 384m
     mem_reservation: 64m
+    read_only: true
     restart: always
 
 ########################################################################
@@ -1212,11 +1256,17 @@ services:
     build:
       context: transmission
     labels:
-      - "traefik.backend=transmission"
-      - "traefik.port=9091"
       - "traefik.enable=true"
-      - "traefik.frontend.entryPoints=https"
-      - "traefik.frontend.rule=Host:www.example.com;PathPrefix:/transmission/"
+      - "traefik.http.routers.transmission-http.rule=Host(`example.net`) && PathPrefix(`/transmission/`)"
+      - "traefik.http.routers.transmission-http.entrypoints=http"
+      - "traefik.http.routers.transmission-http.middlewares=403"
+      - "traefik.http.routers.transmission-https.rule=Host(`example.net`) && PathPrefix(`/transmission/`)"
+      - "traefik.http.routers.transmission-https.entrypoints=https"
+      - "traefik.http.routers.transmission-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.transmission-https.tls=true"
+      - "traefik.http.routers.transmission-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.transmission-https.tls.options=default"
+      - "traefik.http.services.transmission-service.loadbalancer.server.port=9091"
     expose:
     - "9091"
     ports:
@@ -1224,6 +1274,8 @@ services:
     - "51413:51413/udp"
     volumes:
     - /srv/transmission:/var/lib/transmission-daemon
+    # Required for `modprobe tcp_lp`
+    - /lib/modules:/lib/modules:ro
     networks:
     - transmission
     #sysctls:
@@ -1235,6 +1287,58 @@ services:
     mem_reservation: 96m
     #blkio-weight: 10
     restart: "no"
+
+########################################################################
+
+  tt-rss:
+    extends:
+      service: base-service
+    build:
+      context: tt-rss
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ttrss-http.rule=Host(`ttrss.example.net`))"
+      - "traefik.http.routers.ttrss-http.entrypoints=http"
+      - "traefik.http.routers.ttrss-http.middlewares=403"
+      - "traefik.http.routers.ttrss-https.rule=Host(`ttrss.example.net`)"
+      - "traefik.http.routers.ttrss-https.entrypoints=https"
+      - "traefik.http.routers.ttrss-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.ttrss-https.tls=true"
+      - "traefik.http.routers.ttrss-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.ttrss-https.tls.options=default"
+      - "traefik.http.services.ttrss-service.loadbalancer.server.port=80"
+    expose:
+    - "80"
+    environment:
+    - DB_TYPE=mysql
+    - DB_HOST=mysql
+    - DB_PORT=3306
+    - DB_NAME=fox
+    - DB_USER=fox
+    - DB_PASS=
+    - SELF_URL_PATH=https://ttrss.example.net
+    - REG_NOTIFY_ADDRESS=user@your.domain.dom
+    - SMTP_FROM_ADDRESS=noreply@your.domain.dom
+    # Don't change this one!
+    - ENABLE_CRON=1
+    depends_on:
+      mysql:
+        condition: service_healthy
+      email-relay:
+        condition: service_started
+    volumes:
+    #- /srv/tt-rss:/var/www/html
+    - /srv/tt-rss/.well-known:/var/www/html/.well-known:ro
+    networks:
+    - ttrss-front
+    - ttrss-back-internal
+    - ttrss-back
+    cpu_shares: 64
+    mem_limit: 128m
+    memswap_limit: 192m
+    mem_reservation: 96m
+    read_only: false
+    restart: unless-stopped
 
 ########################################################################
 
@@ -1255,6 +1359,7 @@ services:
     # webroot authentification lets encrypt
     - /srv/owncloud/acme-challenge:/srv/owncloud/acme-challenge
     - /srv/nextcloud/acme-challenge:/srv/nextcloud/acme-challenge
+    - /srv/tt-rss/.well-known:/srv/tt-rss/.well-known
     - /srv/wordpress/acme-challenge:/srv/wordpress/acme-challenge
     - /srv/droppy/.well-known:/srv/droppy/.well-known
     - /srv/dokuwiki/acme-challenge:/srv/dokuwiki/acme-challenge
@@ -1347,6 +1452,24 @@ networks:
     ipam:
       config:
       - subnet: 172.30.3.0/24
+  ttrss-front:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.4.0/24
+  ttrss-back-internal:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.29.4.0/24
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+    internal: true
+  ttrss-back:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.30.4.0/24
   wordpress-front:
     driver: bridge
     ipam:

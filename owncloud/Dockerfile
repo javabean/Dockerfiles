@@ -15,7 +15,7 @@ COPY backup_conf_local.sh restore_conf_local.sh ownCloudUpgrade.sh  /usr/local/b
 
 ############### FIXME  change depending on base OS / version! ###############
 # https://owncloud.org/release-channels/
-#ARG OWNCLOUD_VERSION=10.0
+#ARG OWNCLOUD_VERSION=10.3
 #ARG OWNCLOUD_VERSION=stable
 ARG OWNCLOUD_VERSION=production
 
@@ -67,8 +67,10 @@ COPY --chown=www-data:www-data autoconfig.php /var/www/owncloud/config/autoconfi
 
 # min[0-59] hour[0-23] dom[1-31] month[1-12] dow[0-7]  command
 #RUN crontab -u www-data -l | { cat; echo "*/15  *  *  *  * php -f /var/www/owncloud/cron.php > /dev/null 2>&1"; } | crontab -u www-data -
-RUN echo "53  *  *  *  * php -f /var/www/owncloud/cron.php > /dev/null 2>&1\n43  1  *  *  * ( cd /var/www/owncloud && sudo -u www-data php occ dav:cleanup-chunks ) > /dev/null 2>&1" | crontab -u www-data -
-
+# ownCloud < 10.3:
+#RUN echo "53  *  *  *  * php -f /var/www/owncloud/cron.php > /dev/null 2>&1\n43  1  *  *  * ( cd /var/www/owncloud && php occ dav:cleanup-chunks ) > /dev/null 2>&1" | crontab -u www-data -
+# ownCloud >= 10.3:
+RUN echo "53  *  *  *  * ( cd /var/www/owncloud && php occ system:cron ) > /dev/null 2>&1\n43  1  *  *  * ( cd /var/www/owncloud && php occ dav:cleanup-chunks ) > /dev/null 2>&1" | crontab -u www-data -
 
 #VOLUME /var/www/html
 #VOLUME ["/var/log"]

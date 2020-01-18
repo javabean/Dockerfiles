@@ -1,5 +1,5 @@
 unexport IMG_NAME = cedrik/baseimage
-unexport IMG_VERSION = 0.10.0.1
+unexport IMG_VERSION = 0.11.0.1
 
 
 ########################################################################
@@ -10,11 +10,9 @@ unexport IMG_VERSION = 0.10.0.1
 include .env
 #export $(shell sed 's/=.*//' .env)
 
-DOCKER_APT_VERSION = 18.09.*
+DOCKER_APT_VERSION = 19.03.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.24.1
-# url fragment
-DOCKER_MACHINE_VERSION = v0.16.1
+DOCKER_COMPOSE_VERSION = 1.25.1
 
 DOCKER_FROM_IMAGE ?= ubuntu
 DOCKER_FROM_VERSION ?= 18.04
@@ -37,7 +35,7 @@ APT_MIRROR ?= fr.archive.ubuntu.com
 # END set versions here
 ########################################################################
 
-docker_compose_build = consul http-proxy http-static tomcat dovecot dnsmasq unbound email-relay mysql owncloud nextcloud wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission sslh
+docker_compose_build = http-proxy http-static tomcat dovecot email-relay mysql owncloud nextcloud wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission sslh
 .PHONY: $(docker_compose_build)
 
 
@@ -92,9 +90,7 @@ owncloud wordpress dokuwiki: php7-base
 #owncloud: memcached-owncloud redis-owncloud
 owncloud wordpress: mysql email-relay
 dokuwiki: email-relay
-openvpn: dnsmasq web-accelerator
-unbound: dnsmasq
-dnsmasq unbound: consul
+openvpn: web-accelerator
 
 ########################################################################
 
@@ -112,7 +108,7 @@ stats: ## display running containers statistics
 ip:
 	@#docker container inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(filter-out $@,$(MAKECMDGOALS))
 	@#docker container inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(NAME)
-	docker container inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $$(docker ps -f name=$(NAME) -q)
+	docker container inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $$(docker container ps -f name=$(NAME) -q)
 
 .PHONY: health
 health: ## Print out the text of the last 5 checks. Use with:  NAME=<container_name>  make health
@@ -187,7 +183,6 @@ distclean: clean
 .PHONY: mkdirs
 mkdirs: ## create required directories in  /opt  and  /srv
 	mkdir -p -m 0775 \
-	/opt/consul/config     /srv/consul/data \
 	/opt/traefik \
 	/opt/http-proxy/conf-available /opt/http-proxy/conf-enabled /opt/http-proxy/conf-include /opt/http-proxy/mods-available /opt/http-proxy/mods-enabled /opt/http-proxy/sites-available /opt/http-proxy/sites-enabled /opt/http-proxy/tls \
 	                       /srv/http-proxy        /srv/logs/http-proxy/apache2 \
@@ -198,8 +193,6 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	                                              /srv/redis-nextcloud \
 	/opt/mysql/docker-entrypoint-initdb.d /opt/mysql/healthcheck.cnf /opt/mysql/mysql-init-complete \
 	  /srv/mysql/data /srv/mysql/backup           /srv/logs/mysql/mysql \
-	/opt/dnsmasq/dnsmasq.d                        /srv/logs/dnsmasq \
-	/opt/unbound                                  /srv/logs/unbound \
 	/opt/dovecot           /srv/dovecot           /srv/logs/dovecot \
 	/opt/email-relay/dkim/keys                    /srv/logs/email-relay \
       /srv/dokuwiki/conf  /srv/dokuwiki/lib/plugins  /srv/dokuwiki/lib/tpl  /srv/dokuwiki/data \
@@ -211,12 +204,12 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	                                              /srv/logs/ziproxy \
 	  /srv/transmission \
 	  /srv/bitwarden \
+	  /srv/tt-rss/.well-known/acme-challenge \
 	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt \
 	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/nextcloud/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known /srv/dokuwiki/acme-challenge/.well-known \
 	/opt/droppy  /srv/droppy/.well-known/acme-challenge \
 	/opt/portainer/certs  /srv/portainer/acme-challenge/.well-known  /srv/portainer/data
 
-	sudo chown -R 8300:8300 /opt/consul /srv/consul
 	sudo touch /opt/traefik/acme.json /opt/traefik/htpasswd /opt/traefik/htdigest && sudo chmod 600 /opt/traefik/acme.json
 	sudo chmod g-rw,o-rwx /opt/http-proxy/tls
 	#sudo chown root:ssl-cert /opt/http-proxy/tls
@@ -225,7 +218,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	sudo chown -R 101:102 /srv/mysql/data /srv/mysql/backup /srv/logs/mysql/mysql
 	if [ ! -f /srv/wordpress/wp-config.php ]; then touch /srv/wordpress/wp-config.php; fi
 	if [ ! -f /srv/wordpress/htaccess ]; then touch /srv/wordpress/htaccess; fi
-	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/wordpress /srv/dokuwiki /srv/tiddlywiki
+	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/wordpress /srv/dokuwiki /srv/tiddlywiki /srv/tt-rss
 	# if [ "$(ls -A /opt/dovecot/*.pem)" ]; then
 	if ls -A /opt/dovecot/*.pem > /dev/null 2>&1; then sudo chmod 0400 /opt/dovecot/*.pem; fi
 	# usd:gid 101:103 == dovecot
@@ -277,20 +270,6 @@ install-docker-compose-rpi: ## install docker-compose on a Raspberry Pi
 	sudo apt-get update && sudo apt-get install docker-compose=$(DOCKER_APT_VERSION); \
 	sudo curl -fsSLR -o /etc/bash_completion.d/docker-compose https://raw.githubusercontent.com/docker/compose/$$(docker-compose version --short)/contrib/completion/bash/docker-compose
 	sudo touch -r /usr/local/bin/docker-compose /etc/bash_completion.d/docker-compose
-
-.PHONY: install-docker-machine
-install-docker-machine: ## install docker-machine
-	mkdir -p ~/.docker/machine
-	[ -f ~/.docker/machine/no-error-report ] || touch ~/.docker/machine/no-error-report
-	sudo curl -fsSLR -o /usr/local/bin/docker-machine https://github.com/docker/machine/releases/download/$(DOCKER_MACHINE_VERSION)/docker-machine-`uname -s`-`uname -m`
-	sudo chmod +x /usr/local/bin/docker-machine
-	sudo curl -fsSLR -o /etc/bash_completion.d/docker-machine-prompt https://github.com/docker/machine/raw/$(DOCKER_MACHINE_VERSION)/contrib/completion/bash/docker-machine-prompt.bash
-	sudo curl -fsSLR -o /etc/bash_completion.d/docker-machine-wrapper https://github.com/docker/machine/raw/$(DOCKER_MACHINE_VERSION)/contrib/completion/bash/docker-machine-wrapper.bash
-	sudo curl -fsSLR -o /etc/bash_completion.d/docker-machine https://github.com/docker/machine/raw/$(DOCKER_MACHINE_VERSION)/contrib/completion/bash/docker-machine.bash
-	sudo touch -r /usr/local/bin/docker-machine /etc/bash_completion.d/docker-machine-prompt /etc/bash_completion.d/docker-machine-wrapper /etc/bash_completion.d/docker-machine
-	# To enable the docker-machine shell prompt, add $(__docker_machine_ps1) to your PS1 setting in ~/.bashrc.
-	# PS1='[\u@\h \W$(__docker_machine_ps1)]\$ '
-	# PS1='[\u@\h \W$(__docker_machine_ps1 " [%s]")]\$ '
 
 .PHONY: install
 install: ## install docker + docker-compose & create required directories (see 'mkdirs')

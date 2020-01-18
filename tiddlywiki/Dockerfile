@@ -24,7 +24,7 @@ RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key ad
 
 EXPOSE 8080
 
-#USER www-data
+USER www-data
 
 WORKDIR /srv
 

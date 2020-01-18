@@ -5,4 +5,7 @@ set -eu
 #shopt -s failglob
 #set -x
 
-exec /usr/local/bin/docker-entrypoint.sh /usr/sbin/unbound
+## copy conf dirs to enable populating empty volumes (see restore_conf.sh)
+#tar czf /ttrss.tgz -C /var/www html
+
+:
