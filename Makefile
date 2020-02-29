@@ -12,7 +12,7 @@ include .env
 
 DOCKER_APT_VERSION = 19.03.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.25.1
+DOCKER_COMPOSE_VERSION = 1.25.4
 
 DOCKER_FROM_IMAGE ?= ubuntu
 DOCKER_FROM_VERSION ?= 18.04
@@ -208,7 +208,8 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt \
 	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/nextcloud/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known /srv/dokuwiki/acme-challenge/.well-known \
 	/opt/droppy  /srv/droppy/.well-known/acme-challenge \
-	/opt/portainer/certs  /srv/portainer/acme-challenge/.well-known  /srv/portainer/data
+	/opt/portainer/certs  /srv/portainer/acme-challenge/.well-known  /srv/portainer/data \
+	/opt/icecaste  /srv/logs/icecast  /opt/darkice
 
 	sudo touch /opt/traefik/acme.json /opt/traefik/htpasswd /opt/traefik/htdigest && sudo chmod 600 /opt/traefik/acme.json
 	sudo chmod g-rw,o-rwx /opt/http-proxy/tls
@@ -229,6 +230,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	sudo chown 101:102 /srv/transmission
 	sudo chown 100:101 /srv/redis*
 	sudo chown -R nobody:nogroup /srv/droppy /opt/droppy
+	sudo touch /opt/icecast/htpasswd && sudo chown 100:101 /opt/icecast/htpasswd
 
 ########################################################################
 

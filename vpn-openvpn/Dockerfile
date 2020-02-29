@@ -16,8 +16,8 @@ RUN curl -fsSL https://swupdate.openvpn.net/repos/repo-public.gpg | apt-key add 
 	# https://community.openvpn.net/openvpn/wiki/OpenvpnSoftwareRepos
 	# version=stable|testing|release/2.3|release/2.4
 	# osrelease=wheezy (Debian 7.x)|jessie (Debian 8.x)|xenial (Ubuntu 16.04)
-#	&& echo "deb http://build.openvpn.net/debian/openvpn/${OPENVPN_VERSION} $(lsb_release -cs) main" > /etc/apt/sources.list.d/openvpn-aptrepo.list \
-	&& echo "deb http://build.openvpn.net/debian/openvpn/${OPENVPN_VERSION} xenial main" > /etc/apt/sources.list.d/openvpn-aptrepo.list \
+#	&& echo "deb https://build.openvpn.net/debian/openvpn/${OPENVPN_VERSION} $(lsb_release -cs) main" > /etc/apt/sources.list.d/openvpn-aptrepo.list \
+	&& echo "deb https://build.openvpn.net/debian/openvpn/${OPENVPN_VERSION} xenial main" > /etc/apt/sources.list.d/openvpn-aptrepo.list \
 	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 		debconf libc6 liblz4-1 liblzo2-2 libpam0g libpkcs11-helper1 libssl1.0.0 libssl1.1 libsystemd0 init-system-helpers iproute2 lsb-base \
 		openssl liblzo2-2 liblz4-1 iptables kmod ca-certificates bridge-utils \

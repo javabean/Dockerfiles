@@ -1,4 +1,4 @@
-FROM buildpack-deps:focal-scm as build
+FROM buildpack-deps:stable-scm as build
 
 RUN cd /usr/src \
   && git clone --depth=1 https://git.tt-rss.org/fox/tt-rss.git tt-rss \

@@ -197,6 +197,7 @@ services:
     - droppy
     - transmission
     - bitwarden
+    - icecast-front
     - vpn
     cpu_shares: 256
     mem_limit: 96m
@@ -231,7 +232,7 @@ services:
     #- /opt/http-static/sites-available:/opt/http-static/sites-available:ro
     - /opt/http-static/sites-enabled:/opt/http-static/sites-enabled:ro
     #- /opt/http-static/tls:/opt/http-static/tls:ro
-    #- /opt/letsencrypt:/etc/letsencrypt:ro
+    #- /opt/letsencrypt:/etc/letsencrypt:ro,z
     - /srv/http-static:/var/www:ro
     - /srv/logs/http-static:/var/log
     networks:
@@ -275,7 +276,7 @@ services:
     #- /opt/http-proxy/sites-available:/opt/http-proxy/sites-available:ro
     - /opt/http-proxy/sites-enabled:/opt/http-proxy/sites-enabled:ro
     #- /opt/http-proxy/tls:/opt/http-proxy/tls:ro
-    - /opt/letsencrypt:/etc/letsencrypt:ro
+    - /opt/letsencrypt:/etc/letsencrypt:ro,z
     - /srv/http-proxy:/var/www:ro
     - /srv/logs/http-proxy:/var/log
     networks:
@@ -291,6 +292,7 @@ services:
     - droppy
     - transmission
     #- bitwarden
+    #- icecast-front
     - vpn
     cpu_shares: 256
     mem_limit: 128m
@@ -491,7 +493,7 @@ services:
       - "traefik.http.routers.nextcloud-http.middlewares=defaultchain-http"
       - "traefik.http.routers.nextcloud-https.rule=Host(`nextcloud.example.net`)"
       - "traefik.http.routers.nextcloud-https.entrypoints=https"
-      - "traefik.http.routers.nextcloud-https.middlewares=std-ipwhitelist,nextcloud-dev-redirect,defaultchain-https"
+      - "traefik.http.routers.nextcloud-https.middlewares=std-ipwhitelist,nextcloud-dav-redirect,defaultchain-https"
       - "traefik.http.routers.nextcloud-https.tls=true"
       - "traefik.http.routers.nextcloud-https.tls.certresolver=letsencrypt"
       - "traefik.http.routers.nextcloud-https.tls.options=default"
@@ -1112,8 +1114,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.adguardhome-http.rule=Host(`adguard.docker.localhost`)"
-      - "traefik.http.routers.adguardhome-http.entrypoints=403"
-      - "traefik.http.routers.adguardhome-http.middlewares=defaultchain-http"
+      - "traefik.http.routers.adguardhome-http.entrypoints=http"
+      - "traefik.http.routers.adguardhome-http.middlewares=403"
       - "traefik.http.routers.adguardhome-https.rule=Host(`adguard.docker.localhost`)"
       - "traefik.http.routers.adguardhome-https.entrypoints=https"
       - "traefik.http.routers.adguardhome-https.middlewares=std-ipwhitelist,defaultchain-https"
@@ -1142,6 +1144,7 @@ services:
     volumes:
     - /opt/adguard-home:/opt/adguardhome/conf
     - /srv/adguard-home:/opt/adguardhome/work
+    - /opt/letsencrypt:/etc/letsencrypt:ro,z
     user: nobody
     working_dir: /opt/adguardhome/work
     cap_add:
@@ -1216,7 +1219,7 @@ services:
     #- EASYRSA_REQ_CN=ChangeMe
     #- EASYRSA_BATCH=
     depends_on:
-      dnsmasq:
+      adguard-home:
         condition: service_started
       web-accelerator:
         condition: service_started
@@ -1342,6 +1345,92 @@ services:
 
 ########################################################################
 
+  icecast:
+    extends:
+      service: base-service
+    build:
+      context: icecast
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.icecast-http.rule=Host(`icecast.docker.localhost`)"
+      - "traefik.http.routers.icecast-http.entrypoints=http"
+      - "traefik.http.routers.icecast-http.middlewares=403"
+      - "traefik.http.routers.icecast-https.rule=Host(`icecast.docker.localhost`)"
+      - "traefik.http.routers.icecast-https.entrypoints=https"
+      - "traefik.http.routers.icecast-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.icecast-https.tls=true"
+      - "traefik.http.routers.icecast-https.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.icecast-https.tls.options=default"
+      - "traefik.http.services.icecast-service.loadbalancer.server.port=8000"
+      # /admin is protected by Icecast configuration
+    volumes:
+      - /opt/icecast/icecast.xml:/etc/icecast.xml:ro
+      - /opt/icecast/htpasswd:/etc/icecast.htpasswd
+      - /srv/logs/icecast:/var/log/icecast
+    healthcheck:
+      test: ["CMD", "pgrep", "-x", "icecast"]
+      interval: 240s
+      timeout: 5s
+      retries: 1
+      start_period: 10s
+    networks:
+      - icecast-front
+      - icecast-back-internal
+    expose:
+      - "8000"
+      - "8001"
+      - "8080"
+      - "8443"
+    command: ["icecast", "-c", "/etc/icecast.xml"]
+    cpu_shares: 128
+    mem_limit: 32m
+    memswap_limit: 32m
+    mem_reservation: 4m
+    restart: unless-stopped
+
+  darkice:
+    extends:
+      service: base-service
+    build:
+      context: darkice
+    init: true
+    labels:
+      - "traefik.enable=false"
+    depends_on:
+      icecast:
+        condition: service_healthy
+    group_add:
+      - audio
+      # /dev/snd is group-owned by `audio` which is not the same gid on host than in container!
+      # getent group audio | awk -F: '{print $3}'
+      - 29
+    devices:
+      - "/dev/snd:/dev/snd"
+    volumes:
+      - /opt/darkice/darkice.cfg:/etc/darkice.cfg:ro
+      # can not mount /proc/asound this way, and can't make security_opt systempaths=unconfined... But doesn't seem to be needed...
+      #- "/proc/asound:/proc/asound:ro"
+    healthcheck:
+      test: ["CMD", "pgrep", "-x", "darkice"]
+      interval: 240s
+      timeout: 5s
+      retries: 1
+      start_period: 10s
+    networks:
+      - icecast-back-internal
+    command: ["darkice", "-c", "/etc/darkice.cfg"]
+    #security_opt:
+    #  - systempaths:unconfined
+    cpu_shares: 256
+    mem_limit: 16m
+    memswap_limit: 16m
+    mem_reservation: 4m
+    #privileged: false
+    restart: unless-stopped
+
+########################################################################
+
   letsencrypt:
     extends:
       service: base-service
@@ -1353,7 +1442,7 @@ services:
     #- "80:80"
     #- "443:443"
     volumes:
-    - /opt/letsencrypt:/etc/letsencrypt
+    - /opt/letsencrypt:/etc/letsencrypt:z
     - /srv/letsencrypt:/var/lib/letsencrypt
     - /srv/logs/letsencrypt:/var/log
     # webroot authentification lets encrypt
@@ -1521,6 +1610,19 @@ networks:
     ipam:
       config:
       - subnet: 172.31.9.0/24
+  icecast-front:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.10.0/24
+  icecast-back-internal:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.29.10.0/24
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
+    internal: true
   droppy:
     driver: bridge
     ipam:
