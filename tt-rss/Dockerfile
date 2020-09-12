@@ -8,12 +8,14 @@ RUN cd /usr/src \
   && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-mailer-smtp.git mailer_smtp \
   && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-nginx-xaccel.git nginx_xaccel \
   && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-time-to-read.git time_to_read \
-  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-data-migration.git data_migration
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-data-migration.git data_migration \
 #  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-video-fill-poster.git af_video_fill_poster \
-#  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-hotkeys-ru.git hotkeys_ru
+#  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-hotkeys-ru.git hotkeys_ru \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-enclosure-fix-type af_enclosure_fix_type \
+  && git clone --depth=1 https://github.com/DigitalDJ/tinytinyrss-fever-plugin fever
 
 
-#FROM php:7.1-apache
+#FROM php:7.2-apache
 FROM cedrik/php7-base:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
@@ -27,12 +29,12 @@ LABEL org.label-schema.schema-version="1.0" \
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	curl \
 #	git \
-	php7.1-cli php7.1-curl php7.1-mbstring \
-	php7.1-json php7.1-intl php7.1-gd php7.1-xml php7.1-opcache \
-	php7.1-common php7.1 \
-	#php7.1-pgsql libapache2-mod-php7.1 \
-	#php7.1-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
-	php7.1-apcu \
+	php7.2-cli php7.2-curl php7.2-mbstring \
+	php7.2-json php7.2-intl php7.2-gd php7.2-xml php7.2-opcache \
+	php7.2-common php7.2 \
+	#php7.2-pgsql libapache2-mod-php7.2 \
+	#php7.2-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
+	php7.2-apcu \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& for m in "remoteip headers env dir mime expires setenvif"; do a2enmod $m; done \
 	&& a2dissite 000-default \
@@ -40,11 +42,11 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh \
 # PHP configuration
-	&& echo "\n\n\napc.enable_cli=1" >> /etc/php/7.1/cli/php.ini \
+	&& echo "\n\n\napc.enable_cli=1" >> /etc/php/7.2/cli/php.ini \
 #	&& sed -i'.bak' \
 #		-e 's%\(memory_limit\) = .*M%\1 = 256M%' \
 #		-e 's%\(max_file_uploads\) = 20%\1 = 200%' \
-#		  /etc/php/7.1/apache2/php.ini \
+#		  /etc/php/7.2/apache2/php.ini \
 # statistics tool
 	&& if test -f /usr/share/php5/apcu/apc.php; then ln -s /usr/share/php5/apcu/apc.php /var/www/html/; fi \
 	&& if test -f /usr/share/doc/php-apcu/apc.php; then ln -s /usr/share/doc/php-apcu/apc.php /var/www/html/; fi

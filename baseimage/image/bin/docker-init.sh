@@ -87,10 +87,10 @@ start_runit() {
 	cp -a /etc/service/* "${SVDIR}"
 	
 	# beware that cron logs to syslog
-	local ENABLE_SYSLOG=${ENABLE_SYSLOG:-}
-	local ENABLE_CRON=${ENABLE_CRON:-}
-	local ENABLE_SSH=${ENABLE_SSH:-}
-	local ENABLE_CONSUL=${ENABLE_CONSUL:-}
+	local ENABLE_SYSLOG="${ENABLE_SYSLOG:-}"
+	local ENABLE_CRON="${ENABLE_CRON:-}"
+	local ENABLE_SSH="${ENABLE_SSH:-}"
+	local ENABLE_CONSUL="${ENABLE_CONSUL:-}"
 	#[ -z "$ENABLE_SYSLOG" -a -z "$ENABLE_CRON" ] && rm -rf ${SVDIR}/syslog-ng ${SVDIR}/syslog-forwarder
 	[ -z "$ENABLE_SYSLOG" ] && rm -rf ${SVDIR}/syslog-ng ${SVDIR}/syslog-forwarder
 	[ -z "$ENABLE_CRON" ] && rm -rf ${SVDIR}/cron

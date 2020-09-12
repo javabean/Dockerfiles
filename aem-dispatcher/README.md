@@ -5,6 +5,8 @@ Scripts to install AEM dispatcher instance in Docker, or bare metal on RedHat | 
 
 Publish dispatcher instance can multi-host (see `dispatcher-add-domain.sh`) and optionally make use of [ACS AEM Commons Redirect Map Manager](https://adobe-consulting-services.github.io/acs-aem-commons/features/redirect-map-manager/index.html) to keep an Apache httpd RewriteMap up to date (using an external `cron` container).
 
+See also https://docs.adobe.com/content/help/en/experience-manager-learn/cloud-service/local-development-environment-set-up/dispatcher-tools.html
+
 
 
 Installing in Docker

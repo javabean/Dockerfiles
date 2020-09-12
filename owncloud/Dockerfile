@@ -1,5 +1,5 @@
 #FROM owncloud:latest
-#FROM php:7.1-apache
+#FROM php:7.2-apache
 FROM cedrik/php7-base:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
@@ -15,21 +15,23 @@ COPY backup_conf_local.sh restore_conf_local.sh ownCloudUpgrade.sh  /usr/local/b
 
 ############### FIXME  change depending on base OS / version! ###############
 # https://owncloud.org/release-channels/
-#ARG OWNCLOUD_VERSION=10.3
+#ARG OWNCLOUD_VERSION=10.5.0
 #ARG OWNCLOUD_VERSION=stable
 ARG OWNCLOUD_VERSION=production
 
+#RUN echo "deb https://download.owncloud.org/download/repositories/${OWNCLOUD_VERSION}/prod/`lsb_release -is`_`lsb_release -rs`/ /" >> /etc/apt/sources.list.d/owncloud.list
+#RUN curl -fsSL https://download.owncloud.org/download/repositories/${OWNCLOUD_VERSION}/prod/`lsb_release -is`_`lsb_release -rs`/Release.key | apt-key add -
 RUN echo "deb https://download.owncloud.org/download/repositories/${OWNCLOUD_VERSION}/`lsb_release -is`_`lsb_release -rs`/ /" >> /etc/apt/sources.list.d/owncloud.list
 RUN curl -fsSL https://download.owncloud.org/download/repositories/${OWNCLOUD_VERSION}/`lsb_release -is`_`lsb_release -rs`/Release.key | apt-key add -
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	curl bzip2 openssl file sqlite3 \
 	libapache2-mod-xsendfile \
-	php7.1-common php7.1-gd php7.1-json php7.1-mysql php7.1-curl php7.1-intl php7.1-mcrypt php7.1-imagick php7.1-xml \
-	php7.1 php7.1-cli php7.1-readline php7.1-sqlite3 php7.1-mbstring php7.1-zip php7.1-bz2 \
-	#php7.1-pgsql libapache2-mod-php7.1 php7.1-ldap php7.1-imap php-smbclient php-ssh2 php7.1-gmp \
-	#php7.1-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
-	php7.1-apcu php7.1-memcached php7.1-redis \
+	php7.2-common php7.2-gd php7.2-json php7.2-mysql php7.2-curl php7.2-intl php7.2-imagick php7.2-xml \
+	php7.2 php7.2-cli php7.2-readline php7.2-sqlite3 php7.2-mbstring php7.2-zip php7.2-bz2 \
+	#php7.2-pgsql libapache2-mod-php7.2 php7.2-ldap php7.2-imap php-smbclient php-ssh2 php7.2-gmp \
+	#php7.2-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
+	php7.2-apcu php7.2-memcached php7.2-redis \
 	owncloud-files \
 # we need sudo to upgrade DB between OwnCloud versions
 	sudo \
@@ -38,16 +40,16 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 	#&& sed -i'.bak' -e 's@\(RewriteEngine on\)$@\1\n  RewriteCond expr "%{REQUEST_URI} !~ m#^\.well-known/acme-challenge/.+#"\n@' /var/www/owncloud/.htaccess \
 	#&& sed -i'.bak' -e 's@\(RewriteEngine on\)$@\1\n  RewriteCond "%{REQUEST_URI}" !"^\.well-known/acme-challenge/.+"\n@' /var/www/owncloud/.htaccess \
 	&& sed -i'.bak' -e 's@\(RewriteEngine on\)$@\1\n  RewriteRule "^\.well-known/acme-challenge/" - [L]@' /var/www/owncloud/.htaccess \
-	&& for m in "remoteip rewrite headers env dir mime expires setenvif"; do a2enmod $m; done \
+	&& for m in "remoteip rewrite headers env dir mime unique_id expires setenvif"; do a2enmod $m; done \
 	&& a2dissite 000-default \
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh \
 # PHP configuration
-	&& echo "\n\n\napc.enable_cli=1" >> /etc/php/7.1/cli/php.ini \
+	&& echo "\n\n\napc.enable_cli=1" >> /etc/php/7.2/cli/php.ini \
 #	&& sed -i'.bak' \
 #		-e 's%\(memory_limit\) = .*M%\1 = 256M%' \
 #		-e 's%\(max_file_uploads\) = 20%\1 = 200%' \
-#		  /etc/php/7.1/apache2/php.ini \
+#		  /etc/php/7.2/apache2/php.ini \
 # statistics tool
 	&& if test -f /usr/share/php5/apcu/apc.php; then ln -s /usr/share/php5/apcu/apc.php /var/www/owncloud/; fi \
 	&& if test -f /usr/share/doc/php-apcu/apc.php; then ln -s /usr/share/doc/php-apcu/apc.php /var/www/owncloud/; fi

@@ -1,5 +1,5 @@
 #FROM wordpress:latest
-#FROM php:7.1-apache
+#FROM php:7.2-apache
 FROM cedrik/php7-base:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
@@ -17,12 +17,12 @@ COPY wordpress.conf /etc/apache2/conf-enabled/
 COPY backup_conf_local.sh restore_conf_local.sh wp-changeDomainName.sh  /usr/local/bin/
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-	#php7.1-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
-	libpng16-16 libjpeg62 libjpeg8 libjpeg-turbo8 libjpeg9 php7.1-gd php7.1-mysql \
-	php7.1-curl libxml2 php7.1-mcrypt openssl php7.1-soap \
-	php7.1-json php7.1-intl \
-	php7.1-memcache php7.1-memcached \
-	php7.1-apcu \
+	#php7.2-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
+	libpng16-16 libjpeg62 libjpeg8 libjpeg-turbo8 libjpeg9 php7.2-gd php7.2-mysql \
+	php7.2-curl libxml2 openssl php7.2-soap \
+	php7.2-json php7.2-intl \
+	php7.2-memcache php7.2-memcached \
+	php7.2-apcu \
 	sudo \
 	# bash is needed for 'wp shell'
 	bash \
@@ -33,7 +33,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 		# WP_MEMORY_LIMIT/64M for user area, WP_MAX_MEMORY_LIMIT/256M for admin tasks
 		-e 's%\(memory_limit\) = .*M%\1 = 256M%' \
 		-e 's%\(upload_max_filesize\) = .*M%\1 = 8M%' \
-		/etc/php/7.1/apache2/php.ini
+		/etc/php/7.2/apache2/php.ini
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php

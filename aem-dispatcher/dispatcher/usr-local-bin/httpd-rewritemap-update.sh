@@ -32,9 +32,9 @@ main() {
 	# Options
 	while getopts "d:u:c:" option; do
 		case "$option" in
-			d) PRIMARY_DOMAIN=$OPTARG ;;
-			u) REWRITE_MAP_URL=$OPTARG ;;
-			c) REWRITE_MAP_URL_CREDENTIALS=$OPTARG ;;
+			d) PRIMARY_DOMAIN="$OPTARG" ;;
+			u) REWRITE_MAP_URL="$OPTARG" ;;
+			c) REWRITE_MAP_URL_CREDENTIALS="$OPTARG" ;;
 			*) print_usage; exit 1 ;;
 		esac
 	done

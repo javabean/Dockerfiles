@@ -33,8 +33,8 @@ set -e -o pipefail -o posix
 ##############################################################################
 
 httpd_virtualhost_install() {
-	local HTTPD_HTDOCS=$1
-	local JCR_CONTENT_NODE_NAME=$2
+	local HTTPD_HTDOCS="$1"
+	local JCR_CONTENT_NODE_NAME="$2"
 	shift 2
 	local DOMAINS=( "$@" )
 	local PRIMARY_DOMAIN="${DOMAINS[0]}"
@@ -74,7 +74,7 @@ httpd_virtualhost_install() {
 }
 
 dispatcher_configure() {
-	local JCR_CONTENT_NODE_NAME=$1
+	local JCR_CONTENT_NODE_NAME="$1"
 	shift
 	local DOMAINS=( "$@" )
 	local PRIMARY_DOMAIN="${DOMAINS[0]}"
@@ -110,7 +110,7 @@ dispatcher_configure() {
 }
 
 httpd_rewritemap_configure() {
-	local PRIMARY_DOMAIN=$1
+	local PRIMARY_DOMAIN="$1"
 	touch "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".txt
 	httxt2dbm -i "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".txt -o "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".dbm
 	chown "${HTTPD_USER}": "${HTTPD_CONF}"/farm_"${PRIMARY_DOMAIN}".*
@@ -122,10 +122,10 @@ httpd_rewritemap_configure() {
 }
 
 cron_rewritemap_create() {
-	local SCRIPTS_HOME=$1
-	local PRIMARY_DOMAIN=$2
-	local REWRITE_MAP_URL=$3
-	local REWRITE_MAP_URL_CREDENTIALS=${4:-}
+	local SCRIPTS_HOME="$1"
+	local PRIMARY_DOMAIN="$2"
+	local REWRITE_MAP_URL="$3"
+	local REWRITE_MAP_URL_CREDENTIALS="${4:-}"
 	if [ -n "$REWRITE_MAP_URL_CREDENTIALS" ]; then
 		REWRITE_MAP_URL_CREDENTIALS="-c $REWRITE_MAP_URL_CREDENTIALS"
 	fi
@@ -162,10 +162,10 @@ main() {
 	# Options
 	while getopts "n:d:r:c:" option; do
 		case "$option" in
-			n) JCR_CONTENT_NODE_NAME=$OPTARG ;;
-			d) DOMAINS[${#DOMAINS[*]}]=$OPTARG ;;
-			r) REWRITE_MAP_URL=$OPTARG ;;
-			c) REWRITE_MAP_URL_CREDENTIALS=$OPTARG ;;
+			n) JCR_CONTENT_NODE_NAME="$OPTARG" ;;
+			d) DOMAINS[${#DOMAINS[*]}]="$OPTARG" ;;
+			r) REWRITE_MAP_URL="$OPTARG" ;;
+			c) REWRITE_MAP_URL_CREDENTIALS="$OPTARG" ;;
 			*) print_usage; exit 1 ;;
 		esac
 	done

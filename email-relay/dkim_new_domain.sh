@@ -15,20 +15,20 @@ set -eu
 # mailservers is to use the hostname (hostname only, not the fully-qualified
 # domain name) of the host that will be providing the service.  Another 
 # convention is to use the current month and year.
-SELECTOR=${SELECTOR:-mail}
+SELECTOR="${SELECTOR:-mail}"
 # Use '--subdomains' to allow signing of subdomains
-SIGN_SUBDOMAINS=${SIGN_SUBDOMAINS:-}
+SIGN_SUBDOMAINS="${SIGN_SUBDOMAINS:-}"
 # Use '-t' or '--testmode' for "test mode", advising verifiers that they
 # should not take any real action based on success or failure of the use
 # of this key after verifing a message.  Remove the "t=y" once you have
 # tested the DKIM signing of your messages to your satisfaction.
 # You might want to set a short TTL on this record during testing so
 # changes are propagated to other nameservers more quickly.
-TEST_MODE=${TEST_MODE:-}
+TEST_MODE="${TEST_MODE:-}"
 # Domain we want to sign mail for
-DOMAIN=${DOMAIN:-example.net}
+DOMAIN="${DOMAIN:-example.net}"
 # Who should we sign mail for this domain? Use '*' for everyone.
-SENDERS=${SENDERS:-*}
+SENDERS="${SENDERS:-*}"
 
 opendkim-genkey -r -s ${SELECTOR} ${TEST_MODE} ${SIGN_SUBDOMAINS} -D /usr/local/etc/dkim/keys/${DOMAIN}/ --domain=${DOMAIN}
 chown opendkim:postfix /usr/local/etc/dkim/keys/${DOMAIN}/${SELECTOR}.*

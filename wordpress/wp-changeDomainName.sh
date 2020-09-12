@@ -14,17 +14,17 @@ EOT
 }
 
 main() {
-	local BACKUP_DIR=${BACKUP_DIR:-"/tmp"}
+	local BACKUP_DIR="${BACKUP_DIR:-/tmp}"
 	local BACKUP_SUFFIX="`date +%Y%m%d-%H%M%S`"
-	local URL_FIND=${URL_FIND:-}
-	local URL_REPLACE=${URL_REPLACE:-}
+	local URL_FIND="${URL_FIND:-}"
+	local URL_REPLACE="${URL_REPLACE:-}"
 	
 	# Options
 	while getopts "b:f:r:" option; do
 		case "$option" in
-			b) BACKUP_DIR=$OPTARG ;;
-			f) URL_FIND=$OPTARG ;;
-			r) URL_REPLACE=$OPTARG ;;
+			b) BACKUP_DIR="$OPTARG" ;;
+			f) URL_FIND="$OPTARG" ;;
+			r) URL_REPLACE="$OPTARG" ;;
 			*) print_usage; exit 1 ;;
 		esac
 	done
@@ -39,11 +39,11 @@ main() {
 		exit 1
 	fi
 
-	local DB_HOST=$(wp config get --constant=DB_HOST)
-	local DB_USER=$(wp config get --constant=DB_USER)
-	local DB_PASSWORD=$(wp config get --constant=DB_PASSWORD)
-	local DB_NAME=$(wp config get --constant=DB_NAME)
-	local DB_PREFIX=$(wp config get --global=table_prefix)
+	local DB_HOST="$(wp config get --constant=DB_HOST)"
+	local DB_USER="$(wp config get --constant=DB_USER)"
+	local DB_PASSWORD="$(wp config get --constant=DB_PASSWORD)"
+	local DB_NAME="$(wp config get --constant=DB_NAME)"
+	local DB_PREFIX="$(wp config get --global=table_prefix)"
 
 	if [ -z "$DB_HOST" -o -z "$DB_USER" -o -z "${DB_NAME}" -o -z "${DB_PREFIX}" ]; then
 		echo "Can not read database information from `wp config path`: aborting!"

@@ -1,0 +1,14 @@
+# see also automysqlbackup
+/srv/dump.sql.gz {
+	missingok
+	ifempty
+	daily
+	rotate 15
+	dateext
+	extension .sql.gz
+	nocompress
+	create
+	prerotate
+		/usr/local/bin/mysql-dump.sh
+	endscript
+}

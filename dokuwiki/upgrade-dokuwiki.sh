@@ -7,8 +7,8 @@ set -eu
 # https://www.dokuwiki.org/install:upgrade
 # https://www.dokuwiki.org/changes
 
-DOKUWIKI_VERSION=${DOKUWIKI_VERSION:-stable}
-STRIP_LANGS_KEEP=${STRIP_LANGS_KEEP:-}
+DOKUWIKI_VERSION="${DOKUWIKI_VERSION:-stable}"
+STRIP_LANGS_KEEP="${STRIP_LANGS_KEEP:-}"
 
 echo "Upgrading DokuWiki to version: ${DOKUWIKI_VERSION}"
 echo "https://www.dokuwiki.org/changes"
@@ -25,7 +25,7 @@ grep -Ev '^($|#)' data/deleted.files | xargs --no-run-if-empty -n 1 rm -vfr
 [ -f conf/local.php ] && touch conf/local.php
 rm -fv data/cache/messages.txt
 # sudo -u www-data ./bin/indexer.php -c
-if [ -n "$STRIP_LANGS_KEEP" ]; then
+if [ -n "${STRIP_LANGS_KEEP}" ]; then
 	/var/www/html/bin/striplangs.php -k "${STRIP_LANGS_KEEP}"
 fi
 

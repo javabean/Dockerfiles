@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/dash
 set -eu
 (set -o | grep -q pipefail) && set -o pipefail
 (set -o | grep -q posix) && set -o posix
@@ -28,8 +28,12 @@ set -eu
 # 2: reserved - do not use this exit code
 
 if [ -x /usr/local/bin/consul-healthcheck.sh ]; then
-	/usr/local/bin/consul-healthcheck.sh
+	#/usr/local/bin/hc-ping.sh -s -u "${DOCKER_HC_PING_URL:-}"
+	result_out=$(/usr/local/bin/consul-healthcheck.sh 2>&1)
 	consul_result=$?
+	# Keep stdout result for Docker health log (would be better to also keep stderr...)
+	echo -n "${result_out}"
+	/usr/local/bin/hc-ping.sh -u "${DOCKER_HC_PING_URL:-}" -n $consul_result -l "${result_out}"
 	case $consul_result in
 	0) exit 0
 		;;

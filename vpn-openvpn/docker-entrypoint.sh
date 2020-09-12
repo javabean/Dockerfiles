@@ -4,9 +4,9 @@ set -e -o pipefail -o posix
 shopt -s failglob
 #set -x
 
-PROTOCOL=${PROTOCOL:-udp}
-PROTOCOL_SERVER=${PROTOCOL}
-PROTOCOL_CLIENT=${PROTOCOL}
+PROTOCOL="${PROTOCOL:-udp}"
+PROTOCOL_SERVER="${PROTOCOL}"
+PROTOCOL_CLIENT="${PROTOCOL}"
 if [ "${PROTOCOL}" = "tcp" ]; then
 	PROTOCOL_SERVER="tcp-server"
 	PROTOCOL_CLIENT="tcp-client"
@@ -14,9 +14,9 @@ fi
 
 getIP() {
 	# Try to detect a NATed connection
-	IP=$(curl -fsSL ipv4.icanhazip.com)
-	#IP=$(curl -4fsSL http://whatismyip.akamai.com/)
-	#IP=$(curl -fsSL http://myip.enix.org/REMOTE_ADDR)
+	IP="$(curl -fsSL ipv4.icanhazip.com)"
+	#IP="$(curl -4fsSL http://whatismyip.akamai.com/)"
+	#IP="$(curl -fsSL http://myip.enix.org/REMOTE_ADDR)"
 }
 
 execOpenVPN() {

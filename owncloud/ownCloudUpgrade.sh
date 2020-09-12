@@ -13,7 +13,7 @@ sudo -u www-data php occ app:enable calendar
 sudo -u www-data php occ app:enable contacts
 sudo -u www-data php occ app:enable tasks
 sudo -u www-data php occ app:enable notes
-sudo -u www-data php occ app:enable news
+#sudo -u www-data php occ app:enable news
 sudo -u www-data php occ app:enable qownnotesapi
 #sudo -u www-data php occ maintenance:mode --off
 # If this does not work properly, try the repair function:

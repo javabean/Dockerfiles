@@ -12,7 +12,7 @@ include .env
 
 DOCKER_APT_VERSION = 19.03.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.25.4
+DOCKER_COMPOSE_VERSION = 1.26.2
 
 DOCKER_FROM_IMAGE ?= ubuntu
 DOCKER_FROM_VERSION ?= 18.04
@@ -35,7 +35,7 @@ APT_MIRROR ?= fr.archive.ubuntu.com
 # END set versions here
 ########################################################################
 
-docker_compose_build = http-proxy http-static tomcat dovecot email-relay mysql owncloud nextcloud wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission sslh
+docker_compose_build = http-proxy http-static tomcat dovecot email-relay mysql-cron owncloud nextcloud wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission tt-rss sslh
 .PHONY: $(docker_compose_build)
 
 
@@ -86,7 +86,7 @@ $(docker_compose_build): baseimage
 	docker-compose build $@
 
 http-proxy: httpd-base
-owncloud wordpress dokuwiki: php7-base
+owncloud wordpress dokuwiki tt-rss: php7-base
 #owncloud: memcached-owncloud redis-owncloud
 owncloud wordpress: mysql email-relay
 dokuwiki: email-relay
@@ -142,7 +142,8 @@ new-certificates: ## query new TLS certificates
 renew-certificates: ## renew TLS certificates
 	# --quiet --dry-run --test-cert
 	# --pre-hook "service nginx stop" --post-hook "docker container restart http-proxy"
-	docker-compose run --rm letsencrypt --authenticators renew --non-interactive --keep-until-expiring
+	docker-compose run --rm letsencrypt --authenticators renew --non-interactive --keep-until-expiring \
+		--post-hook "chmod a+X /etc/letsencrypt/live /etc/letsencrypt/archive ; chmod a+r /etc/letsencrypt/archive/*/privkey*.pem"
 
 ########################################################################
 
@@ -216,7 +217,8 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	#sudo chown root:ssl-cert /opt/http-proxy/tls
 	sudo chown -R root: /opt/http-proxy/tls
 	sudo chown -R 8080:8080 /opt/tomcat
-	sudo chown -R 101:102 /srv/mysql/data /srv/mysql/backup /srv/logs/mysql/mysql
+	#sudo chown -R 101:102 /srv/mysql/data /srv/mysql/backup /srv/logs/mysql/mysql
+	sudo chown -R 999:999 /srv/mysql/data /srv/mysql/backup /srv/logs/mysql/mysql
 	if [ ! -f /srv/wordpress/wp-config.php ]; then touch /srv/wordpress/wp-config.php; fi
 	if [ ! -f /srv/wordpress/htaccess ]; then touch /srv/wordpress/htaccess; fi
 	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/wordpress /srv/dokuwiki /srv/tiddlywiki /srv/tt-rss

@@ -81,9 +81,9 @@ main() {
 	# Options
 	while getopts "t:k:n:q" option; do
 		case "$option" in
-			t) TIMEOUT=$OPTARG ;;
-			k) TIMEOUT_KILL_AFTER=$OPTARG ;;
-			n) SERVICE_NAME=$OPTARG ;;
+			t) TIMEOUT="$OPTARG" ;;
+			k) TIMEOUT_KILL_AFTER="$OPTARG" ;;
+			n) SERVICE_NAME="$OPTARG" ;;
 			q) QUIET=1 ;;
 			*) printUsage; exit 1 ;;
 		esac

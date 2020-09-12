@@ -16,23 +16,23 @@ fi
 if [ "$1" = "tiddlywiki" ]; then
 	# https://tiddlywiki.com/static/WebServer%2520Parameters.html
 	# See also https://tiddlywiki.com/static/Environment%2520Variables%2520on%2520Node.js.html
-	WIKI_FOLDER=${WIKI_FOLDER:-wiki}
-	PATH_PREFIX=${PATH_PREFIX:-}
-	PORT=${PORT:-8080}
-	CREDENTIALS=${CREDENTIALS:-}
-	ANON_USERNAME=${ANON_USERNAME:-}
-	USERNAME=${USERNAME:-}
-	PASSWORD=${PASSWORD:-}
-	AUTHENTICATED_USER_HEADER=${AUTHENTICATED_USER_HEADER:-}
-	READERS=${READERS:-(anon)}
-	WRITERS=${WRITERS:-(authenticated)}
-	CSRF_DISABLE=${CSRF_DISABLE:-no}
+	WIKI_FOLDER="${WIKI_FOLDER:-wiki}"
+	PATH_PREFIX="${PATH_PREFIX:-}"
+	PORT="${PORT:-8080}"
+	CREDENTIALS="${CREDENTIALS:-}"
+	ANON_USERNAME="${ANON_USERNAME:-}"
+	USERNAME="${USERNAME:-}"
+	PASSWORD="${PASSWORD:-}"
+	AUTHENTICATED_USER_HEADER="${AUTHENTICATED_USER_HEADER:-}"
+	READERS="${READERS:-(anon)}"
+	WRITERS="${WRITERS:-(authenticated)}"
+	CSRF_DISABLE="${CSRF_DISABLE:-no}"
 	ROOT_TIDDLER=${ROOT_TIDDLER:-'$:/core/save/all'}
-	ROOT_RENDER_TYPE=${ROOT_RENDER_TYPE:-"text/plain"}
-	ROOT_SERVE_TYPE=${ROOT_SERVE_TYPE:-"text/html"}
-	TLS_CERT=${TLS_CERT:-}
-	TLS_KEY=${TLS_KEY:-}
-	DEBUG_LEVEL=${DEBUG_LEVEL:-none}
+	ROOT_RENDER_TYPE="${ROOT_RENDER_TYPE:-text/plain}"
+	ROOT_SERVE_TYPE="${ROOT_SERVE_TYPE:-text/html}"
+	TLS_CERT="${TLS_CERT:-}"
+	TLS_KEY="${TLS_KEY:-}"
+	DEBUG_LEVEL="${DEBUG_LEVEL:-none}"
 
 	# if [ ! "$(ls -U "${d}")" ]; then
 	if ! ls -U /srv/"${WIKI_FOLDER}" > /dev/null 2>&1; then

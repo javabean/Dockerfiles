@@ -11,17 +11,20 @@ services:
     build: .
     labels:
       - "traefik.enable=false"
-    expose:
-    # Consul agent ports
-    - "8301"
-    - "8301/udp"
-    #- "8400"
-    #- "8500"
-    #environment:
+    #expose:
+    ## Consul agent ports
+    #- "8301"
+    #- "8301/udp"
+    ##- "8400"
+    ##- "8500"
+    environment:
     # please note that SYSLOG requires read_only: false (as it needs creating /dev/log) for Docker < 17.12.0
     #- ENABLE_SYSLOG=1
     #- ENABLE_CRON=1
     #- ENABLE_CONSUL=1
+    # Force PHP/Symfony applications to production
+    - APP_ENV=prod
+    - APP_DEBUG=0
     tmpfs:
     # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
     - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
@@ -62,9 +65,9 @@ services:
   traefik:
     extends:
       service: base-service
-    image: traefik:${TRAEFIK_VERSION:-2.1}
+    image: traefik:${TRAEFIK_VERSION:-2.2}
     init: true
-    # https://docs.traefik.io/v2.1/reference/dynamic-configuration/docker/
+    # https://docs.traefik.io/v2.2/reference/dynamic-configuration/docker/
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik-http.rule=Host(`traefik.docker.localhost`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
@@ -74,9 +77,10 @@ services:
       - "traefik.http.routers.traefik-https.entrypoints=https"
       - "traefik.http.routers.traefik-https.middlewares=std-ipwhitelist,traefik-authentication,defaultchain-https"
       - "traefik.http.routers.traefik-https.service=api@internal"
-      - "traefik.http.routers.traefik-https.tls=true"
-      - "traefik.http.routers.traefik-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.traefik-https.tls.options=default"
+      # Note: If a TLS section (i.e. any of its fields) is user-defined, then the default configuration does not apply at all.
+#      - "traefik.http.routers.traefik-https.tls=true"
+#      - "traefik.http.routers.traefik-https.tls.certresolver=letsencrypt"
+#      - "traefik.http.routers.traefik-https.tls.options=default"
       #- "traefik.http.routers.traefik-https.priority=42"
       - "traefik.http.middlewares.traefik-authentication.basicauth.usersFile=.htpasswd"
       - "traefik.http.middlewares.traefik-authentication.basicauth.realm=traefik"
@@ -126,9 +130,6 @@ services:
       # - "traefik.http.routers.my-407.rule=Host(`example.com`) && PathPrefix(`/{re:(?i:admin|install).*}`)"
       # - "traefik.http.routers.my-407.entrypoints=https"
       # - "traefik.http.routers.my-407.priority=65535"
-      # - "traefik.http.routers.my-407.tls=true"
-      # - "traefik.http.routers.my-407.tls.certresolver=letsencrypt"
-      # - "traefik.http.routers.my-407.tls.options=default"
       # - "traefik.http.routers.my-407.middlewares=std-ipwhitelist,defaultchain-https"
     expose:
     - "8080"
@@ -136,7 +137,7 @@ services:
     - "80:80"
     - "443:443"
     environment:
-    # https://docs.traefik.io/v2.1/reference/static-configuration/env/
+    # https://docs.traefik.io/v2.2/reference/static-configuration/env/
     - TRAEFIK_GLOBAL_CHECKNEWVERSION=false
     - TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE=false
     - TRAEFIK_PROVIDERS_PROVIDERSTHROTTLEDURATION=2
@@ -153,6 +154,10 @@ services:
     - TRAEFIK_ENTRYPOINTS_http_ADDRESS=:80
     - TRAEFIK_ENTRYPOINTS_https=true
     - TRAEFIK_ENTRYPOINTS_https_ADDRESS=:443
+    - TRAEFIK_ENTRYPOINTS_https_HTTP_TLS=true
+    - TRAEFIK_ENTRYPOINTS_https_HTTP_TLS_CERTRESOLVER=letsencrypt
+    # see "traefik.tls.options.default.xxx" in Docker labels
+    - TRAEFIK_ENTRYPOINTS_https_HTTP_TLS_OPTIONS=default
     - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt=true
     #- TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_EMAIL=me@example.com
     #- TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_TLSCHALLENGE=true
@@ -198,7 +203,9 @@ services:
     - transmission
     - bitwarden
     - icecast-front
+#    - daapd-front
     - vpn
+    - webssh
     cpu_shares: 256
     mem_limit: 96m
     memswap_limit: 128m
@@ -217,9 +224,6 @@ services:
       - "traefik.http.routers.http-static-https.rule=Host(`example.com`,`example.net`)"
       - "traefik.http.routers.http-static-https.entrypoints=https"
       - "traefik.http.routers.http-static-https.middlewares=defaultchain-https"
-      - "traefik.http.routers.http-static-https.tls=true"
-      - "traefik.http.routers.http-static-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.http-static-https.tls.options=default"
       - "traefik.http.services.http-static-service.loadbalancer.server.port=80"
     expose:
     - "80"
@@ -294,6 +298,7 @@ services:
     #- bitwarden
     #- icecast-front
     - vpn
+    - webssh
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
@@ -342,9 +347,6 @@ services:
       - "traefik.http.routers.portainer-https.rule=Host(`portainer.docker.localhost`)"
       - "traefik.http.routers.portainer-https.entrypoints=https"
       - "traefik.http.routers.portainer-https.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.routers.portainer-https.tls=true"
-      - "traefik.http.routers.portainer-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.portainer-https.tls.options=default"
       - "traefik.http.services.portainer-service.loadbalancer.server.port=9000"
     #command: ["--tlsverify", "--tlscacert", "/certs/ca.pem", "--tlscert", "/certs/cert.pem", "--tlskey", "/certs/key.pem"]
     #command: ["--templates", "https://raw.githubusercontent.com/portainer/templates/master/templates.json"]
@@ -380,13 +382,12 @@ services:
       - "traefik.http.routers.tomcat-https.rule=Host(`example.com`,`example.net`)"
       - "traefik.http.routers.tomcat-https.entrypoints=https"
       - "traefik.http.routers.tomcat-https.middlewares=defaultchain-https"
-      - "traefik.http.routers.tomcat-https.tls=true"
-      - "traefik.http.routers.tomcat-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.tomcat-https.tls.options=default"
       - "traefik.http.services.tomcat-service.loadbalancer.server.port=8080"
     expose:
     - "8080"
     - "8443"
+    - "8008"
+    - "8009"
     environment:
     # See $CATALINA_HOME/bin/catalina.sh for available env vars,
     # and $CATALINA_BASE/bin/setenv.sh for additional configuration
@@ -419,7 +420,7 @@ services:
       context: owncloud
       args:
       # https://owncloud.org/release-channels/
-      #- OWNCLOUD_VERSION=10.3
+      #- OWNCLOUD_VERSION=10.5.0
       #- OWNCLOUD_VERSION=stable
       - OWNCLOUD_VERSION=production
     labels:
@@ -430,9 +431,6 @@ services:
       - "traefik.http.routers.owncloud-https.rule=Host(`owncloud.example.net`)"
       - "traefik.http.routers.owncloud-https.entrypoints=https"
       - "traefik.http.routers.owncloud-https.middlewares=std-ipwhitelist,owncloud-dav-redirect,defaultchain-https"
-      - "traefik.http.routers.owncloud-https.tls=true"
-      - "traefik.http.routers.owncloud-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.owncloud-https.tls.options=default"
       - "traefik.http.services.owncloud-service.loadbalancer.server.port=80"
       # redirect DAV well-known endpoints
       - "traefik.http.middlewares.owncloud-dav-redirect.redirectregex.permanent=true"
@@ -482,7 +480,7 @@ services:
       context: nextcloud
       args:
       # https://nextcloud.com/release-channels/
-      #- DOCKER_FROM_TAG=17-apache
+      #- DOCKER_FROM_TAG=19-apache
       #- DOCKER_FROM_TAG=stable-apache
       - DOCKER_FROM_TAG=production-apache
     init: true
@@ -494,9 +492,6 @@ services:
       - "traefik.http.routers.nextcloud-https.rule=Host(`nextcloud.example.net`)"
       - "traefik.http.routers.nextcloud-https.entrypoints=https"
       - "traefik.http.routers.nextcloud-https.middlewares=std-ipwhitelist,nextcloud-dav-redirect,defaultchain-https"
-      - "traefik.http.routers.nextcloud-https.tls=true"
-      - "traefik.http.routers.nextcloud-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.nextcloud-https.tls.options=default"
       - "traefik.http.services.nextcloud-service.loadbalancer.server.port=80"
       # redirect DAV well-known endpoints
       - "traefik.http.middlewares.nextcloud-dav-redirect.redirectregex.permanent=true"
@@ -519,7 +514,6 @@ services:
     #- NEXTCLOUD_ADMIN_USER=admin
     #- NEXTCLOUD_ADMIN_PASSWORD=x4uhbXqGsG9qU43mPBrvAYE8
     - NEXTCLOUD_DATA_DIR=/srv/nextcloud/data
-    - NEXTCLOUD_TABLE_PREFIX=nc_
     #- NEXTCLOUD_TRUSTED_DOMAINS="example.com www.example.com"
     # Launch a cron daemon in the background (instead of relying on an external cron)
     #- ENABLE_CRON=1
@@ -591,9 +585,6 @@ services:
       - "traefik.http.routers.wordpress-https.rule=Host(`wordpress.example.net`)"
       - "traefik.http.routers.wordpress-https.entrypoints=https"
       - "traefik.http.routers.wordpress-https.middlewares=defaultchain-https"
-      - "traefik.http.routers.wordpress-https.tls=true"
-      - "traefik.http.routers.wordpress-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.wordpress-https.tls.options=default"
       - "traefik.http.services.wordpress-service.loadbalancer.server.port=80"
       # IP restriction on https /admin endpoint
       # Forbid admin endpoint on plain http
@@ -606,9 +597,6 @@ services:
       - "traefik.http.routers.wordpress-407.entrypoints=https"
       - "traefik.http.routers.wordpress-407.middlewares=std-ipwhitelist,defaultchain-https"
       - "traefik.http.routers.wordpress-407.priority=65535"
-      - "traefik.http.routers.wordpress-407.tls=true"
-      - "traefik.http.routers.wordpress-407.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.wordpress-407.tls.options=default"
     expose:
     - "80"
     - "443"
@@ -661,7 +649,7 @@ services:
     build:
       context: dokuwiki
       args:
-      #- DOKUWIKI_VERSION=2018-04-22b
+      #- DOKUWIKI_VERSION=2018-04-22c
       - DOKUWIKI_VERSION=stable
       # Languages to keep (delete all others)
       #- STRIP_LANGS_KEEP=en,fr
@@ -673,9 +661,6 @@ services:
       - "traefik.http.routers.dokuwiki-https.rule=Host(`dokuwiki.example.net`)"
       - "traefik.http.routers.dokuwiki-https.entrypoints=https"
       - "traefik.http.routers.dokuwiki-https.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.routers.dokuwiki-https.tls=true"
-      - "traefik.http.routers.dokuwiki-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.dokuwiki-https.tls.options=default"
       - "traefik.http.services.dokuwiki-service.loadbalancer.server.port=80"
       # ToDo ip-whitelist on /admin
     expose:
@@ -720,9 +705,6 @@ services:
       - "traefik.http.routers.tiddlywiki-https.rule=Host(`tiddlywiki.example.net`)"
       - "traefik.http.routers.tiddlywiki-https.entrypoints=https"
       - "traefik.http.routers.tiddlywiki-https.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.routers.tiddlywiki-https.tls=true"
-      - "traefik.http.routers.tiddlywiki-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.tiddlywiki-https.tls.options=default"
       - "traefik.http.services.tiddlywiki-service.loadbalancer.server.port=8080"
     expose:
     - "8080"
@@ -750,7 +732,6 @@ services:
     extends:
       service: base-service
     image: silverwind/droppy
-#    image: silverwind/armhf-droppy
     init: true
     labels:
       - "traefik.enable=true"
@@ -760,9 +741,6 @@ services:
       - "traefik.http.routers.droppy-https.rule=Host(`droppy.example.net`)"
       - "traefik.http.routers.droppy-https.entrypoints=https"
       - "traefik.http.routers.droppy-https.middlewares=defaultchain-https"
-      - "traefik.http.routers.droppy-https.tls=true"
-      - "traefik.http.routers.droppy-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.droppy-https.tls.options=default"
       - "traefik.http.services.droppy-service.loadbalancer.server.port=8989"
     command: ["/usr/bin/droppy", "start", "--color", "-f", "/files", "-c", "/config"]
     expose:
@@ -825,17 +803,22 @@ services:
   mysql:
     extends:
       service: base-service
-    #image: mysql:5.7
-    build:
-      context: mysql
-      args:
-      - MYSQL_VERSION=${MYSQL_VERSION:-5.7}
+    #image: mysql/mysql-server:${MYSQL_VERSION:-5.7}
+    image: mysql:${MYSQL_VERSION:-5.7}
+    init: true
+    labels:
+      - "com.symfony.server.service-prefix=DATABASE"
+      # The "mysql-cron-backup" label will enable backup via external cron container
+      - "mysql-cron-backup"
+    # https://dev.mysql.com/doc/mysql-port-reference/en/mysql-ports-reference-tables.html
     expose:
     - "3306"
+    - "33060"
+    - "33061"
+    - "33062"
     environment:
-    - ENABLE_CRON=1
-    #- ENABLE_SYSLOG=1
     - MYSQL_ROOT_PASSWORD=
+    #- MYSQL_LOG_CONSOLE=true
     #- MYSQL_CUSTOM_OPTS=--key_buffer_size=4M --sort_buffer_size=128K --read_buffer_size=64K --net_buffer_length=8K
     #- MYSQL_CUSTOM_OPTS=--innodb_buffer_pool_size=64M --innodb_log_buffer_size=8M
     #- MYSQL_CUSTOM_OPTS=--default-storage-engine=MyISAM --default_tmp_storage_engine=MyISAM
@@ -850,7 +833,11 @@ services:
     #   table_definition_cache = min(2000, 400 + (table_open_cache / 2))
     #   max_connections = 151
     # instead of turning off performance_schema, you can reduce RAM usage with --table_open_cache=400 --table_definition_cache=400 --max_connections=151
-    - MYSQL_CUSTOM_OPTS=--performance_schema=off --table_definition_cache=800
+    #- MYSQL_CUSTOM_OPTS=--performance_schema=off --table_definition_cache=800
+    # ToDo: switch to --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    command: ["--datadir=/var/lib/mysql", "--user=mysql", "--bind-address=0.0.0.0", "--log-error=/var/log/mysql/error.log", "--pid-file=/var/run/mysqld/mysqld.pid", "--socket=/var/run/mysqld/mysqld.sock", "--port=3306", "--character-set-server=utf8", "--collation-server=utf8_unicode_ci", "--skip-character-set-client-handshake", "--performance_schema=off", "--table_definition_cache=800"]
+    tmpfs:
+    - /run/mysqld:rw,nosuid,dev,noexec,relatime,size=16k,uid=999,gid=999,mode=755
     volumes:
     - /opt/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
     # following 2 files are a hack to enable read_only: true
@@ -858,8 +845,15 @@ services:
     - /opt/mysql/mysql-init-complete:/mysql-init-complete
     #- /opt/mysql/conf.d:/etc/mysql/conf.d
     - /srv/mysql/data:/var/lib/mysql
-    - /srv/mysql/backup:/srv
     - /srv/logs/mysql:/var/log
+#    healthcheck:
+#      test: ["CMD", "mysqladmin", "--silent", "--no-beep", "--wait=0", "--connect_timeout=1", "--host=127.0.0.1", "--user=${self:services.mysql.environment.MYSQL_USER:-root}", "--password=${self:services.mysql.environment.MYSQL_PASSWORD:-$self:services.mysql.environment.MYSQL_ROOT_PASSWORD}", "ping"]
+#      test: mysqladmin --silent --no-beep --wait=0 --connect_timeout=1 --host=127.0.0.1 --user="$${MYSQL_USER:-root}", --password="$${MYSQL_PASSWORD:-$$MYSQL_ROOT_PASSWORD}" ping
+#      test: ["CMD", "/docker-entrypoint-initdb.d/docker-healthcheck"]
+#      interval: 30s
+#      timeout: 5s
+#      retries: 1
+#      start_period: 10s
     networks:
     #- tomcat-back-internal
     - owncloud-back-internal
@@ -876,6 +870,28 @@ services:
     memswap_limit: 512m
     mem_reservation: 416m
     restart: unless-stopped
+
+  mysql-backup:
+    build:
+      context: mysql-cron
+    init: true
+    environment:
+    - MYSQL_CRON_LABEL=mysql-cron-backup
+    - MYSQL_ROOT_PASSWORD=
+    #depends_on:
+    #  mysql:
+    #    condition: service_started
+    volumes:
+    - /srv/mysql/backup:/srv
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    cpu_shares: 256
+    mem_limit: 64m
+    memswap_limit: 128m
+    mem_swappiness: 10
+    mem_reservation: 8m
+    # logrotate needs /var/lib/logrotate.status and /var/log/messages
+    read_only: false
+    restart: on-failure:3
 
 ########################################################################
 
@@ -917,6 +933,8 @@ services:
   redis:
     image: redis:5-alpine
     init: true
+    labels:
+      - "com.symfony.server.service-prefix=REDIS"
     # https://raw.githubusercontent.com/antirez/redis/5.0/redis.conf
     command: ["--daemonize", "no", "--protected-mode", "no", "--tcp-backlog", "511", "--loglevel", "notice", "--logfile", "", "--databases", "1", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--stop-writes-on-bgsave-error", "yes", "--dbfilename", "dump.rdb", "--dir", "/data", "--maxclients", "100", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction", "--slowlog-log-slower-than", "10000", "--slowlog-max-len", "128"]
     expose:
@@ -1010,17 +1028,11 @@ services:
       - "traefik.http.routers.bitwarden-https.entrypoints=https"
       - "traefik.http.routers.bitwarden-https.middlewares=std-ipwhitelist,defaultchain-https"
       - "traefik.http.routers.bitwarden-https.service=bitwarden-web"
-      - "traefik.http.routers.bitwarden-https.tls=true"
-      - "traefik.http.routers.bitwarden-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.bitwarden-https.tls.options=default"
       - "traefik.http.services.bitwarden-web.loadbalancer.server.port=80"
       
       - "traefik.http.routers.bitwarden-hub.rule=Host(`vault.example.net`) && PathPrefix(`/notifications/hub`)"
       - "traefik.http.routers.bitwarden-hub.entrypoints=https"
       - "traefik.http.routers.bitwarden-hub.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.routers.bitwarden-hub.tls=true"
-      - "traefik.http.routers.bitwarden-hub.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.bitwarden-hub.tls.options=default"
       - "traefik.http.routers.bitwarden-hub.service=bitwarden-hub"
       - "traefik.http.services.bitwarden-hub.loadbalancer.server.port=3012"
       
@@ -1028,9 +1040,6 @@ services:
       - "traefik.http.routers.bitwarden-negociate.entrypoints=https"
       - "traefik.http.routers.bitwarden-negociate.middlewares=std-ipwhitelist,defaultchain-https"
       - "traefik.http.routers.bitwarden-negociate.service=bitwarden-negociate"
-      - "traefik.http.routers.bitwarden-negociate.tls=true"
-      - "traefik.http.routers.bitwarden-negociate.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.bitwarden-negociate.tls.options=default"
       - "traefik.http.services.bitwarden-negociate.loadbalancer.server.port=80"
       
       # IP restriction on https /admin endpoint
@@ -1044,9 +1053,6 @@ services:
       - "traefik.http.routers.bitwarden-407.entrypoints=https"
       - "traefik.http.routers.bitwarden-407.priority=65535"
       - "traefik.http.routers.bitwarden-407.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.routers.bitwarden-407.tls=true"
-      - "traefik.http.routers.bitwarden-407.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.bitwarden-407.tls.options=default"
     expose:
     - "80"
     - "3012"
@@ -1107,6 +1113,34 @@ services:
 
 ########################################################################
 
+  web-ssh:
+    build: web-ssh
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.webssh-http.rule=Host(`webssh.docker.localhost`)"
+      - "traefik.http.routers.webssh-http.entrypoints=http"
+      - "traefik.http.routers.webssh-http.middlewares=403"
+      - "traefik.http.routers.webssh-https.rule=Host(`webssh.docker.localhost`)"
+      - "traefik.http.routers.webssh-https.entrypoints=https"
+      - "traefik.http.routers.webssh-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.services.webssh-service.loadbalancer.server.port=8888"
+    expose:
+    - "8888"
+    - "4433"
+    volumes:
+    - /srv/webssh:/srv
+    networks:
+    - webssh
+    cpu_shares: 256
+    mem_limit: 64m
+    memswap_limit: 96m
+    mem_reservation: 24m
+    read_only: true
+    restart: unless-stopped
+
+########################################################################
+
   # AdGuard Home is our internal + external (ACLs) DNS server
   adguard-home:
     image: adguard/adguardhome:latest
@@ -1119,9 +1153,6 @@ services:
       - "traefik.http.routers.adguardhome-https.rule=Host(`adguard.docker.localhost`)"
       - "traefik.http.routers.adguardhome-https.entrypoints=https"
       - "traefik.http.routers.adguardhome-https.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.routers.adguardhome-https.tls=true"
-      - "traefik.http.routers.adguardhome-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.adguardhome-https.tls.options=default"
       - "traefik.http.services.adguardhome-service.loadbalancer.server.port=3000"
     ports:
     #- "192.0.2.1:53:53/tcp"
@@ -1266,9 +1297,6 @@ services:
       - "traefik.http.routers.transmission-https.rule=Host(`example.net`) && PathPrefix(`/transmission/`)"
       - "traefik.http.routers.transmission-https.entrypoints=https"
       - "traefik.http.routers.transmission-https.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.routers.transmission-https.tls=true"
-      - "traefik.http.routers.transmission-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.transmission-https.tls.options=default"
       - "traefik.http.services.transmission-service.loadbalancer.server.port=9091"
     expose:
     - "9091"
@@ -1306,9 +1334,6 @@ services:
       - "traefik.http.routers.ttrss-https.rule=Host(`ttrss.example.net`)"
       - "traefik.http.routers.ttrss-https.entrypoints=https"
       - "traefik.http.routers.ttrss-https.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.routers.ttrss-https.tls=true"
-      - "traefik.http.routers.ttrss-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.ttrss-https.tls.options=default"
       - "traefik.http.services.ttrss-service.loadbalancer.server.port=80"
     expose:
     - "80"
@@ -1359,9 +1384,6 @@ services:
       - "traefik.http.routers.icecast-https.rule=Host(`icecast.docker.localhost`)"
       - "traefik.http.routers.icecast-https.entrypoints=https"
       - "traefik.http.routers.icecast-https.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.routers.icecast-https.tls=true"
-      - "traefik.http.routers.icecast-https.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.icecast-https.tls.options=default"
       - "traefik.http.services.icecast-service.loadbalancer.server.port=8000"
       # /admin is protected by Icecast configuration
     volumes:
@@ -1428,6 +1450,58 @@ services:
     mem_reservation: 4m
     #privileged: false
     restart: unless-stopped
+
+########################################################################
+
+#  forked-daapd:
+#    extends:
+#      service: base-service
+#    image: linuxserver/daapd
+#    init: false
+#    labels:
+#      - "traefik.enable=false"
+#    ports:
+#      # DAAP
+#      - "3689:3689"
+#      # websocket
+#      - "3688:3688"
+#      # MPD
+#      - "6600:6600"
+#      # mDNS
+#      - "5353:5353/udp"
+#      # SSDP
+#      - "1900:1900/udp"
+#    expose:
+#      - "3689"
+#      - "3688"
+#      - "6600"
+#      - "5353/udp"
+#      - "1900/udp"
+#    environment:
+#    - PUID=1000
+#    - PGID=1000
+#    - TZ=Europe/Paris
+#    devices:
+#      - "/dev/snd:/dev/snd"
+#    volumes:
+#      - /opt/forked-daapd:/config
+#      - /srv/forked-daapd:/music:ro
+#      #- /srv/logs/forked-daapd:/var/log
+#    healthcheck:
+#      test: ["CMD", "pgrep", "forked-daapd"]
+#      interval: 240s
+#      timeout: 5s
+#      retries: 1
+#      start_period: 10s
+#    networks:
+#      - daapd-front
+##    network_mode: host
+#    cpu_shares: 128
+#    mem_limit: 64m
+#    memswap_limit: 96m
+#    mem_reservation: 24m
+#    read_only: false
+#    restart: unless-stopped
 
 ########################################################################
 
@@ -1638,6 +1712,26 @@ networks:
     ipam:
       config:
       - subnet: 172.31.13.0/24
+  #daapd-front:
+  #  driver: bridge
+  #  ipam:
+  #    config:
+  #    - subnet: 172.31.14.0/24
+#  daapd-front:
+#    driver: macvlan
+#    driver_opts:
+#      parent: eth0
+#      ipvlan_mode: l2
+#    ipam:
+#      config:
+#        - subnet: 192.168.1.0/24
+#          gateway: 192.168.1.254
+#          ip_range: 192.168.1.128/31 # IP from this pool are assigned automatically
+  webssh:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.15.0/24
   vpn:
     driver: bridge
     ipam:

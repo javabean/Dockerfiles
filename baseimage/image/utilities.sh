@@ -31,7 +31,7 @@ cp /bd_build/bin/install_clean /sbin/install_clean
 cp -a /bd_build/bin/su-exec.$(dpkg --print-architecture | awk -F- '{ print $NF }') /usr/local/bin/su-exec
 ln -s /usr/local/bin/su-exec /usr/local/bin/gosu
 
-cp -a /bd_build/bin/wait_for.sh /usr/local/bin/
+cp -a /bd_build/bin/wait_for.sh /bd_build/bin/hc-ping.sh /usr/local/bin/
 
 mkdir /usr/local/share/tls
 cp -a /bd_build/dhparams-ffdhe*.pem /usr/local/share/tls/

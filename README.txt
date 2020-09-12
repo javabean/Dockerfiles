@@ -32,12 +32,12 @@ baseimage
 	tiddlywiki*
 	mysql
 	email-relay
-	dnsmasq
-	unbound	(requires dnsmasq)
-	openvpn	(requires dnsmasq, ziproxy)
+	AdGuard Home
+	openvpn	(requires AdGuard Home, ziproxy)
 	ziproxy
 	transmission
 	sslh
+	webssh
 * = not ready yet
 
 For dependencies and additional usage notes, go read `docker-compose.yml` :-)

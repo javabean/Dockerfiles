@@ -18,9 +18,9 @@ httpd_install() {
 		return
 	fi
 
-	local AEM_AP_RUNMODE=${1}
-	local AEM_ENDPOINT=${2}
-	local DISPATCHER_TGZ_URL=${3}
+	local AEM_AP_RUNMODE="${1}"
+	local AEM_ENDPOINT="${2}"
+	local DISPATCHER_TGZ_URL="${3}"
 	local reset_e=0
 
 	# 1. install Apache httpd
@@ -113,13 +113,13 @@ EOT
 
 main() {
 	# author: 4502; publish: 4503
-	local AEM_PORT=${AEM_PORT:-4502}
+	local AEM_PORT="${AEM_PORT:-4502}"
 	
 	# temporary variable to read CLI option; also used for copying AEM Dispatcher configuration file
 	# author | publish
-	local AEM_AP_RUNMODE=${AEM_AP_RUNMODE:-}
-	local AEM_ENDPOINT=${AEM_ENDPOINT:-}
-	local DISPATCHER_TGZ_URL=${DISPATCHER_TGZ_URL:-}
+	local AEM_AP_RUNMODE="${AEM_AP_RUNMODE:-}"
+	local AEM_ENDPOINT="${AEM_ENDPOINT:-}"
+	local DISPATCHER_TGZ_URL="${DISPATCHER_TGZ_URL:-}"
 	
 	# Options
 	while getopts "a:p:d:" option; do

@@ -15,14 +15,14 @@ COPY consul-healthcheck.sh backup_conf.sh restore_conf.sh docker-entrypoint.sh  
 
 COPY security-add.conf /tmp/
 
-ADD https://raw.githubusercontent.com/docker-library/php/master/7.2/stretch/apache/apache2-foreground  /usr/local/bin/
+ADD https://raw.githubusercontent.com/docker-library/php/master/7.2/buster/apache/apache2-foreground  /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/apache2-foreground \
   && LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/apache2 \
 	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2 apache2-utils openssl libapache2-mod-xsendfile \
 	#libapache2-mod-geoip geoip-database geoipupdate geoip-bin mmdb-bin \
 	libapache2-mod-geoip geoip-database geoip-bin \
-	&& for m in "auth_digest authz_host expires headers info reqtimeout rewrite remoteip slotmem_shm socache_shmcb" ; do a2enmod $m; done \
+	&& for m in "unique_id auth_digest authz_host expires headers info reqtimeout rewrite remoteip slotmem_shm socache_shmcb" ; do a2enmod $m; done \
 #	&& for m in "" ; do a2dismod $m; done \
 	&& a2disconf serve-cgi-bin \
 	&& a2dissite default-ssl \

@@ -27,7 +27,7 @@ internal_is_shell_attribute_set() { # attribute, like "e"
 
 internal_is_shell_option_set() { # option, like "pipefail"
 	# Note: bash-specific alternative: `test -o`
-	local search_option=$1
+	local search_option="$1"
 	case $(set -o | grep "$search_option" | cut -f2) in
 		on) return 0 ;;
 		off) return 1 ;;

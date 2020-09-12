@@ -1,4 +1,4 @@
-#FROM php:7.1-apache
+#FROM php:7.2-apache
 FROM cedrik/php7-base:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
@@ -17,10 +17,10 @@ COPY backup_conf_local.sh restore_conf_local.sh upgrade-dokuwiki.sh cleanup.sh  
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	libapache2-mod-xsendfile \
-	php7.1-zip php7.1-bz2 \
-	libpng16-16 libjpeg62 libjpeg8 libjpeg-turbo8 libjpeg9 php7.1-gd \
-	php7.1-curl libxml2 php7.1-xml php7.1-mcrypt openssl php7.1-soap \
-	php7.1-json php7.1-intl \
+	php7.2-zip php7.2-bz2 \
+	libpng16-16 libjpeg62 libjpeg8 libjpeg-turbo8 libjpeg9 php7.2-gd \
+	php7.2-curl libxml2 php7.2-xml openssl php7.2-soap \
+	php7.2-json php7.2-intl \
 # we need sudo to upgrade DokuWiki via CLI
 	sudo \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
@@ -49,7 +49,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 		-e 's%\(post_max_size\) = .*M%\1 = 15M%' \
 		-e 's%\(session.use_cookies\) = .*%\1 = 1%' \
 #		-e 's%\(session.cache_limiter\) = .*%\1 = nocache%' \
-		/etc/php/7.1/apache2/php.ini
+		/etc/php/7.2/apache2/php.ini
 
 # set recommended PHP.ini settings
 # see https://secure.php.net/manual/en/opcache.installation.php
