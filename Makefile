@@ -12,7 +12,7 @@ include .env
 
 DOCKER_APT_VERSION = 19.03.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.26.2
+DOCKER_COMPOSE_VERSION = 1.27.4
 
 DOCKER_FROM_IMAGE ?= ubuntu
 DOCKER_FROM_VERSION ?= 18.04
@@ -57,7 +57,6 @@ pull: ## pull base Docker images from Docker Hub
 	#docker image pull memcached:1.5-alpine
 	docker image pull redis:5-alpine
 	#docker image pull silverwind/droppy
-	#docker image pull silverwind/armhf-droppy
 	#docker image pull portainer/portainer
 	#docker image pull certbot/certbot
 	#docker image pull traefik:$(TRAEFIK_VERSION)
@@ -121,32 +120,6 @@ health:
 
 ########################################################################
 
-.PHONY: new-certificates
-new-certificates: ## query new TLS certificates
-	# --quiet --dry-run --test-cert
-	docker-compose run --rm letsencrypt --authenticators certonly --non-interactive --dry-run \
-		--webroot \
-		-w /srv/owncloud/acme-challenge -d oc.cedrik.fr \
-		-w /srv/nextcloud/acme-challenge -d nc.cedrik.fr \
-		-w /srv/wordpress/acme-challenge -d www.piacercanto.org -d piacercanto.org -d beta.piacercanto.org \
-		-w /srv/droppy -d fichiers.piacercanto.org \
-		-w /srv/dokuwiki/acme-challenge -d wiki.cedrik.fr \
-		-w /srv/http-proxy/wiki -d wiki.cedrik.fr \
-		-w /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT -d www.cedrik.fr -d cedrik.fr -d wpad.cedrik.fr \
-		-w /srv/portainer/acme-challenge -d portainer.cedrik.fr \
-		-w /srv/http-proxy/polycarpe.fr -d www.polycarpe.fr -d polycarpe.fr \
-		-w /srv/http-proxy/ebooks -d ebooks.cedrik.fr \
-		-w /srv/http-proxy/html -d paris.cedrik.fr
-
-.PHONY: renew-certificates
-renew-certificates: ## renew TLS certificates
-	# --quiet --dry-run --test-cert
-	# --pre-hook "service nginx stop" --post-hook "docker container restart http-proxy"
-	docker-compose run --rm letsencrypt --authenticators renew --non-interactive --keep-until-expiring \
-		--post-hook "chmod a+X /etc/letsencrypt/live /etc/letsencrypt/archive ; chmod a+r /etc/letsencrypt/archive/*/privkey*.pem"
-
-########################################################################
-
 .PHONY: clean
 clean: ## remove stopped containers, unused volumes, untagged images, unused networks
 clean:
@@ -205,11 +178,8 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	                                              /srv/logs/ziproxy \
 	  /srv/transmission \
 	  /srv/bitwarden \
-	  /srv/tt-rss/.well-known/acme-challenge \
-	/opt/letsencrypt       /srv/letsencrypt       /srv/logs/letsencrypt \
-	  /srv/owncloud/acme-challenge/.well-known/acme-challenge  /srv/nextcloud/acme-challenge/.well-known/acme-challenge  /srv/wordpress/acme-challenge/.well-known /srv/dokuwiki/acme-challenge/.well-known \
-	/opt/droppy  /srv/droppy/.well-known/acme-challenge \
-	/opt/portainer/certs  /srv/portainer/acme-challenge/.well-known  /srv/portainer/data \
+	/opt/droppy \
+	/opt/portainer/certs  /srv/portainer/data \
 	/opt/icecaste  /srv/logs/icecast  /opt/darkice
 
 	sudo touch /opt/traefik/acme.json /opt/traefik/htpasswd /opt/traefik/htdigest && sudo chmod 600 /opt/traefik/acme.json

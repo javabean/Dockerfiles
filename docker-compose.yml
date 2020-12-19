@@ -65,9 +65,9 @@ services:
   traefik:
     extends:
       service: base-service
-    image: traefik:${TRAEFIK_VERSION:-2.2}
+    image: traefik:${TRAEFIK_VERSION:-2.3}
     init: true
-    # https://docs.traefik.io/v2.2/reference/dynamic-configuration/docker/
+    # https://docs.traefik.io/v2.3/reference/dynamic-configuration/docker/
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik-http.rule=Host(`traefik.docker.localhost`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
@@ -137,7 +137,7 @@ services:
     - "80:80"
     - "443:443"
     environment:
-    # https://docs.traefik.io/v2.2/reference/static-configuration/env/
+    # https://docs.traefik.io/v2.3/reference/static-configuration/env/
     - TRAEFIK_GLOBAL_CHECKNEWVERSION=false
     - TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE=false
     - TRAEFIK_PROVIDERS_PROVIDERSTHROTTLEDURATION=2
@@ -204,6 +204,7 @@ services:
     - bitwarden
     - icecast-front
 #    - daapd-front
+    - statping-front
     - vpn
     - webssh
     cpu_shares: 256
@@ -236,7 +237,6 @@ services:
     #- /opt/http-static/sites-available:/opt/http-static/sites-available:ro
     - /opt/http-static/sites-enabled:/opt/http-static/sites-enabled:ro
     #- /opt/http-static/tls:/opt/http-static/tls:ro
-    #- /opt/letsencrypt:/etc/letsencrypt:ro,z
     - /srv/http-static:/var/www:ro
     - /srv/logs/http-static:/var/log
     networks:
@@ -279,8 +279,8 @@ services:
     - /opt/http-proxy/conf-include:/opt/http-proxy/conf-include:ro
     #- /opt/http-proxy/sites-available:/opt/http-proxy/sites-available:ro
     - /opt/http-proxy/sites-enabled:/opt/http-proxy/sites-enabled:ro
-    #- /opt/http-proxy/tls:/opt/http-proxy/tls:ro
     - /opt/letsencrypt:/etc/letsencrypt:ro,z
+    - /opt/http-proxy/tls:/srv/md
     - /srv/http-proxy:/var/www:ro
     - /srv/logs/http-proxy:/var/log
     networks:
@@ -297,6 +297,7 @@ services:
     - transmission
     #- bitwarden
     #- icecast-front
+    #- statping-front
     - vpn
     - webssh
     cpu_shares: 256
@@ -1017,7 +1018,6 @@ services:
       service: base-service
     #image: bitwardenrs/server:latest
     image: bitwardenrs/server:alpine
-    #image: bitwardenrs/server:raspberry
     init: true
     labels:
       - "traefik.enable=true"
@@ -1162,6 +1162,7 @@ services:
     #- "80:80/tcp"
     #- "443:443/tcp"
     - "853:853/tcp"
+    - "784:784/udp"
     #- "3000:3000/tcp"
     expose:
     - "53/tcp"
@@ -1171,6 +1172,7 @@ services:
     - "80"
     - "443"
     - "853/tcp"
+    - "784/udp"
     - "3000"
     volumes:
     - /opt/adguard-home:/opt/adguardhome/conf
@@ -1505,40 +1507,99 @@ services:
 
 ########################################################################
 
-  letsencrypt:
+  # https://github.com/statping/statping/wiki/Docker-Compose
+  statping:
     extends:
       service: base-service
-    image: certbot/certbot:latest
-    #build: letsencrypt
+    image: statping/statping
     init: true
-    command: [ "--authenticators" ]
-    #ports:
-    #- "80:80"
-    #- "443:443"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.statping-http.rule=Host(`statping.docker.localhost`)"
+      - "traefik.http.routers.statping-http.entrypoints=http"
+      - "traefik.http.routers.statping-http.middlewares=403"
+      - "traefik.http.routers.statping-https.rule=Host(`statping.docker.localhost`)"
+      - "traefik.http.routers.statping-https.entrypoints=https"
+      - "traefik.http.routers.statping-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.services.statping-service.loadbalancer.server.port=8080"
+    expose:
+      - "8080"
+    environment:
+    # https://github.com/statping/statping/wiki/Environment-Variables
+    # https://github.com/statping/statping/wiki/Config-with-.env-File
+    # https://github.com/statping/statping/blob/dev/utils/env.go
+    - ALLOW_REPORTS=false
+    #- DISABLE_LOGS=true
+    #- REMOVE_AFTER=2160h
+    #- CLEANUP_INTERVAL=1h
+    - DB_CONN=sqlite
+    #- DISABLE_COLORS=true
+    - LANGUAGE=en
+    #- NAME=Statping Sample Data
+    #- DESCRIPTION=This status page has sample data included
+    #- DOMAIN=http://localhost:8080
+    #- ADMIN_USER=admin
+    #- ADMIN_PASSWORD=admin
+    #- ADMIN_EMAIL=info@admin.com
+    #- API_SECRET=
+    - SAMPLE_DATA=false
     volumes:
-    - /opt/letsencrypt:/etc/letsencrypt:z
-    - /srv/letsencrypt:/var/lib/letsencrypt
-    - /srv/logs/letsencrypt:/var/log
-    # webroot authentification lets encrypt
-    - /srv/owncloud/acme-challenge:/srv/owncloud/acme-challenge
-    - /srv/nextcloud/acme-challenge:/srv/nextcloud/acme-challenge
-    - /srv/tt-rss/.well-known:/srv/tt-rss/.well-known
-    - /srv/wordpress/acme-challenge:/srv/wordpress/acme-challenge
-    - /srv/droppy/.well-known:/srv/droppy/.well-known
-    - /srv/dokuwiki/acme-challenge:/srv/dokuwiki/acme-challenge
-    - /srv/http-proxy/wiki/.well-known:/srv/http-proxy/wiki/.well-known
-    - /opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known:/opt/tomcat/instance-cedrik/webapps/cedrik.fr/ROOT/.well-known
-    - /srv/portainer/acme-challenge:/srv/portainer/acme-challenge
-    - /srv/http-proxy/polycarpe.fr/.well-known:/srv/http-proxy/polycarpe.fr/.well-known
-    #- /srv/http-proxy/vingt-citadelles.fr/.well-known:/srv/http-proxy/vingt-citadelles.fr/.well-known
-    - /srv/http-proxy/ebooks/.well-known:/srv/http-proxy/ebooks/.well-known
-    - /srv/http-proxy/html/.well-known:/srv/http-proxy/html/.well-known
-    #networks:
-    #- default
-    logging:
-      driver: "none"
-    read_only: false
-    restart: "no"
+      - /srv/statping:/app
+    cap_add:
+      - NET_RAW
+    networks:
+      - statping-front
+    cpu_shares: 128
+    mem_limit: 128m
+    memswap_limit: 128m
+    mem_reservation: 64m
+    read_only: true
+    restart: unless-stopped
+
+########################################################################
+
+#  jellyfin:
+#    extends:
+#      service: base-service
+#    image: jellyfin/jellyfin
+#    init: true
+#    labels:
+#      # See https://jellyfin.org/docs/general/networking/traefik2.html
+#      - "traefik.enable=false"
+#    user: 1000:1000
+#    group_add: # by id as these may not exist within the container. Needed to provide permissions to the VAAPI Devices
+#      - "107" #render
+#      - "44"  #video
+#    ports:
+#      # DLNA
+#      - "1900:1900"
+#    expose:
+#      # HTTP
+#      - "8096"
+#      # HTTPS
+#      - "8920"
+#    environment:
+#    - JELLYFIN_PublishedServerUrl=192.0.2.1
+#    volumes:
+#      - /srv/jellyfin/config:/config
+#      - /srv/jellyfin/cache:/cache
+#      - /srv/media:/media:ro
+#    healthcheck:
+#      test: ["CMD", "pgrep", "jellyfin"]
+#      interval: 240s
+#      timeout: 5s
+#      retries: 1
+#      start_period: 10s
+#    networks:
+#      - jellyfin-front
+#    # Network mode of 'host' exposes the ports on the host. This is needed for DLNA access or HDHomeRun.
+##    network_mode: host
+#    cpu_shares: 128
+#    mem_limit: 128m
+#    memswap_limit: 128m
+#    mem_reservation: 64m
+#    read_only: true
+#    restart: unless-stopped
 
 ########################################################################
 ########################################################################
@@ -1732,6 +1793,11 @@ networks:
     ipam:
       config:
       - subnet: 172.31.15.0/24
+  statping-front:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.31.16.0/24
   vpn:
     driver: bridge
     ipam:

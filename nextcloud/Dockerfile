@@ -66,7 +66,7 @@ COPY logrotate-nextcloud-dump /etc/logrotate.d/nextcloud-dump
 COPY apache2-pre-foreground.sh docker-healthcheck.sh hc-ping.sh nextcloudUpgrade.sh nextcloud-sqlite-dump.sh  /usr/local/bin/
 COPY --chown=www-data:www-data config/* /usr/src/nextcloud/config/
 
-HEALTHCHECK --interval=120s --timeout=10s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=5m --timeout=10s --start-period=30s --retries=3 \
 	CMD ["/usr/local/bin/docker-healthcheck.sh"]
 
 #ENV NEXTCLOUD_UPDATE=1

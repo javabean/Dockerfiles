@@ -10,9 +10,9 @@ export DISABLE_CRON=${DISABLE_CRON:-0}
 export DISABLE_CONSUL=${DISABLE_CONSUL:-1}
 
 # https://github.com/tianon/gosu
-#export GOSU_VERSION=${GOSU_VERSION:-1.11}
+#export GOSU_VERSION=${GOSU_VERSION:-1.12}
 # https://github.com/krallin/tini
-export TINI_VERSION=${TINI_VERSION:-v0.18.0}
+export TINI_VERSION=${TINI_VERSION:-v0.19.0}
 # https://github.com/Yelp/dumb-init
 export DUMB_INIT_VERSION=${DUMB_INIT_VERSION:-1.2.2}
 # https://www.consul.io

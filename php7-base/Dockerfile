@@ -31,7 +31,7 @@ RUN LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/php \
 	&& a2dismod -f deflate \
 	# php-fpm: a2enmod proxy_fcgi setenvif && a2enconf php7.2-fpm
 	&& for m in "rewrite headers env dir mime"; do a2enmod $m; done \
-	&& if ! test -f /usr/share/doc/php-apcu/apc.php; then curl -fsSL http://pecl.php.net/get/APCu | tar xz -C /usr/share/doc/php-apcu/ --strip-components=1 --wildcards apcu*/apc.php; fi \
+	&& if ! test -f /usr/share/doc/php*-apcu/apc.php; then curl -fsSL http://pecl.php.net/get/APCu | tar xz -C /usr/share/doc/php*-apcu/ --strip-components=1 --wildcards apcu*/apc.php; fi \
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh
 

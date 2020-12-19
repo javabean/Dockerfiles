@@ -5,12 +5,12 @@ LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
 
 # https://hub.docker.com/_/wordpress/
-# https://codex.wordpress.org/Editing_wp-config.php
-# https://codex.wordpress.org/Administration_Over_SSL
-# http://codex.wordpress.org/Hardening_WordPress
+# https://wordpress.org/support/article/editing-wp-config-php/
+# https://wordpress.org/support/article/administration-over-ssl/
+# https://wordpress.org/support/article/hardening-wordpress/
 
 ############### FIXME  change version here! ###############
-#ARG WORDPRESS_VERSION=wordpress-4.9.9
+#ARG WORDPRESS_VERSION=wordpress-5.5.9
 ARG WORDPRESS_VERSION=latest
 
 COPY wordpress.conf /etc/apache2/conf-enabled/

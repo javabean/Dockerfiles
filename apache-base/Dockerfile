@@ -15,7 +15,7 @@ COPY consul-healthcheck.sh backup_conf.sh restore_conf.sh docker-entrypoint.sh  
 
 COPY security-add.conf /tmp/
 
-ADD https://raw.githubusercontent.com/docker-library/php/master/7.2/buster/apache/apache2-foreground  /usr/local/bin/
+ADD https://raw.githubusercontent.com/docker-library/php/master/7.4/buster/apache/apache2-foreground  /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/apache2-foreground \
   && LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/apache2 \

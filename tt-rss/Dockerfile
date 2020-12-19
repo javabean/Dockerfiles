@@ -12,6 +12,7 @@ RUN cd /usr/src \
 #  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-video-fill-poster.git af_video_fill_poster \
 #  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-hotkeys-ru.git hotkeys_ru \
   && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-enclosure-fix-type af_enclosure_fix_type \
+  && git clone --depth=1 https://github.com/joshp23/ttrss-to-wallabag-v2 wallabag_v2 \
   && git clone --depth=1 https://github.com/DigitalDJ/tinytinyrss-fever-plugin fever
 
 
