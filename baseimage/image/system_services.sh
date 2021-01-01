@@ -27,7 +27,7 @@ if [ -z "${DUMB_INIT_VERSION}" -o "${DUMB_INIT_VERSION}" = "latest" ]; then
 	echo "Downloading dumb-init $TAG_NAME"
 	curl -o /usr/local/sbin/dumb-init -fsSLR $(curl -fsSL https://api.github.com/repos/Yelp/dumb-init/releases/latest | jq --raw-output ".assets[] | select(.name == \"dumb-init_${TAG_NAME:1}_amd64\") | .browser_download_url")
 else
-	curl -o /usr/local/sbin/dumb-init -fsSLR https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_amd64
+	curl -o /usr/local/sbin/dumb-init -fsSLR https://github.com/Yelp/dumb-init/releases/download/v${DUMB_INIT_VERSION}/dumb-init_${DUMB_INIT_VERSION}_x86_64
 fi
 chmod +x /usr/local/sbin/dumb-init
 

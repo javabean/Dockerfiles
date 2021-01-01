@@ -14,7 +14,7 @@ export DISABLE_CONSUL=${DISABLE_CONSUL:-1}
 # https://github.com/krallin/tini
 export TINI_VERSION=${TINI_VERSION:-v0.19.0}
 # https://github.com/Yelp/dumb-init
-export DUMB_INIT_VERSION=${DUMB_INIT_VERSION:-1.2.2}
+export DUMB_INIT_VERSION=${DUMB_INIT_VERSION:-1.2.4}
 # https://www.consul.io
 export CONSUL_VERSION=${CONSUL_VERSION:-0.7.5}
 # https://github.com/hashicorp/consul-template
