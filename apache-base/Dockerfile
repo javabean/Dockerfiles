@@ -37,9 +37,11 @@ RUN chmod +x /usr/local/bin/apache2-foreground \
 	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2 apache2-utils openssl libapache2-mod-xsendfile \
 	#libapache2-mod-geoip geoip-database geoip-bin geoipupdate \
 	mmdb-bin \
-	&& for m in "unique_id auth_digest authz_host expires headers info reqtimeout rewrite remoteip slotmem_shm socache_shmcb" ; do a2enmod $m; done \
-#	&& for m in "" ; do a2dismod $m; done \
+	&& a2enmod unique_id auth_digest authz_host expires headers info reqtimeout rewrite remoteip slotmem_shm socache_shmcb \
+#	&& a2dismod \
+#	&& a2enconf \
 	&& a2disconf serve-cgi-bin \
+#	&& a2ensite \
 	&& a2dissite default-ssl \
 	&& sed -i'.bak' -e 's/^\(ServerTokens OS\)$/#\1\nServerTokens Prod/' \
 		-e 's/^#\(ServerSignature Off\)/\1/' \
@@ -47,7 +49,7 @@ RUN chmod +x /usr/local/bin/apache2-foreground \
 		/etc/apache2/conf-available/security.conf \
 	&& cat /tmp/security-add.conf >> /etc/apache2/conf-available/security.conf \
 	&& rm /tmp/security-add.conf \
-#	&& sed -i'.bak' -e 's/SSLProtocol all$/SSLProtocol all -SSLv3/' /etc/apache2/mods-available/ssl.conf \
+#	&& sed -i'.bak' -e 's/\(SSLProtocol all -SSLv3\)$/\1 -TLSv1 -TLSv1.1/' /etc/apache2/mods-available/ssl.conf \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& mkdir -p /var/www/html/.well-known/acme-challenge && chown -R www-data: /var/www/html/.well-known \
 #	&& geoipupdate \

@@ -16,7 +16,7 @@ RUN cd /usr/src \
   && git clone --depth=1 https://github.com/DigitalDJ/tinytinyrss-fever-plugin fever
 
 
-#FROM php:7.2-apache
+#FROM php:7.3-apache
 FROM cedrik/php7-base:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
@@ -30,12 +30,12 @@ LABEL org.label-schema.schema-version="1.0" \
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	curl \
 #	git \
-	php7.2-cli php7.2-curl php7.2-mbstring \
-	php7.2-json php7.2-intl php7.2-gd php7.2-xml php7.2-opcache \
-	php7.2-common php7.2 \
-	#php7.2-pgsql libapache2-mod-php7.2 \
-	#php7.2-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
-	php7.2-apcu \
+	php7.3-cli php7.3-curl php7.3-mbstring \
+	php7.3-json php7.3-intl php7.3-gd php7.3-xml php7.3-opcache \
+	php7.3-common php7.3 \
+	#php7.3-pgsql libapache2-mod-php7.3 \
+	#php7.3-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
+	php7.3-apcu \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& for m in "remoteip headers env dir mime expires setenvif"; do a2enmod $m; done \
 	&& a2dissite 000-default \
@@ -43,14 +43,13 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh \
 # PHP configuration
-	&& echo "\n\n\napc.enable_cli=1" >> /etc/php/7.2/cli/php.ini \
+	&& echo "\n\n\napc.enable_cli=1" >> /etc/php/7.3/cli/php.ini \
 #	&& sed -i'.bak' \
 #		-e 's%\(memory_limit\) = .*M%\1 = 256M%' \
 #		-e 's%\(max_file_uploads\) = 20%\1 = 200%' \
-#		  /etc/php/7.2/apache2/php.ini \
+#		  /etc/php/7.3/apache2/php.ini \
 # statistics tool
-	&& if test -f /usr/share/php5/apcu/apc.php; then ln -s /usr/share/php5/apcu/apc.php /var/www/html/; fi \
-	&& if test -f /usr/share/doc/php-apcu/apc.php; then ln -s /usr/share/doc/php-apcu/apc.php /var/www/html/; fi
+	&& if test -f /usr/share/doc/php*-apcu/apc.php; then ln -s /usr/share/doc/php*-apcu/apc.php /var/www/html/; fi
 
 #RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \
 #	&& docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \

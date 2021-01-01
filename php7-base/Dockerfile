@@ -1,4 +1,4 @@
-#FROM php:7.2-apache
+#FROM php:7.3-apache
 FROM cedrik/httpd-base:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
@@ -14,22 +14,22 @@ RUN apt-key adv --keyserver ipv4.pool.sks-keyservers.net --recv-keys 5072E1F5
 
 RUN echo "deb https://repo.mysql.com/apt/ubuntu/ `lsb_release -cs` mysql-${MYSQL_VERSION}" > /etc/apt/sources.list.d/mysql.list
 
-RUN LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/php \
+RUN LC_ALL=C.UTF-8  add-apt-repository -y --no-update ppa:ondrej/php \
 	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	curl bzip2 openssl file \
-	libapache2-mod-php7.2 libapache2-mod-bw libapache2-mod-rpaf \
+	libapache2-mod-php7.3 libapache2-mod-bw libapache2-mod-rpaf \
 #	libapache2-mod-security2 \
-	php7.2-fpm \
-	php7.2-gd php7.2-json php7.2-curl php7.2-intl  php7.2-imagick \
-	php7.2 php7.2-cli php7.2-readline php7.2-sqlite3 \
-	php7.2-apcu php7.2-memcache php7.2-memcached php7.2-redis \
-	php7.2-bz2 php7.2-mbstring php7.2-soap php7.2-xml php7.2-zip \
-#	php7.2-fpm php7.2-ldap \
-	php7.2-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
+	php7.3-fpm \
+	php7.3-gd php7.3-json php7.3-curl php7.3-intl  php7.3-imagick \
+	php7.3 php7.3-cli php7.3-readline php7.3-sqlite3 \
+	php7.3-apcu php7.3-memcache php7.3-memcached php7.3-redis \
+	php7.3-bz2 php7.3-mbstring php7.3-soap php7.3-xml php7.3-zip \
+#	php7.3-fpm php7.3-ldap \
+	php7.3-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& a2dismod mpm_event && a2enmod mpm_prefork \
 	&& a2dismod -f deflate \
-	# php-fpm: a2enmod proxy_fcgi setenvif && a2enconf php7.2-fpm
+	# php-fpm: a2enmod proxy_fcgi setenvif && a2enconf php7.3-fpm
 	&& for m in "rewrite headers env dir mime"; do a2enmod $m; done \
 	&& if ! test -f /usr/share/doc/php*-apcu/apc.php; then curl -fsSL http://pecl.php.net/get/APCu | tar xz -C /usr/share/doc/php*-apcu/ --strip-components=1 --wildcards apcu*/apc.php; fi \
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
@@ -45,8 +45,8 @@ RUN LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/php \
 # PHP configuration
 RUN sed -i'.bak' -e 's%\(upload_max_filesize\) = .*M%\1 = 8M%' \
 	-e 's%\(session.cookie_httponly\) =.*%\1 = On%' \
-	-e 's%\(session.hash_function\) = 0%\1 = 1%' \
-	  /etc/php/7.2/apache2/php.ini
+	-e 's%\(session.use_strict_mode\) =.*%\1 = 1%' \
+	  /etc/php/7.3/apache2/php.ini
 
 #VOLUME /var/www/html
 #VOLUME ["/var/log"]

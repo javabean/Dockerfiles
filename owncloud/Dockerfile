@@ -1,5 +1,5 @@
 #FROM owncloud:latest
-#FROM php:7.2-apache
+#FROM php:7.3-apache
 FROM cedrik/php7-base:latest
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
@@ -27,11 +27,11 @@ RUN curl -fsSL https://download.owncloud.org/download/repositories/${OWNCLOUD_VE
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	curl bzip2 openssl file sqlite3 \
 	libapache2-mod-xsendfile \
-	php7.2-common php7.2-gd php7.2-json php7.2-mysql php7.2-curl php7.2-intl php7.2-imagick php7.2-xml \
-	php7.2 php7.2-cli php7.2-readline php7.2-sqlite3 php7.2-mbstring php7.2-zip php7.2-bz2 \
-	#php7.2-pgsql libapache2-mod-php7.2 php7.2-ldap php7.2-imap php-smbclient php-ssh2 php7.2-gmp \
-	#php7.2-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
-	php7.2-apcu php7.2-memcached php7.2-redis \
+	php7.3-common php7.3-gd php7.3-json php7.3-mysql php7.3-curl php7.3-intl php7.3-imagick php7.3-xml \
+	php7.3 php7.3-cli php7.3-readline php7.3-sqlite3 php7.3-mbstring php7.3-zip php7.3-bz2 \
+	#php7.3-pgsql libapache2-mod-php7.3 php7.3-ldap php7.3-imap php-smbclient php-ssh2 php7.3-gmp \
+	#php7.3-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
+	php7.3-apcu php7.3-memcached php7.3-redis \
 	owncloud-files \
 # we need sudo to upgrade DB between OwnCloud versions
 	sudo \
@@ -45,14 +45,13 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh \
 # PHP configuration
-	&& echo "\n\n\napc.enable_cli=1" >> /etc/php/7.2/cli/php.ini \
+	&& echo "\n\n\napc.enable_cli=1" >> /etc/php/7.3/cli/php.ini \
 #	&& sed -i'.bak' \
 #		-e 's%\(memory_limit\) = .*M%\1 = 256M%' \
 #		-e 's%\(max_file_uploads\) = 20%\1 = 200%' \
-#		  /etc/php/7.2/apache2/php.ini \
+#		  /etc/php/7.3/apache2/php.ini \
 # statistics tool
-	&& if test -f /usr/share/php5/apcu/apc.php; then ln -s /usr/share/php5/apcu/apc.php /var/www/owncloud/; fi \
-	&& if test -f /usr/share/doc/php-apcu/apc.php; then ln -s /usr/share/doc/php-apcu/apc.php /var/www/owncloud/; fi
+	&& if test -f /usr/share/doc/php*-apcu/apc.php; then ln -s /usr/share/doc/php*-apcu/apc.php /var/www/owncloud/; fi
 
 #RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \
 #	&& docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \
