@@ -22,9 +22,11 @@ services:
     #- ENABLE_SYSLOG=1
     #- ENABLE_CRON=1
     #- ENABLE_CONSUL=1
-    # Force PHP/Symfony applications to production
+    # Force PHP/Symfony, NodeJS & Ruby on Rails applications to production
     - APP_ENV=prod
     - APP_DEBUG=0
+    - NODE_ENV=production
+    - RAILS_ENV=production
     tmpfs:
     # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
     - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
@@ -61,7 +63,6 @@ services:
 ########################################################################
 
   # to configure backends: https://docs.traefik.io/providers/docker/
-  # to extract Let'sEncrypt certificates: https://github.com/containous/traefik/blob/master/contrib/scripts/dumpcerts.sh
   traefik:
     extends:
       service: base-service
@@ -208,9 +209,9 @@ services:
     - vpn
     - webssh
     cpu_shares: 256
-    mem_limit: 96m
-    memswap_limit: 128m
-    mem_reservation: 16m
+    mem_limit: 128m
+    memswap_limit: 192m
+    mem_reservation: 64m
     restart: always
 
   http-static:
@@ -236,7 +237,6 @@ services:
     - /opt/http-static/conf-include:/opt/http-static/conf-include:ro
     #- /opt/http-static/sites-available:/opt/http-static/sites-available:ro
     - /opt/http-static/sites-enabled:/opt/http-static/sites-enabled:ro
-    #- /opt/http-static/tls:/opt/http-static/tls:ro
     - /srv/http-static:/var/www:ro
     - /srv/logs/http-static:/var/log
     networks:
@@ -279,7 +279,8 @@ services:
     - /opt/http-proxy/conf-include:/opt/http-proxy/conf-include:ro
     #- /opt/http-proxy/sites-available:/opt/http-proxy/sites-available:ro
     - /opt/http-proxy/sites-enabled:/opt/http-proxy/sites-enabled:ro
-    - /opt/letsencrypt:/etc/letsencrypt:ro,z
+    #- /opt/letsencrypt:/etc/letsencrypt:ro,z
+    - /srv/GeoIP:/usr/local/share/GeoIP:ro,z
     - /opt/http-proxy/tls:/srv/md
     - /srv/http-proxy:/var/www:ro
     - /srv/logs/http-proxy:/var/log
@@ -481,7 +482,7 @@ services:
       context: nextcloud
       args:
       # https://nextcloud.com/release-channels/
-      #- DOCKER_FROM_TAG=19-apache
+      #- DOCKER_FROM_TAG=20-apache
       #- DOCKER_FROM_TAG=stable-apache
       - DOCKER_FROM_TAG=production-apache
     init: true
@@ -1177,7 +1178,8 @@ services:
     volumes:
     - /opt/adguard-home:/opt/adguardhome/conf
     - /srv/adguard-home:/opt/adguardhome/work
-    - /opt/letsencrypt:/etc/letsencrypt:ro,z
+    #- /opt/letsencrypt:/etc/letsencrypt:ro,z
+    - /opt/http-proxy/tls:/opt/tls:ro,z
     user: nobody
     working_dir: /opt/adguardhome/work
     cap_add:
@@ -1554,6 +1556,32 @@ services:
     memswap_limit: 128m
     mem_reservation: 64m
     read_only: true
+    restart: unless-stopped
+
+########################################################################
+
+  # https://github.com/maxmind/geoipupdate/blob/master/doc/docker.md
+  geoipupdate:
+    extends:
+      service: base-service
+    image: maxmindinc/geoipupdate
+    init: true
+    labels:
+      - "traefik.enable=false"
+    environment:
+    - GEOIPUPDATE_ACCOUNT_ID=XXXXXX
+    - GEOIPUPDATE_LICENSE_KEY=XXXXXXXXXXXXXXXX
+    - 'GEOIPUPDATE_EDITION_IDS=GeoLite2-ASN GeoLite2-City GeoLite2-Country'
+    - GEOIPUPDATE_FREQUENCY=720
+    - GEOIPUPDATE_PRESERVE_FILE_TIMES=1
+    #- GEOIPUPDATE_VERBOSE=1
+    volumes:
+      - /srv/GeoIP:/usr/share/GeoIP
+    cpu_shares: 128
+    mem_limit: 128m
+    memswap_limit: 128m
+    mem_reservation: 64m
+    read_only: false
     restart: unless-stopped
 
 ########################################################################

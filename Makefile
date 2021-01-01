@@ -73,7 +73,7 @@ baseimage: pull
 .PHONY: httpd-base
 httpd-base: ## build Docker base Apache httpd image
 httpd-base: baseimage
-	docker image build -t cedrik/httpd-base --rm apache-base
+	docker image build --build-arg MOD_MAXMINDDB_VERSION=$(MOD_MAXMINDDB_VERSION) -t cedrik/httpd-base --rm apache-base
 
 .PHONY: php7-base
 php7-base: ## build Docker base PHP 7 image (Apache httpd-based) with MySQL client
@@ -101,13 +101,13 @@ tag_latest:
 
 .PHONY: stats
 stats: ## display running containers statistics
-	docker container stats --no-stream $$(docker container ps --format='{{.Names}}')
+	docker container stats --no-stream $$(docker container ls --format='{{.Names}}')
 
 .PHONY: ip
 ip:
 	@#docker container inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(filter-out $@,$(MAKECMDGOALS))
 	@#docker container inspect --format '{{ .NetworkSettings.Networks.docker_default.IPAddress }}' $(NAME)
-	docker container inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $$(docker container ps -f name=$(NAME) -q)
+	docker container inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $$(docker container ls -f name=$(NAME) -q)
 
 .PHONY: health
 health: ## Print out the text of the last 5 checks. Use with:  NAME=<container_name>  make health
@@ -126,7 +126,7 @@ clean:
 	# See also Docker 1.13 `docker system df [-v]` / `docker system prune [--volumes] -f` == `docker container prune -f && docker volume prune -f && docker image prune -f && docker network prune -f`
 	# remove stopped containers
 	# WARNING: be aware if you use data-only container, it will remove them also if you set "--volumes=true"
-	docker container ps --no-trunc -a -q -f "status=exited" | xargs --no-run-if-empty docker container rm --volumes=false
+	docker container ls --no-trunc -a -q -f "status=exited" | xargs --no-run-if-empty docker container rm --volumes=false
 	# remove all unused volumes
 	#docker volume ls -q | xargs --no-run-if-empty docker volume rm
 	# remove local volumes

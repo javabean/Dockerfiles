@@ -1,3 +1,19 @@
+FROM buildpack-deps:bionic as builder
+
+ARG MOD_MAXMINDDB_VERSION=1.2.0
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apt-utils software-properties-common \
+  && LC_ALL=C.UTF-8  add-apt-repository -y --no-update ppa:ondrej/apache2 \
+  && LC_ALL=C.UTF-8  add-apt-repository -y --no-update ppa:maxmind/ppa \
+  && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2 apache2-dev libmaxminddb0 libmaxminddb-dev \
+	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  && curl -fsSL https://github.com/maxmind/mod_maxminddb/releases/download/${MOD_MAXMINDDB_VERSION}/mod_maxminddb-${MOD_MAXMINDDB_VERSION}.tar.gz | tar xz -C /usr/src \
+  && cd /usr/src/mod_maxminddb* \
+  && ./configure \
+  && make install
+
+
+
 FROM cedrik/baseimage:18.04
 LABEL org.label-schema.schema-version="1.0" \
       org.label-schema.vendor="Cédrik LIME"
@@ -9,8 +25,6 @@ COPY runit_apache2 /etc/service/apache2/run
 #COPY runit_apache2 /etc/my_init.d/apache2
 #COPY apache2.conf /etc/apache2.conf
 
-COPY GeoIP.conf /etc/
-
 COPY consul-healthcheck.sh backup_conf.sh restore_conf.sh docker-entrypoint.sh  /usr/local/bin/
 
 COPY security-add.conf /tmp/
@@ -18,10 +32,11 @@ COPY security-add.conf /tmp/
 ADD https://raw.githubusercontent.com/docker-library/php/master/7.4/buster/apache/apache2-foreground  /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/apache2-foreground \
-  && LC_ALL=C.UTF-8  add-apt-repository -y ppa:ondrej/apache2 \
+  && LC_ALL=C.UTF-8  add-apt-repository -y --no-update ppa:ondrej/apache2 \
+  && LC_ALL=C.UTF-8  add-apt-repository -y --no-update ppa:maxmind/ppa \
 	&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2 apache2-utils openssl libapache2-mod-xsendfile \
-	#libapache2-mod-geoip geoip-database geoipupdate geoip-bin mmdb-bin \
-	libapache2-mod-geoip geoip-database geoip-bin \
+	#libapache2-mod-geoip geoip-database geoip-bin geoipupdate \
+	mmdb-bin \
 	&& for m in "unique_id auth_digest authz_host expires headers info reqtimeout rewrite remoteip slotmem_shm socache_shmcb" ; do a2enmod $m; done \
 #	&& for m in "" ; do a2dismod $m; done \
 	&& a2disconf serve-cgi-bin \
@@ -35,10 +50,13 @@ RUN chmod +x /usr/local/bin/apache2-foreground \
 #	&& sed -i'.bak' -e 's/SSLProtocol all$/SSLProtocol all -SSLv3/' /etc/apache2/mods-available/ssl.conf \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 	&& mkdir -p /var/www/html/.well-known/acme-challenge && chown -R www-data: /var/www/html/.well-known \
-#	&& cd /usr/share/GeoIP && curl -fsSLRO http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz && gunzip -f GeoIP.dat.gz && cd - \
-	#&& geoipupdate \
+#	&& geoipupdate \
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
 	&& /usr/local/bin/backup_conf.sh
+
+COPY --from=builder /usr/lib/apache2/modules/mod_maxminddb.so /usr/lib/apache2/modules/
+COPY --from=builder /etc/apache2/mods-available/maxminddb.load /etc/apache2/mods-available/
+COPY maxminddb.conf /etc/apache2/conf-available/
 
 #VOLUME ["/var/log"]
 

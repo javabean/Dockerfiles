@@ -7,11 +7,12 @@ COPY http2.conf acme.conf /etc/apache2/conf-enabled/
 
 # libapache2-mod-evasive depends on mailx, and thus loads quite a few dependencies
 #RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libapache2-mod-evasive \
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libcurl4 libjansson4 \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libcurl4 libjansson4 libmaxminddb0 \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 # watchdog module is statically linked \
-	&& for m in "http2 ssl md geoip setenvif proxy proxy_ajp proxy_balancer proxy_http proxy_wstunnel lbmethod_bybusyness lbmethod_byrequests lbmethod_bytraffic lbmethod_heartbeat autoindex dav_fs auth_digest" ; do a2enmod $m; done \
+	&& for m in "http2 ssl md maxminddb setenvif proxy proxy_ajp proxy_balancer proxy_http proxy_wstunnel lbmethod_bybusyness lbmethod_byrequests lbmethod_bytraffic lbmethod_heartbeat autoindex dav_fs auth_digest" ; do a2enmod $m; done \
 	&& for m in "remoteip" ; do a2dismod $m; done \
+	&& for m in "maxminddb" ; do a2enconf $m; done \
 #	&& a2disconf serve-cgi-bin \
 	&& a2dissite default-ssl \
 	&& a2dissite 000-default.conf \
