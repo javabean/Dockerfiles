@@ -1,7 +1,6 @@
 #FROM alpine:latest
 FROM docker:stable
-LABEL org.label-schema.schema-version="1.0" \
-      org.label-schema.vendor="Cédrik LIME"
+LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 RUN apk add --no-cache --virtual .run-deps curl logrotate dash \
 	&& touch /var/log/messages

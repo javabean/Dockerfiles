@@ -1,6 +1,5 @@
 FROM cedrik/baseimage:18.04
-LABEL org.label-schema.schema-version="1.0" \
-      org.label-schema.vendor="Cédrik LIME"
+LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 COPY 60-ipsec.conf /etc/sysctl.d/
 COPY docker-entrypoint.sh consul-healthcheck.sh newClient.sh revokeClient.sh openvpn-status.sh  /usr/local/bin/

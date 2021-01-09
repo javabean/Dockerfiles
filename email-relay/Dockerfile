@@ -1,6 +1,5 @@
 FROM cedrik/baseimage:18.04
-LABEL org.label-schema.schema-version="1.0" \
-      org.label-schema.vendor="Cédrik LIME"
+LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 #RUN ln -sf /bin/sv /etc/init.d/postfix
 #RUN ln -sf /bin/sv /etc/init.d/opendkim

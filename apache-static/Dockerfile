@@ -1,6 +1,5 @@
 FROM cedrik/httpd-base:latest
-LABEL org.label-schema.schema-version="1.0" \
-      org.label-schema.vendor="Cédrik LIME"
+LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 COPY backup_conf_local.sh restore_conf_local.sh  /usr/local/bin/
 COPY http2.conf remoteip.conf /etc/apache2/conf-enabled/

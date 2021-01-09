@@ -1,7 +1,6 @@
 #FROM ubuntu:latest
 FROM cedrik/baseimage:18.04
-LABEL org.label-schema.schema-version="1.0" \
-      org.label-schema.vendor="Cédrik LIME"
+LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 ENV TRANSMISSION_HOME=/var/lib/transmission-daemon
 

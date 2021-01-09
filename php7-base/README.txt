@@ -1,7 +1,7 @@
 What? (purpose)
 ===============
 
-Base Apache + PHP 7.0 image (via mod-php7, not php-fmp)
+Base Apache + PHP 7.3 image (via mod-php7, not php-fmp)
 
 
 Who? (dependencies)

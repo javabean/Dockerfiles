@@ -15,8 +15,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 
 
 FROM cedrik/baseimage:18.04
-LABEL org.label-schema.schema-version="1.0" \
-      org.label-schema.vendor="Cédrik LIME"
+LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 #RUN echo "Apachai Hopachai" > /etc/container_environment/MY_NAME
 

@@ -1,7 +1,6 @@
 ARG BASE_IMAGE=ubuntu:18.04
 FROM $BASE_IMAGE
-LABEL org.label-schema.schema-version="1.0" \
-      org.label-schema.vendor="Cédrik LIME"
+LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 ARG APT_MIRROR=fr.archive.ubuntu.com
 #ARG APT_MIRROR=ports.ubuntu.com/ubuntu-ports

@@ -20,8 +20,10 @@ As much as I would like to separate all services, there is only a single MySQL c
 
 Images hierarchy:
 tomcat
+AdGuard Home
+mysql
+webssh
 baseimage
-	consul
 	dovecot
 	apache-base
 		http-proxy
@@ -30,14 +32,11 @@ baseimage
 			wordpress	(requires mysql, email-relay[, memcached])
 			dokuwiki	(requires email-relay)
 	tiddlywiki*
-	mysql
 	email-relay
-	AdGuard Home
 	openvpn	(requires AdGuard Home, ziproxy)
 	ziproxy
 	transmission
 	sslh
-	webssh
 * = not ready yet
 
 For dependencies and additional usage notes, go read `docker-compose.yml` :-)
@@ -51,7 +50,7 @@ MAINTENANCE
 
 `docker-compose.override.yml`: adjust `${*}` vars
 
-`baseimage/image/Dockerfile`: `FROM`: check and adjust guest OS version (e.g. 16.04)  
+`baseimage/image/Dockerfile`: `FROM`: check and adjust guest OS version (e.g. 18.04)  
 `baseimage/image/buildconfig`
 
 `.env` : check and adjust `MYSQL_VERSION`

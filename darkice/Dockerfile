@@ -1,6 +1,5 @@
 FROM alpine:latest
-LABEL org.label-schema.schema-version="1.0" \
-      org.label-schema.vendor="Cédrik LIME"
+LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 # alsa-utils
 RUN apk add --no-cache darkice \

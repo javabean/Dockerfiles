@@ -1,6 +1,5 @@
 FROM python:3.8-slim
-LABEL org.label-schema.schema-version="1.0" \
-      org.label-schema.vendor="Cédrik LIME"
+LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 # Install procps & curl (for health check)
 #RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apt-utils && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends procps curl \

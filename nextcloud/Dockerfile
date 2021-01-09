@@ -1,21 +1,22 @@
 ARG DOCKER_FROM_TAG=production-apache
 #ARG DOCKER_FROM_TAG=stable-apache
 FROM nextcloud:${DOCKER_FROM_TAG}
-LABEL org.label-schema.schema-version="1.0" \
-      org.label-schema.vendor="Cédrik LIME"
+LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 # https://github.com/nextcloud/docker
+# https://github.com/nextcloud/docker/tree/master/.examples
 # https://docs.nextcloud.com/server/20/admin_manual/installation/source_installation.html#prerequisites-label
 
 
-# Apache httpd configuration
+# OS & Apache httpd configuration
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests \
   apt-utils \
-  curl bzip2 openssl file \
+  busybox-static curl zip unzip \
   libapache2-mod-rpaf libapache2-mod-encoding libapache2-mod-xsendfile \
 # libapache2-mod-bw libapache2-mod-log-slow libapache2-mod-security2 \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  && mkdir -p /var/spool/cron/crontabs \
   && a2enmod unique_id expires rewrite headers env setenvif dir mime info reqtimeout remoteip slotmem_shm socache_shmcb \
 # && a2dismod \
 # && a2enconf \
@@ -34,16 +35,19 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 
 # PHP configuration
 
+#COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/install-php-extensions \
   && if ! test -f /usr/src/apc.php; then curl -fsSL http://pecl.php.net/get/APCu | tar xz -C /usr/src/ --strip-components=1 --wildcards apcu*/apc.php; fi \
+  && mkdir -p --mode=1733 /var/lib/php/sessions \
   && cp -a ${PHP_INI_DIR}/php.ini-production ${PHP_INI_DIR}/php.ini \
   && { \
        echo 'session.cookie_httponly = 1'; \
        echo 'session.use_strict_mode = 1'; \
        echo 'expose_php = Off'; \
-    } > ${PHP_INI_DIR}/conf.d/security.ini
+    } > ${PHP_INI_DIR}/conf.d/security.ini \
+  && echo 'session.save_path = "/var/lib/php/sessions"' > ${PHP_INI_DIR}/conf.d/session.ini
 
 
 # Nextcloud
@@ -63,6 +67,8 @@ RUN echo " 0  *  *  *  *    php -f /var/www/html/occ activity:send-mails hourly 
   && echo "30  7  *  *  *    php -f /var/www/html/occ activity:send-mails daily"  >> /var/spool/cron/crontabs/www-data \
   && echo "30  7  *  *  MON  php -f /var/www/html/occ activity:send-mails weekly"  >> /var/spool/cron/crontabs/www-data \
   && echo "03  0  *  *  *    /usr/local/bin/nextcloud-sqlite-dump.sh"  >> /var/spool/cron/crontabs/www-data \
+# using Redis session handler, not a FS-based one
+  && rm ${PHP_INI_DIR}/conf.d/session.ini \
   && echo 'source <(/var/www/html/occ _completion --generate-hook --program occ)' | tee -a ~www-data/.bash_profile ~www-data/.zshrc > /dev/null 2>&1 \
   && mkdir -p /usr/src/nextcloud/.well-known/acme-challenge && chown -R www-data: /usr/src/nextcloud/.well-known \
   && a2disconf remoteip \
