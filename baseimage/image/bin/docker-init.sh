@@ -31,7 +31,7 @@ export_envvars() {
 run_startup_files() {
 	# Run ${ENV_INIT_DIRECTORY}/*
 #	echo "Running ${ENV_INIT_DIRECTORY}/..."
-	[ -d ${ENV_INIT_DIRECTORY} ] && run-parts --report --lsbsysinit ${ENV_INIT_DIRECTORY}
+	[ -d ${ENV_INIT_DIRECTORY} ] && run-parts --report --exit-on-error --lsbsysinit ${ENV_INIT_DIRECTORY}
 
 	# Run /etc/rc.local.
 #	echo "Running /etc/rc.local..."
@@ -43,13 +43,13 @@ run_startup_files() {
 run_pre_shutdown_scripts() {
 #	echo "Running pre-shutdown scripts..."
 	# Run /etc/my_init.pre_shutdown.d/*
-	[ -d /etc/my_init.pre_shutdown.d ] && run-parts --report --lsbsysinit /etc/my_init.pre_shutdown.d
+	[ -d /etc/my_init.pre_shutdown.d ] && run-parts --report --exit-on-error --lsbsysinit /etc/my_init.pre_shutdown.d
 }
 
 run_post_shutdown_scripts() {
 #	echo "Running post-shutdown scripts..."
 	# Run /etc/my_init.post_shutdown.d/*
-	[ -d /etc/my_init.post_shutdown.d ] && run-parts --report --lsbsysinit /etc/my_init.post_shutdown.d
+	[ -d /etc/my_init.post_shutdown.d ] && run-parts --report --exit-on-error --lsbsysinit /etc/my_init.post_shutdown.d
 }
 
 export SVDIR=/var/lib/runit-sv
@@ -124,7 +124,7 @@ start_runit() {
 main() {
 	# /run/lock is mounted
 	if [ "$(id -u)" = "0" ]; then
-		chmod a+rwx,+t /run/lock
+		chmod a+rwx,+t /run/lock || true
 	fi
 
 	export_envvars || true

@@ -30,13 +30,13 @@ services:
     tmpfs:
     # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
     - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
-    - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k
+    - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k,mode=1777
     #- /var/log
     #- /var/cache
     #- /var/tmp
     - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
     # PHP.ini 'session.save_path'
-    #- /var/lib/php/sessions
+    #- /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
     # required for syslog
     #- /var/lib/syslog-ng:rw,nosuid,nodev,noexec,relatime,size=16k
     # required for logrotate
@@ -339,7 +339,7 @@ services:
   portainer:
     extends:
       service: base-service
-    image: portainer/portainer
+    image: portainer/portainer-ce
     init: true
     labels:
       - "traefik.enable=true"
@@ -351,9 +351,9 @@ services:
       - "traefik.http.routers.portainer-https.middlewares=std-ipwhitelist,defaultchain-https"
       - "traefik.http.services.portainer-service.loadbalancer.server.port=9000"
     #command: ["--tlsverify", "--tlscacert", "/certs/ca.pem", "--tlscert", "/certs/cert.pem", "--tlskey", "/certs/key.pem"]
-    #command: ["--templates", "https://raw.githubusercontent.com/portainer/templates/master/templates.json"]
-    command: ["--no-analytics"]
+    #command: ["--templates", "https://raw.githubusercontent.com/portainer/templates/master/templates-2.0.json"]
     expose:
+    - "8000"
     - "9000"
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -445,6 +445,9 @@ services:
     - ENABLE_CRON=1
     #- ENABLE_SYSLOG=1
     #- SERVER_NAME=https://www.example.com
+    tmpfs:
+    # PHP.ini 'session.save_path'
+    - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
     depends_on:
       redis-owncloud:
         condition: service_healthy
@@ -519,6 +522,9 @@ services:
     #- NEXTCLOUD_TRUSTED_DOMAINS="example.com www.example.com"
     # Launch a cron daemon in the background (instead of relying on an external cron)
     #- ENABLE_CRON=1
+    tmpfs:
+    # PHP.ini 'session.save_path'
+    - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
     depends_on:
       redis-nextcloud:
         condition: service_healthy
@@ -617,6 +623,9 @@ services:
     #- WORDPRESS_SECURE_AUTH_SALT=
     #- WORDPRESS_LOGGED_IN_SALT=
     #- WORDPRESS_NONCE_SALT=
+    tmpfs:
+    # PHP.ini 'session.save_path'
+    - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
     depends_on:
       mysql:
         condition: service_healthy
@@ -670,6 +679,9 @@ services:
     - "443"
     environment:
     - ENABLE_CRON=1
+    tmpfs:
+    # PHP.ini 'session.save_path'
+    - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
     depends_on:
       email-relay:
         condition: service_started
@@ -898,14 +910,14 @@ services:
 ########################################################################
 
   memcached:
-    image: memcached:1.5-alpine
+    image: memcached:1.6-alpine
     init: true
-    command: ["memcached", "-m", "64", "-p", "11211", "-c", "256"]
+    command: ["memcached", "--memory-limit=64", "--port=11211", "--udp-port=11211", "--conn-limit=256", "--threads=2"]
     expose:
     - "11211/tcp"
     - "11211/udp"
     healthcheck:
-      test: if [ `pgrep -cx memcached` -eq 0 ]; then echo "No memcached process!"; exit 1; else exit 0; fi
+      test: if [ -z "$$(pgrep -x memcached)" ]; then echo "No memcached process!"; exit 1; else exit 0; fi
       interval: 30s
       timeout: 5s
       retries: 1
@@ -913,20 +925,21 @@ services:
     cpu_shares: 128
     mem_limit: 128m
     memswap_limit: 128m
+    mem_swappiness: 1
     read_only: true
     restart: always
 
   memcached-owncloud:
     extends:
       service: memcached
-    command: ["memcached", "-m", "32", "-p", "11211", "-c", "256"]
+    command: ["memcached", "-m", "32", "-p", "11211", "-c", "256", "-t", "1"]
     networks:
     - owncloud-back-internal
 
   memcached-wordpress:
     extends:
       service: memcached
-    command: ["memcached", "-m", "64", "-p", "11211", "-c", "256"]
+    command: ["memcached", "-m", "64", "-p", "11211", "-c", "256", "-t", "1"]
     networks:
     - wordpress-back-internal
 
@@ -1353,6 +1366,9 @@ services:
     - SMTP_FROM_ADDRESS=noreply@your.domain.dom
     # Don't change this one!
     - ENABLE_CRON=1
+    tmpfs:
+    # PHP.ini 'session.save_path'
+    - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
     depends_on:
       mysql:
         condition: service_healthy
