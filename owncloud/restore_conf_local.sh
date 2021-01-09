@@ -7,13 +7,11 @@ set -eu
 
 # copy backup of conf dirs if mounted volume is empty
 
-# if [ ! "$(ls -U "${d}")" ]; then
-if ! ls -U /var/www/owncloud/config/* > /dev/null 2>&1; then
+if [ -z "$(ls -AUq -- /var/www/owncloud/config/ 2> /dev/null)" ]; then
 	tar xzf /owncloud-config.tgz -C /var/www/owncloud
 fi
 
-# if [ ! "$(ls -U "${d}")" ]; then
-if ! ls -U /var/www/owncloud/apps/* > /dev/null 2>&1; then
+if [ -z "$(ls -AUq -- /var/www/owncloud/apps/ 2> /dev/null)" ]; then
 	tar xzf /owncloud-apps.tgz -C /var/www/owncloud
 fi
 

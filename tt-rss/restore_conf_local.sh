@@ -7,8 +7,7 @@ set -eu
 
 # copy backup of conf dirs if mounted volume is empty
 
-# if [ ! "$(ls -U "${d}")" ]; then
-if ! ls -U /var/www/html/update.php > /dev/null 2>&1; then
+if [ ! -f /var/www/html/update.php ]; then
 	#tar xzf /ttrss.tgz -C /var/www
 	cp -a /usr/src/tt-rss/* /var/www/html/
 	#cp -a /usr/src/tt-rss/.git* /var/www/html/

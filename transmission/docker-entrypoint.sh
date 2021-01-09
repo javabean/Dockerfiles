@@ -15,8 +15,7 @@ if [ "$1" = 'transmission-daemon' -o "$1" = '/usr/bin/transmission-daemon' ]; th
 
 	TRANSMISSION_EXTRA_ARGS=
 
-	# if [ ! "$(ls -U "${d}")" ]; then
-	if ! ls -U "${TRANSMISSION_HOME}"/* > /dev/null 2>&1; then
+	if [ -z "$(ls -AUq -- "${TRANSMISSION_HOME}" 2> /dev/null)" ]; then
 		tar xzf /var/lib/transmission-daemon.tgz -C /var/lib
 		TRANSMISSION_EXTRA_ARGS="--log-info --blocklist --username transmission --password transmission --allowed 127.0.0.*,192.168.*.*,172.16.*.*,172.17.*.*,172.18.*.*,172.19.*.*,172.2*.*,172.30.*.*,172.31.*.*,10.*.*.* --dht --lpd --utp --no-portmap --encryption-preferred --watch-dir ${TRANSMISSION_HOME}/torrents --incomplete-dir ${TRANSMISSION_HOME}/incomplete --download-dir ${TRANSMISSION_HOME}/downloads"
 	fi

@@ -7,18 +7,15 @@ set -eu
 # copy backup of conf dirs if mounted volume is empty
 
 for d in data conf; do
-	# if [ ! "$(ls -U "/var/www/html/${d}")" ]; then
-	if ! ls -U "/var/www/html/${d}"/* > /dev/null 2>&1; then
+	if [ -z "$(ls -AUq -- "/var/www/html/${d}" 2> /dev/null)" ]; then
 		tar xzf /var/www/${d}.tgz -C /var/www/html
 	fi
 done
 
-# if [ ! "$(ls -U "/var/www/html/${d}")" ]; then
-if ! ls -U "/var/www/html/lib/plugins"/* > /dev/null 2>&1; then
+if [ -z "$(ls -AUq -- "/var/www/html/lib/plugins" 2> /dev/null)" ]; then
 	tar xzf /var/www/lib-plugins.tgz -C /var/www/html/lib
 fi
 
-# if [ ! "$(ls -U "/var/www/html/${d}")" ]; then
-if ! ls -U "/var/www/html/lib/tpl"/* > /dev/null 2>&1; then
+if [ -z "$(ls -AUq -- "/var/www/html/lib/tpl" 2> /dev/null)" ]; then
 	tar xzf /var/www/lib-tpl.tgz -C /var/www/html/lib
 fi

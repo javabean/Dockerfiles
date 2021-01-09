@@ -34,8 +34,7 @@ if [ "$1" = "tiddlywiki" ]; then
 	TLS_KEY="${TLS_KEY:-}"
 	DEBUG_LEVEL="${DEBUG_LEVEL:-none}"
 
-	# if [ ! "$(ls -U "${d}")" ]; then
-	if ! ls -U /srv/"${WIKI_FOLDER}" > /dev/null 2>&1; then
+	if [ -z "$(ls -AUq -- /srv/"${WIKI_FOLDER}" 2> /dev/null)" ]; then
 		echo "Creating new wiki: \"${WIKI_FOLDER}\""
 		tiddlywiki /srv/"${WIKI_FOLDER}" --init server
 		# https://tiddlywiki.com/static/Using%2520the%2520integrated%2520static%2520file%2520server.html

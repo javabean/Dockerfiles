@@ -8,13 +8,11 @@ set -e -o pipefail -o posix
 
 # copy backup of conf dirs if mounted volume is empty
 
-# if [ ! "$(ls -U "/var/www/html/wp-content/")" ]; then
-if ! ls -U /var/www/html/wp-content/* > /dev/null 2>&1; then
+if [ -z "$(ls -AUq -- "/var/www/html/wp-content/" 2> /dev/null)" ]; then
 	tar xzf /var/www/wp-content.tgz -C /var/www/html
 fi
 
-# if [ ! "$(ls -U "/var/www/html/wp-includes/languages/")" ]; then
-if ! ls -U /var/www/html/wp-includes/languages/* > /dev/null 2>&1; then
+if [ -z "$(ls -AUq -- "/var/www/html/wp-includes/languages/" 2> /dev/null)" ]; then
 	[ -f /var/www/wp-includes-languages.tgz ] && tar xzf /var/www/wp-includes-languages.tgz -C /var/www/html
 fi
 

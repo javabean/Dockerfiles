@@ -7,7 +7,6 @@ set -eu
 
 # copy backup of conf dirs if mounted volume is empty
 
-# if [ ! "$(ls -U "${d}")" ]; then
-if ! ls -U /var/www/* > /dev/null 2>&1; then
+if [ -z "$(ls -AUq -- /var/www/ 2> /dev/null)" ]; then
 	cp -a /var/www.bak/. /var/www/
 fi
