@@ -1,7 +1,9 @@
 ARG DOCKER_FROM_TAG=production-apache
 #ARG DOCKER_FROM_TAG=stable-apache
 FROM nextcloud:${DOCKER_FROM_TAG}
-LABEL org.opencontainers.image.authors="Cédrik LIME"
+LABEL org.opencontainers.image.title="Nextcloud" \
+      org.opencontainers.image.version="${DOCKER_FROM_TAG}" \
+      org.opencontainers.image.authors="Cédrik LIME"
 
 # https://github.com/nextcloud/docker
 # https://github.com/nextcloud/docker/tree/master/.examples

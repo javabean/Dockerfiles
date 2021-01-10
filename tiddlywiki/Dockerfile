@@ -1,5 +1,6 @@
 FROM cedrik/baseimage:18.04
-LABEL org.opencontainers.image.authors="Cédrik LIME"
+LABEL org.opencontainers.image.title="TiddlyWiki" \
+      org.opencontainers.image.authors="Cédrik LIME"
 
 COPY docker-entrypoint.sh consul-healthcheck.sh  /usr/local/bin/
 

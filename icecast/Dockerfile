@@ -1,5 +1,6 @@
 FROM alpine:latest
-LABEL org.opencontainers.image.authors="Cédrik LIME"
+LABEL org.opencontainers.image.title="Icecast" \
+      org.opencontainers.image.authors="Cédrik LIME"
 
 RUN apk add --no-cache icecast mailcap
 
@@ -11,5 +12,4 @@ EXPOSE 8000 8001 8080 8443
 
 USER icecast
 
-#ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["icecast", "-c", "/etc/icecast.xml"]

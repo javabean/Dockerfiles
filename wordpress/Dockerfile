@@ -1,7 +1,8 @@
 #FROM wordpress:latest
 #FROM php:7.3-apache
 FROM cedrik/php7-base:latest
-LABEL org.opencontainers.image.authors="Cédrik LIME"
+LABEL org.opencontainers.image.title="WordPress" \
+      org.opencontainers.image.authors="Cédrik LIME"
 
 # https://hub.docker.com/_/wordpress/
 # https://wordpress.org/support/article/editing-wp-config-php/

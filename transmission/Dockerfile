@@ -1,6 +1,7 @@
 #FROM ubuntu:latest
 FROM cedrik/baseimage:18.04
-LABEL org.opencontainers.image.authors="Cédrik LIME"
+LABEL org.opencontainers.image.title="Transmission" \
+      org.opencontainers.image.authors="Cédrik LIME"
 
 ENV TRANSMISSION_HOME=/var/lib/transmission-daemon
 

@@ -1,5 +1,6 @@
 FROM alpine:latest
-LABEL org.opencontainers.image.authors="Cédrik LIME"
+LABEL org.opencontainers.image.title="DarkIce" \
+      org.opencontainers.image.authors="Cédrik LIME"
 
 # alsa-utils
 RUN apk add --no-cache darkice \
@@ -7,5 +8,4 @@ RUN apk add --no-cache darkice \
 
 USER nobody:audio
 
-#ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
 CMD ["darkice", "-c", "/etc/darkice.cfg"]

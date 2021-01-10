@@ -1,7 +1,16 @@
 #FROM owncloud:latest
 #FROM php:7.3-apache
 FROM cedrik/php7-base:latest
-LABEL org.opencontainers.image.authors="Cédrik LIME"
+
+############### FIXME  change depending on base OS / version! ###############
+# https://owncloud.org/release-channels/
+#ARG OWNCLOUD_VERSION=10.5.0
+#ARG OWNCLOUD_VERSION=stable
+ARG OWNCLOUD_VERSION=production
+
+LABEL org.opencontainers.image.title="ownCloud" \
+      org.opencontainers.image.version="${OWNCLOUD_VERSION}" \
+      org.opencontainers.image.authors="Cédrik LIME"
 
 # see https://github.com/docker-library/owncloud/blob/master/9.1/apache/Dockerfile
 # https://doc.owncloud.org/server/10.0/admin_manual/installation/source_installation.html#prerequisites
@@ -11,12 +20,6 @@ LABEL org.opencontainers.image.authors="Cédrik LIME"
 COPY owncloud.conf /etc/apache2/conf-enabled/
 COPY logrotate-owncloud-dump /etc/logrotate.d/owncloud-dump
 COPY backup_conf_local.sh restore_conf_local.sh ownCloudUpgrade.sh  /usr/local/bin/
-
-############### FIXME  change depending on base OS / version! ###############
-# https://owncloud.org/release-channels/
-#ARG OWNCLOUD_VERSION=10.5.0
-#ARG OWNCLOUD_VERSION=stable
-ARG OWNCLOUD_VERSION=production
 
 #RUN echo "deb https://download.owncloud.org/download/repositories/${OWNCLOUD_VERSION}/prod/`lsb_release -is`_`lsb_release -rs`/ /" >> /etc/apt/sources.list.d/owncloud.list
 #RUN curl -fsSL https://download.owncloud.org/download/repositories/${OWNCLOUD_VERSION}/prod/`lsb_release -is`_`lsb_release -rs`/Release.key | apt-key add -

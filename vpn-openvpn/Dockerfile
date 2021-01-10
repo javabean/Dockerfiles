@@ -1,5 +1,6 @@
 FROM cedrik/baseimage:18.04
-LABEL org.opencontainers.image.authors="Cédrik LIME"
+LABEL org.opencontainers.image.title="OpenVPN" \
+      org.opencontainers.image.authors="Cédrik LIME"
 
 COPY 60-ipsec.conf /etc/sysctl.d/
 COPY docker-entrypoint.sh consul-healthcheck.sh newClient.sh revokeClient.sh openvpn-status.sh  /usr/local/bin/

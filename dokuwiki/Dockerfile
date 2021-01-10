@@ -1,14 +1,17 @@
 #FROM php:7.3-apache
 FROM cedrik/php7-base:latest
-LABEL org.opencontainers.image.authors="Cédrik LIME"
-
-# https://www.dokuwiki.org/
 
 ############### FIXME  change version here! ###############
 #ARG DOKUWIKI_VERSION=2018-04-22c
 ARG DOKUWIKI_VERSION=stable
 # Languages to keep (delete all others)
 ARG STRIP_LANGS_KEEP=
+
+LABEL org.opencontainers.image.title="Dokuwiki" \
+      org.opencontainers.image.version="${DOKUWIKI_VERSION}" \
+      org.opencontainers.image.authors="Cédrik LIME"
+
+# https://www.dokuwiki.org/
 
 
 COPY dokuwiki.conf /etc/apache2/conf-enabled/

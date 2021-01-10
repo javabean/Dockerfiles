@@ -2,7 +2,9 @@
 ARG DOCKER_FROM_VERSION=9-jdk11-openjdk-slim
 
 FROM tomcat:${DOCKER_FROM_VERSION}
-LABEL org.opencontainers.image.authors="Cédrik LIME"
+LABEL org.opencontainers.image.title="Tomcat" \
+      org.opencontainers.image.version="${DOCKER_FROM_VERSION}" \
+      org.opencontainers.image.authors="Cédrik LIME"
 
 # Create "tomcat" user
 RUN	if ! getent group "tomcat" > /dev/null 2>&1 ; then \

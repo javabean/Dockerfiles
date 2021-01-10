@@ -1,5 +1,6 @@
 FROM cedrik/baseimage:18.04
-LABEL org.opencontainers.image.authors="Cédrik LIME"
+LABEL org.opencontainers.image.title="email relay" \
+      org.opencontainers.image.authors="Cédrik LIME"
 
 #RUN ln -sf /bin/sv /etc/init.d/postfix
 #RUN ln -sf /bin/sv /etc/init.d/opendkim
