@@ -6,13 +6,13 @@ set -u
 #shopt -s failglob
 #set -x
 
-# node process
-num_processes=`pgrep -cx node`
+# apache2 process
+num_processes=`pgrep -cx apache2`
 if [ "$num_processes" -eq 0 ]; then
-	echo "No node process!"
+	echo "No apache2 process!"
 	exit 2
 fi
 
-curl -fsS -o /dev/null http://localhost:8080 || exit 2
+curl -fsS -o /dev/null --connect-timeout 1 --max-time 10 http://localhost || exit 2
 
 exit 0

@@ -44,5 +44,4 @@ function cleanup()
 #cleanup /home/user2/htdocs/mywiki/data  180
 #cleanup /var/www/superwiki/data         180
 
-cleanup /var/www/html 180
-
+cleanup /var/www/html/data 180

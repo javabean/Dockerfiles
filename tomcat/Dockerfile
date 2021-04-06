@@ -1,7 +1,7 @@
-############### FIXME  change version here! ###############
 ARG DOCKER_FROM_VERSION=9-jdk11-openjdk-slim
 
 FROM tomcat:${DOCKER_FROM_VERSION}
+ARG DOCKER_FROM_VERSION=9-jdk11-openjdk-slim
 LABEL org.opencontainers.image.title="Tomcat" \
       org.opencontainers.image.version="${DOCKER_FROM_VERSION}" \
       org.opencontainers.image.authors="Cédrik LIME"

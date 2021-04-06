@@ -10,9 +10,9 @@ unexport IMG_VERSION = 0.11.0.1
 include .env
 #export $(shell sed 's/=.*//' .env)
 
-DOCKER_APT_VERSION = 19.03.*
+DOCKER_APT_VERSION = 20.10.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.27.4
+DOCKER_COMPOSE_VERSION = 1.28.6
 
 DOCKER_FROM_IMAGE ?= ubuntu
 DOCKER_FROM_VERSION ?= 18.04
@@ -54,12 +54,18 @@ help: ## Display this help menu
 pull: ## pull base Docker images from Docker Hub
 	docker image pull $(DOCKER_FROM)
 	#docker-compose pull
-	#docker image pull memcached:1.5-alpine
+	#docker image pull memcached:1.6-alpine
 	docker image pull redis:5-alpine
 	#docker image pull silverwind/droppy
-	#docker image pull portainer/portainer
+	#docker image pull portainer/portainer-ce
 	#docker image pull certbot/certbot
 	#docker image pull traefik:$(TRAEFIK_VERSION)
+	#docker image pull nextcloud:production-apache
+	docker image pull node:lts-alpine
+	#docker image pull python:3.8-slim
+	#docker image pull tomat:9-jdk11-openjdk-slim
+	docker image pull docker:20.10
+	docker image pull php:7.4-apache
 
 .PHONY: build
 build: ## build all Docker images
@@ -75,19 +81,19 @@ httpd-base: ## build Docker base Apache httpd image
 httpd-base: baseimage
 	docker image build --build-arg MOD_MAXMINDDB_VERSION=$(MOD_MAXMINDDB_VERSION) -t cedrik/httpd-base --rm apache-base
 
-.PHONY: php7-base
-php7-base: ## build Docker base PHP 7 image (Apache httpd-based) with MySQL client
-php7-base: httpd-base
-	docker image build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php7-base --rm php7-base
+.PHONY: php7-apache
+php7-apache: ## build Docker base PHP 7 image (Apache httpd-based) with MySQL client
+php7-apache:
+	docker image build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php7-apache --rm php7-apache
 
 
 $(docker_compose_build): baseimage
 	docker-compose build $@
 
 http-proxy: httpd-base
-owncloud wordpress dokuwiki tt-rss: php7-base
+owncloud wordpress dokuwiki tt-rss: php7-apache
 #owncloud: memcached-owncloud redis-owncloud
-owncloud wordpress: mysql email-relay
+owncloud wordpress: email-relay
 dokuwiki: email-relay
 openvpn: web-accelerator
 

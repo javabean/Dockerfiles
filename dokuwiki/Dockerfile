@@ -1,8 +1,8 @@
-#FROM php:7.3-apache
-FROM cedrik/php7-base:latest
+#FROM php:7.4-apache
+FROM cedrik/php7-apache:latest
 
 ############### FIXME  change version here! ###############
-#ARG DOKUWIKI_VERSION=2018-04-22c
+#ARG DOKUWIKI_VERSION=2020-07-29
 ARG DOKUWIKI_VERSION=stable
 # Languages to keep (delete all others)
 ARG STRIP_LANGS_KEEP=
@@ -15,79 +15,59 @@ LABEL org.opencontainers.image.title="Dokuwiki" \
 
 
 COPY dokuwiki.conf /etc/apache2/conf-enabled/
-COPY backup_conf_local.sh restore_conf_local.sh upgrade-dokuwiki.sh cleanup.sh  /usr/local/bin/
+COPY bin/* /usr/local/bin/
+COPY init.d/* /usr/local/etc/init.d/
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-	libapache2-mod-xsendfile \
-	php7.3-zip php7.3-bz2 \
-	libpng16-16 libjpeg62 libjpeg8 libjpeg-turbo8 libjpeg9 php7.3-gd \
-	php7.3-curl libxml2 php7.3-xml openssl php7.3-soap \
-	php7.3-json php7.3-intl \
-# we need sudo to upgrade DokuWiki via CLI
-	sudo \
-	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-	&& for m in "rewrite"; do a2enmod $m; done \
-	# PHP configuration: https://www.dokuwiki.org/install:php
-	&& sed -i'.bak' \
-		-e 's%\(register_globals\) = .*%\1 = Off%' \
-		-e 's%\(zlib.output_compression\) = .*%\1 = Off%' \
-		-e 's%\(implicit_flush\) = .*%\1 = Off%' \
-		-e 's%\(allow_call_time_pass_reference\) = .*%\1 = Off%' \
-		-e 's%\(max_execution_time\) = .*%\1 = 30%' \
-		-e 's%\(max_input_time\) = .*%\1 = 60%' \
-		-e 's%; \(max_input_vars\) = .*%\1 = 10000%' \
-		-e 's%\(memory_limit\) = .*M%\1 = 32M%' \
-		-e 's%\(error_reporting\) = .*%\1 = E_ALL \& ~E_NOTICE%' \
-		-e 's%\(display_errors\) = .*%\1 = Off%' \
-		-e 's%\(display_startup_errors\) = .*%\1 = Off%' \
-#		-e 's%\(log_errors\) = .*%\1 = On%' \
-		-e 's%\(variables_order\) = .*%\1 = "EGPCS"%' \
-		-e 's%\(register_argc_argv\) = .*%\1 = Off%' \
-		-e 's%\(magic_quotes_gpc\) = .*%\1 = Off%' \
-		-e 's%\(magic_quotes_runtime\) = .*%\1 = Off%' \
-		-e 's%\(magic_quotes_sybase\) = .*%\1 = Off%' \
-		-e 's%\(file_uploads\) = .*%\1 = On%' \
-		-e 's%\(upload_max_filesize\) = .*M%\1 = 15M%' \
-		-e 's%\(post_max_size\) = .*M%\1 = 15M%' \
-		-e 's%\(session.use_cookies\) = .*%\1 = 1%' \
-#		-e 's%\(session.cache_limiter\) = .*%\1 = nocache%' \
-		/etc/php/7.3/apache2/php.ini
-
-# set recommended PHP.ini settings
-# see https://secure.php.net/manual/en/opcache.installation.php
-#RUN { \
-#		echo 'opcache.memory_consumption=128'; \
-#		echo 'opcache.interned_strings_buffer=8'; \
-#		echo 'opcache.max_accelerated_files=4000'; \
-#		echo 'opcache.revalidate_freq=60'; \
-#		echo 'opcache.fast_shutdown=1'; \
-#		echo 'opcache.enable_cli=1'; \
-#	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
-
-#RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \
-#	&& docker-php-ext-install gd
+RUN a2enmod rewrite \
+  && install-php-extensions gd openssl xml \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  && docker-php-source delete \
+  && { \
+       echo '; https://www.dokuwiki.org/install:php'; \
+       echo ''; \
+       echo 'short_open_tag = Off'; \
+       echo 'output_buffering = Off'; \
+       echo 'output_handler ='; \
+       echo 'zlib.output_compression = Off'; \
+       echo 'implicit_flush = Off'; \
+       echo 'allow_call_time_pass_reference = Off'; \
+       echo 'max_execution_time = 30'; \
+       echo 'max_input_time = 60'; \
+       echo 'max_input_vars = 10000'; \
+       echo 'memory_limit = 32M'; \
+       echo 'error_reporting = E_ALL & ~E_NOTICE'; \
+       echo 'display_errors = Off'; \
+       echo 'display_startup_errors = Off'; \
+       echo 'log_errors = On'; \
+       echo 'error_log = /dev/stdout'; \
+       echo 'variables_order = “EGPCS”'; \
+       echo 'register_argc_argv = Off'; \
+       echo 'magic_quotes_gpc = Off'; \
+       echo 'magic_quotes_runtime = Off'; \
+       echo 'magic_quotes_sybase = Off'; \
+       echo 'file_uploads = On'; \
+       echo 'upload_max_filesize = 16M'; \
+       echo 'upload_max_filesize = 32M'; \
+       echo 'session.use_cookies = 1'; \
+       echo 'session.use_only_cookies = 1'; \
+       echo 'session.cache_limiter = private_no_expire'; \
+    } > ${PHP_INI_DIR}/conf.d/dokuwiki.ini
 
 RUN curl -fsSL https://download.dokuwiki.org/src/dokuwiki/dokuwiki-${DOKUWIKI_VERSION}.tgz | tar xz -C /var/www/html/ --strip-components=1 \
-	&& mv /var/www/html/index.html /var/www/html/index.html.bak \
 	&& cp -a /var/www/html/.htaccess.dist /var/www/html/.htaccess \
-	&& chown www-data:www-data -R /var/www/html/ \
 	&& chmod +x /var/www/html/bin/*.php \
 	&& find /var/www/html -name '_dummy' -delete \
 	&& rm /var/www/html/README /var/www/html/COPYING \
-	&& if [ -n "$STRIP_LANGS_KEEP" ]; then /var/www/html/bin/striplangs.php -k "${STRIP_LANGS_KEEP}" ; fi \
+	&& if [ -n "${STRIP_LANGS_KEEP}" ]; then /var/www/html/bin/striplangs.php -k "${STRIP_LANGS_KEEP}" ; fi \
+	&& chown www-data:www-data -R /var/www/html/data /var/www/html/lib/plugins /var/www/html/lib/tpl /var/www/html/conf \
 # copy conf dirs to enable populating empty volumes (see runit_apache2)
-	&& /usr/local/bin/backup_conf.sh
+	&& /usr/local/bin/backup_conf_local.sh
 
 #COPY --chown=www-data:www-data preload.php /var/www/html/inc/preload.php
 
 # min[0-59] hour[0-23] dom[1-31] month[1-12] dow[0-7]  command
-#RUN crontab -u www-data -l | { cat; echo "7  0  *  *  * /usr/local/bin/cleanup.sh > /dev/null 2>&1"; } | crontab -u www-data -
-RUN echo "7  0  *  *  * /usr/local/bin/cleanup.sh > /dev/null 2>&1" | crontab -u www-data -
+#RUN busybox crontab -u www-data -l | { cat; echo "7  0  *  *  * /usr/local/bin/cleanup.sh > /dev/null 2>&1"; } | busybox crontab -u www-data -
+RUN echo "7  0  *  *  * /usr/local/bin/cleanup.sh > /dev/null 2>&1" | busybox crontab -u www-data -
 
 #VOLUME ["/var/log"]
 #VOLUME ["/var/www/html/data", "/var/www/html/conf", "/var/www/html/lib/plugins", "/var/www/html/lib/tpl"]
-
-EXPOSE 80 443
-
-ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
-CMD ["/usr/local/bin/apache2-foreground"]

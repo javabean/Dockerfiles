@@ -5,7 +5,7 @@ set -eu
 #shopt -s failglob
 #set -x
 
-## copy conf dirs to enable populating empty volumes (see restore_conf.sh)
-#tar czf /ttrss.tgz -C /var/www html
-
-:
+# Launch cron in background. Poor man's solution...
+if [ -n "${ENABLE_CRON:-}" ]; then
+	busybox crond -b -l 8 -L /dev/stdout
+fi

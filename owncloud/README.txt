@@ -8,7 +8,7 @@ Who? (dependencies)
 ===================
 
     links:
-    #- mysql:mysql
+    - mysql:mysql
     #- memcached-owncloud:memcached
     - redis-owncloud:redis
     - email-relay:email-relay
@@ -25,15 +25,14 @@ Exposes APC cache statistics on URL `/apc.php`
 Where? (volumes)
 ================
 
-Mount configuration folder in /var/www/owncloud/config  
+Mount configuration folder in /var/www/html/config  
 Mount data into /srv/owncloud/data (owncloud data) and /srv/owncloud/backup (SQLite backups)
 
 Will automatically backup SQLite DB daily if file /srv/owncloud/backup/owncloud-dump.sql.gz exists
 
     volumes:
-    - /srv/owncloud/acme-challenge/.well-known:/var/www/owncloud/.well-known
-    - /opt/owncloud/config:/var/www/owncloud/config
-    - /opt/owncloud/apps:/var/www/owncloud/apps2
+    - /opt/owncloud/config:/var/www/html/config
+    - /opt/owncloud/apps:/var/www/html/apps-external
     - /opt/owncloud/ip-restriction.conf:/etc/apache2/conf-enabled/ip-restriction.conf:ro
     - /srv/owncloud:/srv/owncloud
     - /srv/logs/owncloud:/var/log

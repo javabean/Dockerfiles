@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+(set -o | grep -q pipefail) && set -o pipefail
+(set -o | grep -q posix) && set -o posix
+#shopt -s failglob
+#set -x
+
+# Apache gets grumpy about PID files pre-existing
+rm -f ${APACHE_LOG_DIR:-/usr/local/apache2/logs}/httpd.pid ${APACHE_RUN_DIR:-/var/run/apache2}/apache2.pid
+# ssl_scache shouldn't be here if we're just starting up.
+# (this is bad if there are several apache2 instances running)
+rm -f ${APACHE_RUN_DIR:-/var/run/apache2}/*ssl_scache*

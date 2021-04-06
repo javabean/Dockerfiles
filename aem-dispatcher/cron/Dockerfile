@@ -1,5 +1,5 @@
 #FROM alpine:latest
-FROM docker:stable
+FROM docker:20.10
 LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 COPY launch-httpd-rewritemap-update /usr/local/bin/

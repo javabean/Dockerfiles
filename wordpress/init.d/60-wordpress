@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+(set -o | grep -q pipefail) && set -o pipefail
+(set -o | grep -q posix) && set -o posix
+#shopt -s failglob
+#set -x
+
+# We are not being run (the user probably asked for a shell)
+if [ -z "${WORDPRESS_DB_HOST:-}" ]; then
+	exit
+fi
+
+
+# copy backup of conf dirs if mounted volume is empty
+
+if [ -z "$(ls -AUq -- "/var/www/html/wp-content/" 2> /dev/null)" ]; then
+	cp -a /usr/src/wordpress/wp-content/. /var/www/html/wp-content/
+fi

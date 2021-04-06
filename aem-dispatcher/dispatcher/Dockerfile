@@ -1,5 +1,6 @@
 FROM httpd:2.4
-LABEL org.opencontainers.image.authors="Cédrik LIME"
+LABEL org.opencontainers.image.title="Dispatcher" \
+      org.opencontainers.image.authors="Cédrik LIME"
 
 ############### FIXME  change URL here! ###############
 ARG DISPATCHER_URL=https://download.macromedia.com/dispatcher/download/dispatcher-apache2.4-linux-x86_64-4.3.3.tar.gz

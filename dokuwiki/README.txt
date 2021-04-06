@@ -29,7 +29,6 @@ To save your blog configuration, plugins, templates & data, mount volumes in
 	/var/www/html/data
 
     volumes:
-    - /srv/dokuwiki/acme-challenge/.well-known:/var/www/html/.well-known
     - /srv/dokuwiki/conf:/var/www/html/conf
     - /srv/dokuwiki/lib/plugins:/var/www/html/lib/plugins
     - /srv/dokuwiki/lib/tpl:/var/www/html/lib/tpl

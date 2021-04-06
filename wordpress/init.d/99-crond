@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+(set -o | grep -q pipefail) && set -o pipefail
+(set -o | grep -q posix) && set -o posix
+#shopt -s failglob
+#set -x
+
+# Launch cron in background. Poor man's solution...
+if [ -n "${ENABLE_CRON:-}" ]; then
+	busybox crond -b -l 8 -L /dev/stdout
+fi

@@ -1,6 +1,7 @@
-#!/bin/bash
-set -eu -o pipefail -o posix
-shopt -s failglob
+#!/bin/sh
+set -eu
+#set -o pipefail -o posix
+#shopt -s failglob
 #set -x
 
 # this if will check if the first argument is a flag

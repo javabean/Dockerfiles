@@ -12,39 +12,38 @@ services:
     labels:
       - "traefik.enable=false"
     #expose:
-    ## Consul agent ports
-    #- "8301"
-    #- "8301/udp"
-    ##- "8400"
-    ##- "8500"
+      ## Consul agent ports
+      #- "8301"
+      #- "8301/udp"
+      ##- "8400"
+      ##- "8500"
     environment:
-    # please note that SYSLOG requires read_only: false (as it needs creating /dev/log) for Docker < 17.12.0
-    #- ENABLE_SYSLOG=1
-    #- ENABLE_CRON=1
-    #- ENABLE_CONSUL=1
-    # Force PHP/Symfony, NodeJS & Ruby on Rails applications to production
-    - APP_ENV=prod
-    - APP_DEBUG=0
-    - NODE_ENV=production
-    - RAILS_ENV=production
+      # please note that SYSLOG requires read_only: false (as it needs creating /dev/log) for Docker < 17.12.0
+      #- ENABLE_SYSLOG=1
+      #- ENABLE_CRON=1
+      #- ENABLE_CONSUL=1
+      # Force PHP/Symfony, NodeJS, Ruby on Rails & Elixir applications to production
+      - APP_ENV=prod
+      - APP_DEBUG=0
+      - NODE_ENV=production
+      - RAILS_ENV=production
+      - MIX_ENV=prod
     tmpfs:
-    # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
-    - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
-    - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k,mode=1777
-    #- /var/log
-    #- /var/cache
-    #- /var/tmp
-    - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
-    # PHP.ini 'session.save_path'
-    #- /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
-    # required for syslog
-    #- /var/lib/syslog-ng:rw,nosuid,nodev,noexec,relatime,size=16k
-    # required for logrotate
-    - /var/lib/logrotate:rw,nosuid,nodev,noexec,relatime,size=16k
-    # mount work dir for runit
-    - /var/lib/runit-sv:rw,suid,nodev,exec,size=1024k
-    # mount work dir for consul
-    #- /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
+      # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
+      - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
+      - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k,mode=1777
+      #- /var/log
+      #- /var/cache
+      #- /var/tmp
+      - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
+      # required for syslog
+      #- /var/lib/syslog-ng:rw,nosuid,nodev,noexec,relatime,size=16k
+      # required for logrotate
+      - /var/lib/logrotate:rw,nosuid,nodev,noexec,relatime,size=16k
+      # mount work dir for runit
+      - /var/lib/runit-sv:rw,suid,nodev,exec,size=1024k
+      # mount work dir for consul
+      #- /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
     #shm_size: 64M
     logging:
       driver: "json-file"
@@ -58,7 +57,21 @@ services:
     mem_swappiness: 1
     #mem_reservation: 128m
     read_only: true
-    restart: "no"
+    #restart: "no"
+    restart: unless-stopped
+
+  base-php-service:
+    extends:
+      service: base-service
+    build: .
+    init: true
+    expose:
+      - "80"
+    #environment:
+      #- ENABLE_CRON=1
+    tmpfs:
+      # PHP.ini 'session.save_path'
+      - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
 
 ########################################################################
 
@@ -66,9 +79,9 @@ services:
   traefik:
     extends:
       service: base-service
-    image: traefik:${TRAEFIK_VERSION:-2.3}
+    image: traefik:${TRAEFIK_VERSION:-2.4}
     init: true
-    # https://docs.traefik.io/v2.3/reference/dynamic-configuration/docker/
+    # https://docs.traefik.io/v2.4/reference/dynamic-configuration/docker/
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik-http.rule=Host(`traefik.docker.localhost`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
@@ -105,6 +118,7 @@ services:
       - "traefik.http.middlewares.std-headers.headers.framedeny=true"
       - "traefik.http.middlewares.std-headers.headers.customFrameOptionsValue=sameorigin"
       - "traefik.http.middlewares.std-headers.headers.stspreload=false"
+      - "traefik.http.middlewares.std-headers.headers.customrequestheaders.Proxy=" # https://httpoxy.org
       #- "traefik.http.middlewares.std-headers.headers.customresponseheaders.name0=foobar"
       - >-
           traefik.http.middlewares.std-ipwhitelist.ipwhitelist.sourcerange=192.168.0.0/16, 172.16.0.0/12,
@@ -112,13 +126,15 @@ services:
       - "traefik.http.middlewares.403.ipwhitelist.sourcerange=127.1.2.7"
       - "traefik.http.middlewares.defaultchain-http.chain.middlewares=std-headers,redirect"
       - "traefik.http.middlewares.defaultchain-https.chain.middlewares=std-headers,compress"
-      - "traefik.tls.options.default.minVersion=VersionTLS12"
-      #- "traefik.tls.options.default.sniStrict=true"
+      # The file provider is the only available method to configure the certificates (as well as the options and the stores).
+      # https://doc.traefik.io/traefik/v2.4/https/tls/
+      #- "traefik.tls.options.default.minVersion=VersionTLS12"
+      ##- "traefik.tls.options.default.sniStrict=true"
       #- "traefik.docker.network=default"
       
       # To disallow /admin path, one can not simply use negative lookaround:
       #   "traefik.http.routers.http.rule=Host(`example.com`) && PathPrefix(`/{re:(?!admin|manager).*}/`)"
-      # because: (?!re)	before text not matching re (NOT SUPPORTED) (https://github.com/google/re2/wiki/Syntax)
+      # because: (?!re) before text not matching re (NOT SUPPORTED) (https://github.com/google/re2/wiki/Syntax)
       # Workaround (ugly, but it works): use deny-all middleware:
       # # Allow general traffic (low prioriy rule)
       # - "traefik.http.routers.http.rule=Host(`example.com`)"
@@ -133,56 +149,57 @@ services:
       # - "traefik.http.routers.my-407.priority=65535"
       # - "traefik.http.routers.my-407.middlewares=std-ipwhitelist,defaultchain-https"
     expose:
-    - "8080"
+      - "8080"
     ports:
-    - "80:80"
-    - "443:443"
+      - "80:80"
+      - "443:443"
     environment:
-    # https://docs.traefik.io/v2.3/reference/static-configuration/env/
-    - TRAEFIK_GLOBAL_CHECKNEWVERSION=false
-    - TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE=false
-    - TRAEFIK_PROVIDERS_PROVIDERSTHROTTLEDURATION=2
-    - TRAEFIK_PROVIDERS_DOCKER=true
-    - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
-    #- TRAEFIK_PROVIDERS_DOCKER_NETWORK=
-    - TRAEFIK_API=true
-    - TRAEFIK_API_DASHBOARD=true
-    - TRAEFIK_PING=true
-    - TRAEFIK_PING_ENTRYPOINT=http
-    - TRAEFIK_ENTRYPOINTS_traefik=true
-    - TRAEFIK_ENTRYPOINTS_traefik_ADDRESS=:8080
-    - TRAEFIK_ENTRYPOINTS_http=true
-    - TRAEFIK_ENTRYPOINTS_http_ADDRESS=:80
-    - TRAEFIK_ENTRYPOINTS_https=true
-    - TRAEFIK_ENTRYPOINTS_https_ADDRESS=:443
-    - TRAEFIK_ENTRYPOINTS_https_HTTP_TLS=true
-    - TRAEFIK_ENTRYPOINTS_https_HTTP_TLS_CERTRESOLVER=letsencrypt
-    # see "traefik.tls.options.default.xxx" in Docker labels
-    - TRAEFIK_ENTRYPOINTS_https_HTTP_TLS_OPTIONS=default
-    - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt=true
-    #- TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_EMAIL=me@example.com
-    #- TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_TLSCHALLENGE=true
-    - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_HTTPCHALLENGE=true
-    - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_HTTPCHALLENGE_ENTRYPOINT=http
-    - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_STORAGE=/acme.json
-    - TRAEFIK_LOG=true
-    # PANIC, FATAL, ERROR, WARN, INFO, DEBUG
-    - TRAEFIK_LOG_LEVEL=WARN
-    #- TRAEFIK_ACCESSLOG=true
-    #- TRAEFIK_ACCESSLOG_BUFFERINGSIZE=100
-    #- TRAEFIK_ACCESSLOG_FILTERS_MINDURATION=500ms
-    #- TRAEFIK_ACCESSLOG_FILTERS_STATUSCODES="200, 300-302"
-    - TRAEFIK_SERVERSTRANSPORT_INSECURESKIPVERIFY=true
+      # https://docs.traefik.io/v2.4/reference/static-configuration/env/
+      - TRAEFIK_GLOBAL_CHECKNEWVERSION=false
+      - TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE=false
+      - TRAEFIK_PROVIDERS_PROVIDERSTHROTTLEDURATION=2
+      - TRAEFIK_PROVIDERS_DOCKER=true
+      - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
+      #- TRAEFIK_PROVIDERS_DOCKER_NETWORK=
+      - TRAEFIK_API=true
+      - TRAEFIK_API_DASHBOARD=true
+      - TRAEFIK_PILOT_DASHBOARD=false
+      - TRAEFIK_PING=true
+      - TRAEFIK_PING_ENTRYPOINT=http
+      - TRAEFIK_ENTRYPOINTS_traefik=true
+      - TRAEFIK_ENTRYPOINTS_traefik_ADDRESS=:8080
+      - TRAEFIK_ENTRYPOINTS_http=true
+      - TRAEFIK_ENTRYPOINTS_http_ADDRESS=:80
+      - TRAEFIK_ENTRYPOINTS_https=true
+      - TRAEFIK_ENTRYPOINTS_https_ADDRESS=:443
+      - TRAEFIK_ENTRYPOINTS_https_HTTP_TLS=true
+      - TRAEFIK_ENTRYPOINTS_https_HTTP_TLS_CERTRESOLVER=letsencrypt
+      # see "traefik.tls.options.default.xxx" in Docker labels
+      #- TRAEFIK_ENTRYPOINTS_https_HTTP_TLS_OPTIONS=default
+      - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt=true
+      #- TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_EMAIL=me@example.com
+      #- TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_TLSCHALLENGE=true
+      - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_HTTPCHALLENGE=true
+      - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_HTTPCHALLENGE_ENTRYPOINT=http
+      - TRAEFIK_CERTIFICATESRESOLVERS_letsencrypt_ACME_STORAGE=/acme.json
+      - TRAEFIK_LOG=true
+      # PANIC, FATAL, ERROR, WARN, INFO, DEBUG
+      - TRAEFIK_LOG_LEVEL=WARN
+      #- TRAEFIK_ACCESSLOG=true
+      #- TRAEFIK_ACCESSLOG_BUFFERINGSIZE=100
+      #- TRAEFIK_ACCESSLOG_FILTERS_MINDURATION=500ms
+      #- TRAEFIK_ACCESSLOG_FILTERS_STATUSCODES="200, 300-302"
+      - TRAEFIK_SERVERSTRANSPORT_INSECURESKIPVERIFY=true
     volumes:
-    - /var/run/docker.sock:/var/run/docker.sock:ro
-    #- /opt/traefik/traefik.toml:/etc/traefik/traefik.toml:ro
-    # create with: touch /opt/traefik/acme.json && chmod 600 /opt/traefik/acme.json
-    - /opt/traefik/acme.json:/acme.json
-    # docker container run --rm -ti httpd:2.4-alpine htpasswd -n <user> >> /opt/traefik/htpasswd
-    # docker container run --rm -ti -v /opt/traefik/htpasswd:/.htpasswd httpd:2.4-alpine htpasswd /.htpasswd <user>
-    - /opt/traefik/htpasswd:/.htpasswd:ro
-    # docker container run --rm -ti -v /opt/traefik/htdigest:/.htdigest httpd:2.4-alpine htdigest /.htdigest <realm> <username>
-    - /opt/traefik/htdigest:/.htdigest:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      #- /opt/traefik/traefik.toml:/etc/traefik/traefik.toml:ro
+      # create with: touch /opt/traefik/acme.json && chmod 600 /opt/traefik/acme.json
+      - /opt/traefik/acme.json:/acme.json
+      # docker container run --rm -ti httpd:2.4-alpine htpasswd -n <user> >> /opt/traefik/htpasswd
+      # docker container run --rm -ti -v /opt/traefik/htpasswd:/.htpasswd httpd:2.4-alpine htpasswd /.htpasswd <user>
+      - /opt/traefik/htpasswd:/.htpasswd:ro
+      # docker container run --rm -ti -v /opt/traefik/htdigest:/.htdigest httpd:2.4-alpine htdigest /.htdigest <realm> <username>
+      - /opt/traefik/htdigest:/.htdigest:ro
     healthcheck:
       test: ["CMD", "/usr/local/bin/traefik", "healthcheck"]
       interval: 240s
@@ -190,24 +207,24 @@ services:
       retries: 1
       start_period: 10s
     networks:
-    # "default" needed to get connectivity from outside(!)
-    - default
-    - http-static
-    - tomcat-front
-    - owncloud-front
-    - nextcloud-front
-    - ttrss-front
-    - wordpress-front
-    - dokuwiki-front
-    - tiddlywiki-front
-    - droppy
-    - transmission
-    - bitwarden
-    - icecast-front
-#    - daapd-front
-    - statping-front
-    - vpn
-    - webssh
+      # "default" needed to get connectivity from outside(!)
+      - default
+      - http-static
+      - tomcat-front
+      - owncloud-front
+      - nextcloud-front
+      - ttrss-front
+      - wordpress-front
+      - dokuwiki-front
+      - tiddlywiki-front
+      - droppy
+      - transmission
+      - bitwarden
+      - icecast-front
+#      - daapd-front
+      - statping-front
+      - vpn
+      - webssh
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
@@ -228,19 +245,19 @@ services:
       - "traefik.http.routers.http-static-https.middlewares=defaultchain-https"
       - "traefik.http.services.http-static-service.loadbalancer.server.port=80"
     expose:
-    - "80"
+      - "80"
     volumes:
-    #- /opt/http-static/mods-available:/opt/http-static/mods-available:ro
-    - /opt/http-static/mods-enabled:/opt/http-static/mods-enabled:ro
-    #- /opt/http-static/conf-available:/opt/http-static/conf-available:ro
-    - /opt/http-static/conf-enabled:/opt/http-static/conf-enabled:ro
-    - /opt/http-static/conf-include:/opt/http-static/conf-include:ro
-    #- /opt/http-static/sites-available:/opt/http-static/sites-available:ro
-    - /opt/http-static/sites-enabled:/opt/http-static/sites-enabled:ro
-    - /srv/http-static:/var/www:ro
-    - /srv/logs/http-static:/var/log
+      #- /opt/http-static/mods-available:/opt/http-static/mods-available:ro
+      - /opt/http-static/mods-enabled:/opt/http-static/mods-enabled:ro
+      #- /opt/http-static/conf-available:/opt/http-static/conf-available:ro
+      - /opt/http-static/conf-enabled:/opt/http-static/conf-enabled:ro
+      - /opt/http-static/conf-include:/opt/http-static/conf-include:ro
+      #- /opt/http-static/sites-available:/opt/http-static/sites-available:ro
+      - /opt/http-static/sites-enabled:/opt/http-static/sites-enabled:ro
+      - /srv/http-static:/var/www:ro
+      - /srv/logs/http-static:/var/log
     networks:
-    - http-static
+      - http-static
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
@@ -252,60 +269,54 @@ services:
       service: base-service
     build: apache-proxy
 #    expose:
-#    - "443"
+#      - "443"
     ports:
-    - "80:80"
-    - "443:443"
+      - "80:80"
+      - "443:443"
     #depends_on:
-    #- tomcat
-    #- owncloud
-    #- wordpress
-    #- dokuwiki
-    #- tiddlywiki
-    links:
-    - tomcat:tomcat
-    - owncloud:owncloud
-    - wordpress:wordpress
-    #- dokuwiki:dokuwiki
-    #- tiddlywiki:tiddlywiki
-    #- droppy:droppy
-    #- transmission:transmission
-    - portainer:portainer
+      #- tomcat
+      #- owncloud
+      #- wordpress
+      #- dokuwiki
+      #- tiddlywiki
+      #- droppy
+      #- transmission
+      #- portainer
     volumes:
-    #- /opt/http-proxy/mods-available:/opt/http-proxy/mods-available:ro
-    - /opt/http-proxy/mods-enabled:/opt/http-proxy/mods-enabled:ro
-    #- /opt/http-proxy/conf-available:/opt/http-proxy/conf-available:ro
-    - /opt/http-proxy/conf-enabled:/opt/http-proxy/conf-enabled:ro
-    - /opt/http-proxy/conf-include:/opt/http-proxy/conf-include:ro
-    #- /opt/http-proxy/sites-available:/opt/http-proxy/sites-available:ro
-    - /opt/http-proxy/sites-enabled:/opt/http-proxy/sites-enabled:ro
-    #- /opt/letsencrypt:/etc/letsencrypt:ro,z
-    - /srv/GeoIP:/usr/local/share/GeoIP:ro,z
-    - /opt/http-proxy/tls:/srv/md
-    - /srv/http-proxy:/var/www:ro
-    - /srv/logs/http-proxy:/var/log
+      #- /opt/http-proxy/mods-available:/opt/http-proxy/mods-available:ro
+      - /opt/http-proxy/mods-enabled:/opt/http-proxy/mods-enabled:ro
+      #- /opt/http-proxy/conf-available:/opt/http-proxy/conf-available:ro
+      - /opt/http-proxy/conf-enabled:/opt/http-proxy/conf-enabled:ro
+      - /opt/http-proxy/conf-include:/opt/http-proxy/conf-include:ro
+      #- /opt/http-proxy/sites-available:/opt/http-proxy/sites-available:ro
+      - /opt/http-proxy/sites-enabled:/opt/http-proxy/sites-enabled:ro
+      - /opt/letsencrypt:/etc/letsencrypt:ro,z
+      - /srv/GeoIP:/usr/local/share/GeoIP:ro,z
+      - /opt/http-proxy/tls:/srv/md
+      - /srv/http-proxy:/var/www:ro
+      - /srv/logs/http-proxy:/var/log
     networks:
-    # "default" needed to get connectivity from outside(!)
-    - default
-    - tomcat-front
-    - owncloud-front
-    - nextcloud-front
-    - ttrss-front
-    - wordpress-front
-    - dokuwiki-front
-    - tiddlywiki-front
-    - droppy
-    - transmission
-    #- bitwarden
-    #- icecast-front
-    #- statping-front
-    - vpn
-    - webssh
+      # "default" needed to get connectivity from outside(!)
+      - default
+      - tomcat-front
+      - owncloud-front
+      - nextcloud-front
+      - ttrss-front
+      - wordpress-front
+      - dokuwiki-front
+      - tiddlywiki-front
+      - droppy
+      - transmission
+      #- bitwarden
+      #- icecast-front
+      #- statping-front
+      - vpn
+      - webssh
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
     mem_reservation: 96m
-    restart: always
+    restart: unless-stopped
 
   sslh:
     extends:
@@ -314,20 +325,20 @@ services:
     #command: ["--ssl", "http-proxy:443", "--openvpn", "openvpn:1194", "--on-timeout", "http-proxy:443"]
     command: ["--tls", "http-proxy:443", "--on-timeout", "http-proxy:443"]
     ports:
-    - "9443:443"
+      - "9443:443"
     depends_on:
       http-proxy:
         condition: service_started
 #      openvpn:
 #        condition: service_started
     cap_add:
-    - NET_BIND_SERVICE
-    - NET_ADMIN
-    - SETGID
-    - SETUID
+      - NET_BIND_SERVICE
+      - NET_ADMIN
+      - SETGID
+      - SETUID
     networks:
-    - default
-#    - vpn
+      - default
+#      - vpn
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
@@ -353,13 +364,12 @@ services:
     #command: ["--tlsverify", "--tlscacert", "/certs/ca.pem", "--tlscert", "/certs/cert.pem", "--tlskey", "/certs/key.pem"]
     #command: ["--templates", "https://raw.githubusercontent.com/portainer/templates/master/templates-2.0.json"]
     expose:
-    - "8000"
-    - "9000"
+      - "8000"
+      - "9000"
     volumes:
-    - /var/run/docker.sock:/var/run/docker.sock:ro
-    - /srv/portainer/acme-challenge/.well-known:/public/.well-known:ro
-    #- /opt/portainer/certs:/certs
-    - /srv/portainer/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      #- /opt/portainer/certs:/certs
+      - /srv/portainer/data:/data
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
@@ -374,7 +384,7 @@ services:
     build:
       context: tomcat
       args:
-      - DOCKER_FROM_VERSION=9-jdk11-openjdk-slim
+        - DOCKER_FROM_VERSION=9-jdk11-openjdk-slim
     init: true
     labels:
       - "traefik.enable=true"
@@ -386,45 +396,41 @@ services:
       - "traefik.http.routers.tomcat-https.middlewares=defaultchain-https"
       - "traefik.http.services.tomcat-service.loadbalancer.server.port=8080"
     expose:
-    - "8080"
-    - "8443"
-    - "8008"
-    - "8009"
+      - "8080"
+      - "8443"
+      - "8008"
+      - "8009"
     environment:
-    # See $CATALINA_HOME/bin/catalina.sh for available env vars,
-    # and $CATALINA_BASE/bin/setenv.sh for additional configuration
-    - CATALINA_BASE=/opt/tomcat/my-instance
+      # See $CATALINA_HOME/bin/catalina.sh for available env vars,
+      # and $CATALINA_BASE/bin/setenv.sh for additional configuration
+      - CATALINA_BASE=/opt/tomcat/my-instance
     user: tomcat
     depends_on:
       email-relay:
         condition: service_started
-    links:
-    - email-relay:email-relay
     volumes:
-    - /opt/tomcat:/opt/tomcat
+      - /opt/tomcat:/opt/tomcat
     networks:
-    - tomcat-front
-    - tomcat-back-internal
-    - tomcat-back
+      - tomcat-front
+      - tomcat-back-internal
+      - tomcat-back
     mem_limit: 1024m
     memswap_limit: 1024m
     mem_swappiness: 1
     mem_reservation: 1024m
-    restart: on-failure:2
+    restart: unless-stopped
 
 ########################################################################
 
   owncloud:
     extends:
-      service: base-service
+      service: base-php-service
     #image: owncloud/server:latest
     build:
       context: owncloud
       args:
-      # https://owncloud.org/release-channels/
-      #- OWNCLOUD_VERSION=10.5.0
-      #- OWNCLOUD_VERSION=stable
-      - OWNCLOUD_VERSION=production
+        #- OWNCLOUD_VERSION=10.5.0
+        - OWNCLOUD_VERSION=stable
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.owncloud-http.rule=Host(`owncloud.example.net`)"
@@ -438,37 +444,27 @@ services:
       - "traefik.http.middlewares.owncloud-dav-redirect.redirectregex.permanent=true"
       - "traefik.http.middlewares.owncloud-dav-redirect.redirectregex.regex=https://(.*)/.well-known/(card|cal)dav"
       - "traefik.http.middlewares.owncloud-dav-redirect.redirectregex.replacement=https://$$1/remote.php/dav/"
-    expose:
-    - "80"
-    - "443"
     environment:
-    - ENABLE_CRON=1
-    #- ENABLE_SYSLOG=1
-    #- SERVER_NAME=https://www.example.com
-    tmpfs:
-    # PHP.ini 'session.save_path'
-    - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
+      - ENABLE_CRON=1
     depends_on:
+      mysql:
+        condition: service_healthy
+      #memcached-owncloud:
+      #  condition: service_healthy
       redis-owncloud:
         condition: service_healthy
       email-relay:
         condition: service_started
-    links:
-    - mysql:mysql
-    #- memcached-owncloud:memcached
-    - redis-owncloud:redis
-    - email-relay:email-relay
     volumes:
-    - /srv/owncloud/acme-challenge/.well-known:/var/www/owncloud/.well-known:ro
-    - /opt/owncloud/config:/var/www/owncloud/config
-    - /opt/owncloud/apps:/var/www/owncloud/apps-external
-    - /opt/owncloud/ip-restriction.conf:/etc/apache2/conf-enabled/ip-restriction.conf:ro
-    - /srv/owncloud:/srv/owncloud
-    - /srv/logs/owncloud:/var/log
+      - /opt/owncloud/config:/var/www/owncloud/config
+      - /opt/owncloud/apps:/var/www/owncloud/apps-external
+      - /opt/owncloud/ip-restriction.conf:/etc/apache2/conf-enabled/ip-restriction.conf:ro
+      - /srv/owncloud:/srv/owncloud
+      - /srv/logs/owncloud:/var/log
     networks:
-    - owncloud-front
-    - owncloud-back-internal
-    - owncloud-back
+      - owncloud-front
+      - owncloud-back-internal
+      - owncloud-back
     mem_limit: 384m
     memswap_limit: 512m
     mem_reservation: 256m
@@ -479,16 +475,15 @@ services:
 
   nextcloud:
     extends:
-      service: base-service
+      service: base-php-service
     #image: nextcloud:latest
     build:
       context: nextcloud
       args:
-      # https://nextcloud.com/release-channels/
-      #- DOCKER_FROM_TAG=20-apache
-      #- DOCKER_FROM_TAG=stable-apache
-      - DOCKER_FROM_TAG=production-apache
-    init: true
+        # https://nextcloud.com/release-channels/
+        #- DOCKER_FROM_TAG=21-apache
+        #- DOCKER_FROM_TAG=stable-apache
+        - DOCKER_FROM_TAG=production-apache
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.nextcloud-http.rule=Host(`nextcloud.example.net`)"
@@ -502,49 +497,41 @@ services:
       - "traefik.http.middlewares.nextcloud-dav-redirect.redirectregex.permanent=true"
       - "traefik.http.middlewares.nextcloud-dav-redirect.redirectregex.regex=https://(.*)/.well-known/(card|cal)dav"
       - "traefik.http.middlewares.nextcloud-dav-redirect.redirectregex.replacement=https://$$1/remote.php/dav/"
-    expose:
-    - "80"
-    - "443"
     # https://github.com/nextcloud/docker/blob/master/README.md
     environment:
-    - MYSQL_HOST=mysql
-    - MYSQL_DATABASE=nextcloud
-    #- MYSQL_USER=nextcloud
-    #- MYSQL_PASSWORD=HJ79WetJELxrbgc3rwed9Jzh
-    - REDIS_HOST=redis-nextcloud
-    #- REDIS_HOST_PORT=6379
-    - SMTP_HOST=email-relay
-    - MAIL_FROM_ADDRESS=nextcloud-noreply
-    - MAIL_DOMAIN=example.com
-    #- NEXTCLOUD_ADMIN_USER=admin
-    #- NEXTCLOUD_ADMIN_PASSWORD=x4uhbXqGsG9qU43mPBrvAYE8
-    - NEXTCLOUD_DATA_DIR=/srv/nextcloud/data
-    #- NEXTCLOUD_TRUSTED_DOMAINS="example.com www.example.com"
-    # Launch a cron daemon in the background (instead of relying on an external cron)
-    #- ENABLE_CRON=1
-    tmpfs:
-    # PHP.ini 'session.save_path'
-    - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
+      - MYSQL_HOST=mysql
+      - MYSQL_DATABASE=nextcloud
+      #- MYSQL_USER=nextcloud
+      #- MYSQL_PASSWORD=HJ79WetJELxrbgc3rwed9Jzh
+      - REDIS_HOST=redis-nextcloud
+      #- REDIS_HOST_PORT=6379
+      - SMTP_HOST=email-relay
+      - MAIL_FROM_ADDRESS=nextcloud-noreply
+      - MAIL_DOMAIN=example.com
+      #- NEXTCLOUD_ADMIN_USER=admin
+      #- NEXTCLOUD_ADMIN_PASSWORD=x4uhbXqGsG9qU43mPBrvAYE8
+      - NEXTCLOUD_DATA_DIR=/srv/nextcloud/data
+      #- NEXTCLOUD_TRUSTED_DOMAINS="example.com www.example.com"
+      # Launch a cron daemon in the background (instead of relying on an external cron)
+      #- ENABLE_CRON=1
     depends_on:
+      mysql:
+        condition: service_healthy
+      #memcached-nextcloud:
+      #  condition: service_healthy
       redis-nextcloud:
         condition: service_healthy
       email-relay:
         condition: service_started
-    links:
-    - mysql:mysql
-    #- memcached-nextcloud:memcached
-    - redis-nextcloud:redis
-    - email-relay:email-relay
     volumes:
-    - /srv/nextcloud/acme-challenge/.well-known:/var/www/html/.well-known:ro
-    - /opt/nextcloud/config:/var/www/html/config
-    - /opt/nextcloud/custom_apps:/var/www/html/custom_apps
-    - /opt/nextcloud/themes:/var/www/html/themes
-    - /srv/nextcloud/data:/srv/nextcloud/data
+      - /opt/nextcloud/config:/var/www/html/config
+      - /opt/nextcloud/custom_apps:/var/www/html/custom_apps
+      - /opt/nextcloud/themes:/var/www/html/themes
+      - /srv/nextcloud/data:/srv/nextcloud/data
     networks:
-    - nextcloud-front
-    - nextcloud-back-internal
-    - nextcloud-back
+      - nextcloud-front
+      - nextcloud-back-internal
+      - nextcloud-back
     mem_limit: 384m
     memswap_limit: 512m
     mem_reservation: 256m
@@ -555,19 +542,18 @@ services:
     image: nextcloud:production-apache
     init: true
     depends_on:
+      mysql:
+        condition: service_healthy
       nextcloud:
         condition: service_healthy
       email-relay:
         condition: service_started
-    links:
-    - mysql:mysql
-    - email-relay:email-relay
     volumes_from:
-    - nextcloud
+      - nextcloud
     command: [ "/cron.sh" ]
     networks:
-    - nextcloud-back-internal
-    - nextcloud-back
+      - nextcloud-back-internal
+      - nextcloud-back
     mem_limit: 384m
     memswap_limit: 512m
     mem_reservation: 256m
@@ -578,13 +564,14 @@ services:
 
   wordpress:
     extends:
-      service: base-service
+      service: base-php-service
     #image: wordpress:latest
     build:
       context: wordpress
       args:
-      #- WORDPRESS_VERSION=wordpress-5.2.5
-      - WORDPRESS_VERSION=latest
+        #- WORDPRESS_VERSION=latest
+        - WORDPRESS_VERSION=wordpress-5.6.2
+        - DOCKER_FROM_TAG=5.6.2-php7.4-apache
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.wordpress-http.rule=Host(`wordpress.example.net`)"
@@ -605,65 +592,110 @@ services:
       - "traefik.http.routers.wordpress-407.entrypoints=https"
       - "traefik.http.routers.wordpress-407.middlewares=std-ipwhitelist,defaultchain-https"
       - "traefik.http.routers.wordpress-407.priority=65535"
-    expose:
-    - "80"
-    - "443"
+    # Only define WORDPRESS_* env var on first startup, until base image switches to docker-entrypoint-ng.sh (i.e. stops `sed`ing wp-config.php and uses env var in wp-config.php instead)
     #environment:
-    #- WORDPRESS_DB_HOST=mysql
-    #- WORDPRESS_DB_USER=root
-    #- WORDPRESS_DB_PASSWORD=
-    #- WORDPRESS_DB_NAME=wordpress
-    #- WORDPRESS_TABLE_PREFIX=
-    # WordPress key generator: https://api.wordpress.org/secret-key/1.1/salt/
-    #- WORDPRESS_AUTH_KEY=
-    #- WORDPRESS_SECURE_AUTH_KEY=
-    #- WORDPRESS_LOGGED_IN_KEY=
-    #- WORDPRESS_NONCE_KEY=
-    #- WORDPRESS_AUTH_SALT=
-    #- WORDPRESS_SECURE_AUTH_SALT=
-    #- WORDPRESS_LOGGED_IN_SALT=
-    #- WORDPRESS_NONCE_SALT=
-    tmpfs:
-    # PHP.ini 'session.save_path'
-    - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
+      #WORDPRESS_DB_HOST: mysql
+      #WORDPRESS_DB_USER: 
+      #WORDPRESS_DB_PASSWORD: 
+      #WORDPRESS_DB_NAME: 
+      #WORDPRESS_DB_CHARSET: utf8mb4
+      #WORDPRESS_DB_COLLATE: utf8_general_ci
+      #WORDPRESS_TABLE_PREFIX: wp_
+      # WordPress key generator: https://api.wordpress.org/secret-key/1.1/salt/
+      #WORDPRESS_AUTH_KEY: 
+      #WORDPRESS_SECURE_AUTH_KEY: 
+      #WORDPRESS_LOGGED_IN_KEY: 
+      #WORDPRESS_NONCE_KEY: 
+      #WORDPRESS_AUTH_SALT: 
+      #WORDPRESS_SECURE_AUTH_SALT: 
+      #WORDPRESS_LOGGED_IN_SALT: 
+      #WORDPRESS_NONCE_SALT: 
+      #WORDPRESS_CONFIG_EXTRA: | # beware docker-compose requires '$$' for '$'!
+      #  /*
+      #  @ini_set( 'error_reporting', 4339 );
+      #  @ini_set( 'display_errors',  'Off' );
+      #  @ini_set( 'display_startup_errors', 'Off' );
+      #  @ini_set( 'log_errors', 'On' );
+      #  @ini_set( 'error_log', '/home/example.com/logs/php_error.log' );
+      #  @ini_set( 'log_errors_max_len', 1024 );
+      #  @ini_set( 'ignore_repeated_errors', 'On );
+      #  @ini_set( 'ignore_repeated_source', 'Off' );
+      #  @ini_set( 'html_errors', 'Off' );
+      #  */
+      #  @ini_set( 'log_errors', 'Off' );
+      #  @ini_set( 'display_errors', 'Off' );
+      #  
+      #  //define( 'WP_DISABLE_FATAL_ERROR_HANDLER', true );   // 5.2 and later define( 'WP_DEBUG', true );
+      #  //define( 'WP_DEBUG_DISPLAY', true ); 
+      #  
+      #  /*
+      #  // If we're behind a proxy server and using HTTPS, we need to alert Wordpress of that fact
+      #  // see also https://wordpress.org/support/article/administration-over-ssl/#using-a-reverse-proxy
+      #  if (isset($$_SERVER['HTTP_X_FORWARDED_PROTO']) && $$_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+      #  	$$_SERVER['HTTPS'] = 'on';
+      #  }
+      #  */
+      #  
+      #  //define( 'AUTOSAVE_INTERVAL', 60 ); // Seconds
+      #  //define( 'WP_POST_REVISIONS', true );
+      #  define( 'WP_POST_REVISIONS', 5 );
+      #  //define( 'WP_ALLOW_MULTISITE', false );
+      #  
+      #  // disable the plugin or theme editor
+      #  define( 'DISALLOW_FILE_EDIT', true );
+      #  
+      #  //define( 'IMAGE_EDIT_OVERWRITE', true );
+      #  
+      #  // https://wordpress.org/support/article/administration-over-ssl/#to-force-ssl-logins-and-ssl-admin-access
+      #  define('FORCE_SSL_ADMIN', true);
+      #  
+      #  // FIXME enable this, and see what wp-content/advanced-cache.php has to say!
+      #  //define( 'WP_CACHE', true ); //Added by WP-Cache Manager
+      #  //define( 'WPCACHEHOME', '/var/www/html/wp-content/plugins/wp-super-cache/' ); //Added by WP-Cache Manager
+      #  
+      #  // Disable the cron entirely (when using external cron URL)
+      #  //define( 'DISABLE_WP_CRON', true );
+      #  // Make sure a cron process cannot run more than once every WP_CRON_LOCK_TIMEOUT seconds.
+      #  define( 'WP_CRON_LOCK_TIMEOUT', 60 );
+      #  
+      #  //define( 'EMPTY_TRASH_DAYS', 30 ); // 30 days
+      #  
+      #  // In case of corrupted DB, enable this and then go to $${your_site}/wp-admin/maint/repair.php
+      #  //define( 'WP_ALLOW_REPAIR', true );
     depends_on:
       mysql:
         condition: service_healthy
+      #memcached-wordpress:
+      #  condition: service_healthy
       email-relay:
         condition: service_started
-    links:
-    - mysql:mysql
-    #- memcached-wordpress:memcached
-    - email-relay:email-relay
     volumes:
-    - /srv/wordpress/acme-challenge/.well-known:/var/www/html/.well-known:ro
-    - /srv/wordpress/htaccess:/var/www/html/.htaccess
-    - /srv/wordpress/wp-config.php:/var/www/html/wp-config.php
-    - /srv/wordpress/wp-content:/var/www/html/wp-content
-    - /srv/wordpress/wp-includes-languages:/var/www/html/wp-includes/languages
-    - /srv/logs/wordpress:/var/log
+      - /srv/wordpress/htaccess:/var/www/html/.htaccess
+      - /srv/wordpress/wp-config.php:/var/www/html/wp-config.php
+      - /srv/wordpress/wp-content:/var/www/html/wp-content
+      - /srv/logs/wordpress:/var/log
     networks:
-    - wordpress-front
-    - wordpress-back-internal
-    - wordpress-back
+      - wordpress-front
+      - wordpress-back-internal
+      - wordpress-back
     mem_limit: 448m
     memswap_limit: 512m
     mem_reservation: 384m
     read_only: false
-    restart: on-failure:5
+    restart: unless-stopped
 
 ########################################################################
 
   dokuwiki:
     extends:
-      service: base-service
+      service: base-php-service
     build:
       context: dokuwiki
       args:
-      #- DOKUWIKI_VERSION=2018-04-22c
-      - DOKUWIKI_VERSION=stable
-      # Languages to keep (delete all others)
-      #- STRIP_LANGS_KEEP=en,fr
+        #- DOKUWIKI_VERSION=2020-07-29
+        - DOKUWIKI_VERSION=stable
+        # Languages to keep (delete all others)
+        #- STRIP_LANGS_KEEP=en,fr
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.dokuwiki-http.rule=Host(`dokuwiki.example.net`)"
@@ -674,35 +706,26 @@ services:
       - "traefik.http.routers.dokuwiki-https.middlewares=std-ipwhitelist,defaultchain-https"
       - "traefik.http.services.dokuwiki-service.loadbalancer.server.port=80"
       # ToDo ip-whitelist on /admin
-    expose:
-    - "80"
-    - "443"
     environment:
-    - ENABLE_CRON=1
-    tmpfs:
-    # PHP.ini 'session.save_path'
-    - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
+      - ENABLE_CRON=1
     depends_on:
       email-relay:
         condition: service_started
-    links:
-    - email-relay:email-relay
     volumes:
-    - /srv/dokuwiki/acme-challenge/.well-known:/var/www/html/.well-known:ro
-    - /srv/dokuwiki/conf:/var/www/html/conf
-    - /srv/dokuwiki/lib/plugins:/var/www/html/lib/plugins
-    #- /srv/dokuwiki/lib/tpl:/var/www/html/lib/tpl
-    - /srv/dokuwiki/data:/var/www/html/data
-    - /srv/logs/dokuwiki:/var/log
+      - /srv/dokuwiki/conf:/var/www/html/conf
+      - /srv/dokuwiki/lib/plugins:/var/www/html/lib/plugins
+      #- /srv/dokuwiki/lib/tpl:/var/www/html/lib/tpl
+      - /srv/dokuwiki/data:/var/www/html/data
+      - /srv/logs/dokuwiki:/var/log
     networks:
-    - dokuwiki-front
-    - dokuwiki-back-internal
-    - dokuwiki-back
+      - dokuwiki-front
+      - dokuwiki-back-internal
+      - dokuwiki-back
     mem_limit: 192m
     memswap_limit: 256m
     mem_reservation: 128m
     read_only: false
-    restart: on-failure:5
+    restart: unless-stopped
 
 ########################################################################
 
@@ -711,6 +734,7 @@ services:
       service: base-service
     build:
       context: tiddlywiki
+    init: true
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.tiddlywiki-http.rule=Host(`tiddlywiki.example.net`)"
@@ -721,23 +745,23 @@ services:
       - "traefik.http.routers.tiddlywiki-https.middlewares=std-ipwhitelist,defaultchain-https"
       - "traefik.http.services.tiddlywiki-service.loadbalancer.server.port=8080"
     expose:
-    - "8080"
+      - "8080"
     environment:
-    # See docker-entrypoint.sh for the full list
-    - WIKI_FOLDER=wiki
-    - PATHPREFIX=
-    - PORT=8080
-    - ANON_USERNAME=
-    - USERNAME=
-    - PASSWORD=
+      # See docker-entrypoint.sh for the full list
+      - WIKI_FOLDER=wiki
+      - PATHPREFIX=
+      - PORT=8080
+      - ANON_USERNAME=
+      - USERNAME=
+      - PASSWORD=
     volumes:
-    - /srv/tiddlywiki:/srv
+      - /srv/tiddlywiki:/srv
     networks:
-    - tiddlywiki-front
+      - tiddlywiki-front
     mem_limit: 384m
     memswap_limit: 512m
     mem_reservation: 256m
-    restart: on-failure:5
+    restart: unless-stopped
 
 ########################################################################
 
@@ -758,16 +782,16 @@ services:
       - "traefik.http.services.droppy-service.loadbalancer.server.port=8989"
     command: ["/usr/bin/droppy", "start", "--color", "-f", "/files", "-c", "/config"]
     expose:
-    - "8989"
+      - "8989"
     #environment:
-    #- UID=nobody
-    #- GID=nogroup
+      #- UID=nobody
+      #- GID=nogroup
     user: nobody:nogroup
     volumes:
-    - /opt/droppy:/config
-    - /srv/droppy:/files:ro
+      - /opt/droppy:/config
+      - /srv/droppy:/files:ro
     networks:
-    - droppy
+      - droppy
     healthcheck:
       test: wget -q -O /dev/null localhost:8989 || exit 1
       interval: 240s
@@ -790,21 +814,21 @@ services:
       args:
       - POSTFIX_HOSTNAME=myhost.example.net
     expose:
-    - "25"
+      - "25"
     environment:
-    - ENABLE_SYSLOG=1
-    - ENABLE_CRON=1
+      - ENABLE_SYSLOG=1
+      - ENABLE_CRON=1
     volumes:
-    - /opt/email-relay/dkim:/usr/local/etc/dkim:ro
-    - /srv/logs/email-relay:/var/log
+      - /opt/email-relay/dkim:/usr/local/etc/dkim:ro
+      - /srv/logs/email-relay:/var/log
     networks:
-    - tomcat-back
-    - owncloud-back
-    - nextcloud-back
-    - ttrss-back
-    - wordpress-back
-    - dokuwiki-back
-    - bitwarden
+      - tomcat-back
+      - owncloud-back
+      - nextcloud-back
+      - ttrss-back
+      - wordpress-back
+      - dokuwiki-back
+      - bitwarden
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
@@ -817,8 +841,8 @@ services:
   mysql:
     extends:
       service: base-service
-    #image: mysql/mysql-server:${MYSQL_VERSION:-5.7}
-    image: mysql:${MYSQL_VERSION:-5.7}
+    #image: mysql/mysql-server:${MYSQL_VERSION:-8.0}
+    image: mysql:${MYSQL_VERSION:-8.0}
     init: true
     labels:
       - "com.symfony.server.service-prefix=DATABASE"
@@ -826,40 +850,44 @@ services:
       - "mysql-cron-backup"
     # https://dev.mysql.com/doc/mysql-port-reference/en/mysql-ports-reference-tables.html
     expose:
-    - "3306"
-    - "33060"
-    - "33061"
-    - "33062"
+      - "3306"
+      - "33060"
+      - "33061"
+      - "33062"
     environment:
-    - MYSQL_ROOT_PASSWORD=
-    #- MYSQL_LOG_CONSOLE=true
-    #- MYSQL_CUSTOM_OPTS=--key_buffer_size=4M --sort_buffer_size=128K --read_buffer_size=64K --net_buffer_length=8K
-    #- MYSQL_CUSTOM_OPTS=--innodb_buffer_pool_size=64M --innodb_log_buffer_size=8M
-    #- MYSQL_CUSTOM_OPTS=--default-storage-engine=MyISAM --default_tmp_storage_engine=MyISAM
-    #- MYSQL_CUSTOM_OPTS=--sql-mode=NO_ENGINE_SUBSTITUTION
-    # http://bugs.mysql.com/bug.php?id=68287 [MySQL 5.6]
-    # There are thresholds based on table_open_cache and table_definition_cache and max_connections and crossing the thresholds produces a big increase in RAM used. The thresholds work by first deciding if the server size is small, medium or large.
-    # Small: all three are same as or less than defaults (2000, 400, 151). (max 52.6 megabytes RAM)
-    # Large: any of the three is more than twice the default. (min 400 megabytes RAM)
-    # Medium: others. (90.7-98.4 megabytes RAM)
-    # default values: [MySQL 5.7]
-    #   table_open_cache = 2000
-    #   table_definition_cache = min(2000, 400 + (table_open_cache / 2))
-    #   max_connections = 151
-    # instead of turning off performance_schema, you can reduce RAM usage with --table_open_cache=400 --table_definition_cache=400 --max_connections=151
-    #- MYSQL_CUSTOM_OPTS=--performance_schema=off --table_definition_cache=800
-    # ToDo: switch to --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    command: ["--datadir=/var/lib/mysql", "--user=mysql", "--bind-address=0.0.0.0", "--log-error=/var/log/mysql/error.log", "--pid-file=/var/run/mysqld/mysqld.pid", "--socket=/var/run/mysqld/mysqld.sock", "--port=3306", "--character-set-server=utf8", "--collation-server=utf8_unicode_ci", "--skip-character-set-client-handshake", "--performance_schema=off", "--table_definition_cache=800"]
+      - MYSQL_ROOT_PASSWORD=
+      #- MYSQL_LOG_CONSOLE=true
+      #- MYSQL_CUSTOM_OPTS=--key_buffer_size=4M --sort_buffer_size=128K --read_buffer_size=64K --net_buffer_length=8K
+      #- MYSQL_CUSTOM_OPTS=--innodb_buffer_pool_size=64M --innodb_log_buffer_size=8M
+      #- MYSQL_CUSTOM_OPTS=--default-storage-engine=MyISAM --default_tmp_storage_engine=MyISAM
+      #- MYSQL_CUSTOM_OPTS=--sql-mode=NO_ENGINE_SUBSTITUTION
+      # http://bugs.mysql.com/bug.php?id=68287 [MySQL 5.6]
+      # There are thresholds based on table_open_cache and table_definition_cache and max_connections and crossing the thresholds produces a big increase in RAM used. The thresholds work by first deciding if the server size is small, medium or large.
+      # Small: all three are same as or less than defaults (2000, 400, 151). (max 52.6 megabytes RAM)
+      # Large: any of the three is more than twice the default. (min 400 megabytes RAM)
+      # Medium: others. (90.7-98.4 megabytes RAM)
+      # default values: [MySQL 5.7]
+      #   table_open_cache = 2000
+      #   table_definition_cache = min(2000, 400 + (table_open_cache / 2))
+      #   max_connections = 151
+      # default values: [MySQL 8.0]
+      #   table_open_cache = 4000
+      #   table_definition_cache = min(2000, 400 + (table_open_cache / 2))
+      #   max_connections = 151
+      # instead of turning off performance_schema, you can reduce RAM usage with --table_open_cache=400 --table_definition_cache=400 --max_connections=151
+      #- MYSQL_CUSTOM_OPTS=--performance_schema=off --table_definition_cache=800
+      # ToDo: switch to --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --skip-character-set-client-handshake
+    command: ["--datadir=/var/lib/mysql", "--user=mysql", "--bind-address=0.0.0.0", "--log-error=/var/log/mysql/error.log", "--pid-file=/var/run/mysqld/mysqld.pid", "--socket=/var/run/mysqld/mysqld.sock", "--port=3306", "--performance_schema=off", "--table_definition_cache=800", "--disable-log-bin"]
     tmpfs:
-    - /run/mysqld:rw,nosuid,dev,noexec,relatime,size=16k,uid=999,gid=999,mode=755
+      - /run/mysqld:rw,nosuid,dev,noexec,relatime,size=16k,uid=999,gid=999,mode=755
     volumes:
-    - /opt/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
-    # following 2 files are a hack to enable read_only: true
-    - /opt/mysql/healthcheck.cnf:/healthcheck.cnf
-    - /opt/mysql/mysql-init-complete:/mysql-init-complete
-    #- /opt/mysql/conf.d:/etc/mysql/conf.d
-    - /srv/mysql/data:/var/lib/mysql
-    - /srv/logs/mysql:/var/log
+      - /opt/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
+      # following 2 files are a hack to enable read_only: true
+      - /opt/mysql/healthcheck.cnf:/healthcheck.cnf
+      - /opt/mysql/mysql-init-complete:/mysql-init-complete
+      #- /opt/mysql/conf.d:/etc/mysql/conf.d
+      - /srv/mysql/data:/var/lib/mysql
+      - /srv/logs/mysql:/var/log
 #    healthcheck:
 #      test: ["CMD", "mysqladmin", "--silent", "--no-beep", "--wait=0", "--connect_timeout=1", "--host=127.0.0.1", "--user=${self:services.mysql.environment.MYSQL_USER:-root}", "--password=${self:services.mysql.environment.MYSQL_PASSWORD:-$self:services.mysql.environment.MYSQL_ROOT_PASSWORD}", "ping"]
 #      test: mysqladmin --silent --no-beep --wait=0 --connect_timeout=1 --host=127.0.0.1 --user="$${MYSQL_USER:-root}", --password="$${MYSQL_PASSWORD:-$$MYSQL_ROOT_PASSWORD}" ping
@@ -868,12 +896,14 @@ services:
 #      timeout: 5s
 #      retries: 1
 #      start_period: 10s
+    cap_add:
+      - SYS_NICE # Fix "mbind: Operation not permitted"
     networks:
-    #- tomcat-back-internal
-    - owncloud-back-internal
-    - nextcloud-back-internal
-    - ttrss-back-internal
-    - wordpress-back-internal
+      #- tomcat-back-internal
+      - owncloud-back-internal
+      - nextcloud-back-internal
+      - ttrss-back-internal
+      - wordpress-back-internal
     #ulimits:
     #  nproc: 65535
     #  nofile:
@@ -890,14 +920,14 @@ services:
       context: mysql-cron
     init: true
     environment:
-    - MYSQL_CRON_LABEL=mysql-cron-backup
-    - MYSQL_ROOT_PASSWORD=
+      - MYSQL_CRON_LABEL=mysql-cron-backup
+      - MYSQL_ROOT_PASSWORD=
     #depends_on:
     #  mysql:
     #    condition: service_started
     volumes:
-    - /srv/mysql/backup:/srv
-    - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /srv/mysql/backup:/srv
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     cpu_shares: 256
     mem_limit: 64m
     memswap_limit: 128m
@@ -905,7 +935,7 @@ services:
     mem_reservation: 8m
     # logrotate needs /var/lib/logrotate.status and /var/log/messages
     read_only: false
-    restart: on-failure:3
+    restart: unless-stopped
 
 ########################################################################
 
@@ -914,8 +944,8 @@ services:
     init: true
     command: ["memcached", "--memory-limit=64", "--port=11211", "--udp-port=11211", "--conn-limit=256", "--threads=2"]
     expose:
-    - "11211/tcp"
-    - "11211/udp"
+      - "11211/tcp"
+      - "11211/udp"
     healthcheck:
       test: if [ -z "$$(pgrep -x memcached)" ]; then echo "No memcached process!"; exit 1; else exit 0; fi
       interval: 30s
@@ -934,14 +964,14 @@ services:
       service: memcached
     command: ["memcached", "-m", "32", "-p", "11211", "-c", "256", "-t", "1"]
     networks:
-    - owncloud-back-internal
+      - owncloud-back-internal
 
   memcached-wordpress:
     extends:
       service: memcached
     command: ["memcached", "-m", "64", "-p", "11211", "-c", "256", "-t", "1"]
     networks:
-    - wordpress-back-internal
+      - wordpress-back-internal
 
 ########################################################################
 
@@ -963,10 +993,10 @@ services:
       retries: 1
       start_period: 2s
     #sysctls:
-    #- sys.net.core.somaxconn=511
-    #- sys.net.core.tcp_max_syn_backlog=511
-    #- vm.overcommit_memory=1
-    #- sys.kernel.mm.transparent_hugepage.enabled=never
+      #- sys.net.core.somaxconn=511
+      #- sys.net.core.tcp_max_syn_backlog=511
+      #- vm.overcommit_memory=1
+      #- sys.kernel.mm.transparent_hugepage.enabled=never
     cpu_shares: 128
     mem_limit: 128m
     memswap_limit: 128m
@@ -978,17 +1008,17 @@ services:
     extends:
       service: redis
     volumes:
-    - /srv/redis-owncloud:/data
+      - /srv/redis-owncloud:/data
     networks:
-    - owncloud-back-internal
+      - owncloud-back-internal
 
   redis-nextcloud:
     extends:
       service: redis
     volumes:
-    - /srv/redis-nextcloud:/data
+      - /srv/redis-nextcloud:/data
     networks:
-    - nextcloud-back-internal
+      - nextcloud-back-internal
 
 ########################################################################
 
@@ -1010,14 +1040,14 @@ services:
     # Sieve
     #- "4190:4190"
     volumes:
-    - /opt/dovecot:/opt/dovecot:ro
-    - /srv/dovecot:/srv/dovecot
-    - /srv/logs/dovecot:/var/log
+      - /opt/dovecot:/opt/dovecot:ro
+      - /srv/dovecot:/srv/dovecot
+      - /srv/logs/dovecot:/var/log
     tmpfs:
-    # this will have the side-effect of regenerating SSL parameters @ each startup
-    - /var/lib/dovecot:rw,nosuid,nodev,noexec,size=32k
+      # this will have the side-effect of regenerating SSL parameters @ each startup
+      - /var/lib/dovecot:rw,nosuid,nodev,noexec,size=32k
     networks:
-    - dovecot
+      - dovecot
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
@@ -1068,42 +1098,42 @@ services:
       - "traefik.http.routers.bitwarden-407.priority=65535"
       - "traefik.http.routers.bitwarden-407.middlewares=std-ipwhitelist,defaultchain-https"
     expose:
-    - "80"
-    - "3012"
+      - "80"
+      - "3012"
     # See https://github.com/dani-garcia/bitwarden_rs/blob/master/.env.template
     environment:
-    #- DOMAIN=https://bw.example.com
-    - SIGNUPS_ALLOWED=false
-    - INVITATIONS_ALLOWED=false
-    # generate token: e.g. `openssl rand -base64 48`
-    #- ADMIN_TOKEN=Vy2VyYTTsKPv8W5aEOWUbB/Bt3DEKePbHmI4m9VcemUMS2rEviDowNAFqYi1xjmp
-    #- WEB_VAULT_ENABLED=true
-    - WEBSOCKET_ENABLED=true
-    #- SHOW_PASSWORD_HINT=true
-    #- DISABLE_ICON_DOWNLOAD=false
-    #- ICON_CACHE_TTL=2592000
-    #- ICON_CACHE_NEGTTL=259200
-    - ICON_BLACKLIST_REGEX=192\.168\.[1-2]?[0-9]?[0-9]\.[0-9].*^
-    #- ROCKET_PORT=80
-    #- ROCKET_LIMITS={json=10485760}
-    #- ROCKET_WORKERS=10
-    - ROCKET_ENV=production
-    - SMTP_HOST=email-relay
-    - SMTP_FROM=bitwarden@example.com
-    - SMTP_PORT=25
-    - SMTP_SSL=false
-    #- SMTP_USERNAME=
-    #- SMTP_PASSWORD=
-    # Logging to file; it is recommended to also set 'ROCKET_CLI_COLORS=off'
-    #- LOG_FILE=/data/bitwarden.log
+      #- DOMAIN=https://bw.example.com
+      - SIGNUPS_ALLOWED=false
+      - INVITATIONS_ALLOWED=false
+      # generate token: e.g. `openssl rand -base64 48`
+      #- ADMIN_TOKEN=Vy2VyYTTsKPv8W5aEOWUbB/Bt3DEKePbHmI4m9VcemUMS2rEviDowNAFqYi1xjmp
+      #- WEB_VAULT_ENABLED=true
+      - WEBSOCKET_ENABLED=true
+      #- SHOW_PASSWORD_HINT=true
+      #- DISABLE_ICON_DOWNLOAD=false
+      #- ICON_CACHE_TTL=2592000
+      #- ICON_CACHE_NEGTTL=259200
+      - ICON_BLACKLIST_REGEX=192\.168\.[1-2]?[0-9]?[0-9]\.[0-9].*^
+      #- ROCKET_PORT=80
+      #- ROCKET_LIMITS={json=10485760}
+      #- ROCKET_WORKERS=10
+      - ROCKET_ENV=production
+      - SMTP_HOST=email-relay
+      - SMTP_FROM=bitwarden@example.com
+      - SMTP_PORT=25
+      - SMTP_SSL=false
+      #- SMTP_USERNAME=
+      #- SMTP_PASSWORD=
+      # Logging to file; it is recommended to also set 'ROCKET_CLI_COLORS=off'
+      #- LOG_FILE=/data/bitwarden.log
     depends_on:
       email-relay:
         condition: service_started
     volumes:
-    - /srv/bitwarden:/data
-    #- /opt/bitwarden/web-vault:/web-vault:ro
+      - /srv/bitwarden:/data
+      #- /opt/bitwarden/web-vault:/web-vault:ro
     networks:
-    - bitwarden
+      - bitwarden
     cpu_shares: 512
     mem_limit: 128m
     memswap_limit: 192m
@@ -1118,12 +1148,12 @@ services:
     #image: registry.gitlab.com/1o/bitwarden_rs-backup:rpi3
     init: true
     #environment:
-    #- CRON_TIME=0 5 * * *
-    #- DB_FILE=/data/db.sqlite3
-    #- BACKUP_FILE=/data/db-backup/backup.sqlite3
-    #- TIMESTAMP=false
+      #- CRON_TIME=0 5 * * *
+      #- DB_FILE=/data/db.sqlite3
+      #- BACKUP_FILE=/data/db-backup/backup.sqlite3
+      #- TIMESTAMP=false
     volumes:
-    - /srv/bitwarden:/data
+      - /srv/bitwarden:/data
 
 ########################################################################
 
@@ -1140,12 +1170,12 @@ services:
       - "traefik.http.routers.webssh-https.middlewares=std-ipwhitelist,defaultchain-https"
       - "traefik.http.services.webssh-service.loadbalancer.server.port=8888"
     expose:
-    - "8888"
-    - "4433"
+      - "8888"
+      - "4433"
     volumes:
-    - /srv/webssh:/srv
+      - /srv/webssh:/srv
     networks:
-    - webssh
+      - webssh
     cpu_shares: 256
     mem_limit: 64m
     memswap_limit: 96m
@@ -1169,37 +1199,44 @@ services:
       - "traefik.http.routers.adguardhome-https.middlewares=std-ipwhitelist,defaultchain-https"
       - "traefik.http.services.adguardhome-service.loadbalancer.server.port=3000"
     ports:
-    #- "192.0.2.1:53:53/tcp"
-    #- "192.0.2.1:53:53/udp"
-    #- "67:67/udp"
-    #- "68:68/udp"
-    #- "80:80/tcp"
-    #- "443:443/tcp"
-    - "853:853/tcp"
-    - "784:784/udp"
-    #- "3000:3000/tcp"
+      #- "192.0.2.1:53:53/tcp"
+      #- "192.0.2.1:53:53/udp"
+      - "853:853/tcp"
+      - "784:784/udp"
     expose:
-    - "53/tcp"
-    - "53/udp"
-    - "67/udp"
-    - "68/udp"
-    - "80"
-    - "443"
-    - "853/tcp"
-    - "784/udp"
-    - "3000"
+      # DNS
+      - "53/tcp"
+      - "53/udp"
+      # DHCP
+      - "67/udp"
+      - "68/udp"
+      - "80"
+      # DoH
+      - "443"
+      # DoT
+      - "853/tcp"
+      # DoQ
+      - "784/udp"
+      # web console
+      - "3000"
+      # DNSCrypt
+      - "5443/tcp"
+      - "5443/udp"
     volumes:
-    - /opt/adguard-home:/opt/adguardhome/conf
-    - /srv/adguard-home:/opt/adguardhome/work
-    #- /opt/letsencrypt:/etc/letsencrypt:ro,z
-    - /opt/http-proxy/tls:/opt/tls:ro,z
+      - /opt/adguard-home:/opt/adguardhome/conf
+      - /srv/adguard-home:/opt/adguardhome/work
+      #- /opt/letsencrypt:/etc/letsencrypt:ro,z
+      - /opt/http-proxy/tls:/opt/tls:ro,z
     user: nobody
     working_dir: /opt/adguardhome/work
     cap_add:
-    - NET_BIND_SERVICE
+      - NET_BIND_SERVICE
     networks:
       vpn:
         ipv4_address: 172.31.53.53
+    #sysctls:
+      # https://github.com/lucas-clemente/quic-go/wiki/UDP-Receive-Buffer-Size
+      #- net.core.rmem_max=2500000
     cpu_shares: 512
     mem_limit: 384m
     memswap_limit: 384m
@@ -1214,11 +1251,11 @@ services:
       service: base-service
     build: ziproxy
     expose:
-    - "3128"
+      - "3128"
     dns:
-    - 172.31.53.53
+      - 172.31.53.53
     #volumes:
-    #- /srv/logs/ziproxy:/var/log
+      #- /srv/logs/ziproxy:/var/log
     networks:
       vpn:
         ipv4_address: 172.31.53.28
@@ -1236,63 +1273,63 @@ services:
     build:
       context: vpn-openvpn
       args:
-      # stable|testing|release/2.3|release/2.4
-      - OPENVPN_VERSION=stable
+        # stable|testing|release/2.3|release/2.4
+        - OPENVPN_VERSION=stable
     #devices:
     #  - "/dev/net/tun:/dev/net/tun:rwm"
     ports:
-    - "1194:1194/udp"
-    - "443:1194/udp"
-    #- "1194:1194/tcp"
+      - "1194:1194/udp"
+      - "443:1194/udp"
+      #- "1194:1194/tcp"
     environment:
-    #- PROTOCOL=udp
-    #- DNS_USE_RESOLVCONF=true
-    #- DNS_EXTRA_SERVER_1=172.31.53.254
-    - DNS_EXTRA_SERVER_1=172.31.53.53
-    #- DNS_EXTRA_SERVER_2=8.8.4.4
-    # OpenVPN extra options
-    #- OPENVPN_OPTS=
-    # See https://github.com/OpenVPN/easy-rsa/blob/master/doc/EasyRSA-Advanced.md
-    - EASYRSA_REQ_COUNTRY=US
-    - EASYRSA_REQ_PROVINCE=California
-    - EASYRSA_REQ_CITY=San Francisco
-    - EASYRSA_REQ_ORG=Copyleft Certificate Co
-    #- EASYRSA_REQ_EMAIL=me@example.net
-    #- EASYRSA_REQ_OU=My Organizational Unit
-    #- EASYRSA_KEY_SIZE=2048
-    # CA expiration time in days
-    #- EASYRSA_CA_EXPIRE=3650
-    # issued cert expiration time in days
-    #- EASYRSA_CERT_EXPIRE=3650
-    #- EASYRSA_REQ_CN=ChangeMe
-    #- EASYRSA_BATCH=
+      #- PROTOCOL=udp
+      #- DNS_USE_RESOLVCONF=true
+      #- DNS_EXTRA_SERVER_1=172.31.53.254
+      - DNS_EXTRA_SERVER_1=172.31.53.53
+      #- DNS_EXTRA_SERVER_2=8.8.4.4
+      # OpenVPN extra options
+      #- OPENVPN_OPTS=
+      # See https://github.com/OpenVPN/easy-rsa/blob/master/doc/EasyRSA-Advanced.md
+      - EASYRSA_REQ_COUNTRY=US
+      - EASYRSA_REQ_PROVINCE=California
+      - EASYRSA_REQ_CITY=San Francisco
+      - EASYRSA_REQ_ORG=Copyleft Certificate Co
+      #- EASYRSA_REQ_EMAIL=me@example.net
+      #- EASYRSA_REQ_OU=My Organizational Unit
+      #- EASYRSA_KEY_SIZE=2048
+      # CA expiration time in days
+      #- EASYRSA_CA_EXPIRE=3650
+      # issued cert expiration time in days
+      #- EASYRSA_CERT_EXPIRE=3650
+      #- EASYRSA_REQ_CN=ChangeMe
+      #- EASYRSA_BATCH=
     depends_on:
       adguard-home:
         condition: service_started
       web-accelerator:
         condition: service_started
     dns:
-    - 172.31.53.53
-    # use service on gateway IP since docker-compose 1.6 can't assign a fixed IP to dns container
-    #- 172.31.53.254
+      - 172.31.53.53
+      # use service on gateway IP since docker-compose 1.6 can't assign a fixed IP to dns container
+      #- 172.31.53.254
     volumes:
-    - /opt/openvpn:/etc/openvpn
-    # Required for `modprobe tun`
-    - /lib/modules:/lib/modules:ro
-    #- /srv/logs/openvpn:/var/log
-    #tmpfs:
-    # required to have the container read-only in docker < 17.12.0
-    #- /dev/net:rw,nosuid,dev,noexec,relatime,size=16k
-    #- /var/log
+      - /opt/openvpn:/etc/openvpn
+      # Required for `modprobe tun`
+      - /lib/modules:/lib/modules:ro
+      #- /srv/logs/openvpn:/var/log
+      #tmpfs:
+      # required to have the container read-only in docker < 17.12.0
+      #- /dev/net:rw,nosuid,dev,noexec,relatime,size=16k
+      #- /var/log
     cap_add:
-    - NET_ADMIN
+      - NET_ADMIN
     networks:
-    - vpn
+      - vpn
     sysctls:
-    - net.ipv4.ip_forward=1
-    - net.ipv4.conf.all.send_redirects=0
-    - net.ipv6.conf.default.forwarding=1
-    - net.ipv6.conf.all.forwarding=1
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.send_redirects=0
+      - net.ipv6.conf.default.forwarding=1
+      - net.ipv6.conf.all.forwarding=1
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
@@ -1316,19 +1353,19 @@ services:
       - "traefik.http.routers.transmission-https.middlewares=std-ipwhitelist,defaultchain-https"
       - "traefik.http.services.transmission-service.loadbalancer.server.port=9091"
     expose:
-    - "9091"
+      - "9091"
     ports:
-    - "51413:51413/tcp"
-    - "51413:51413/udp"
+      - "51413:51413/tcp"
+      - "51413:51413/udp"
     volumes:
-    - /srv/transmission:/var/lib/transmission-daemon
-    # Required for `modprobe tcp_lp`
-    - /lib/modules:/lib/modules:ro
+      - /srv/transmission:/var/lib/transmission-daemon
+      # Required for `modprobe tcp_lp`
+      - /lib/modules:/lib/modules:ro
     networks:
-    - transmission
+      - transmission
     #sysctls:
-    #- net.core.rmem_max=4194304
-    #- net.core.wmem_max=1048576
+      #- net.core.rmem_max=4194304
+      #- net.core.wmem_max=1048576
     cpu_shares: 64
     mem_limit: 128m
     memswap_limit: 192m
@@ -1340,7 +1377,7 @@ services:
 
   tt-rss:
     extends:
-      service: base-service
+      service: base-php-service
     build:
       context: tt-rss
     labels:
@@ -1352,35 +1389,57 @@ services:
       - "traefik.http.routers.ttrss-https.entrypoints=https"
       - "traefik.http.routers.ttrss-https.middlewares=std-ipwhitelist,defaultchain-https"
       - "traefik.http.services.ttrss-service.loadbalancer.server.port=80"
-    expose:
-    - "80"
     environment:
-    - DB_TYPE=mysql
-    - DB_HOST=mysql
-    - DB_PORT=3306
-    - DB_NAME=fox
-    - DB_USER=fox
-    - DB_PASS=
-    - SELF_URL_PATH=https://ttrss.example.net
-    - REG_NOTIFY_ADDRESS=user@your.domain.dom
-    - SMTP_FROM_ADDRESS=noreply@your.domain.dom
-    # Don't change this one!
-    - ENABLE_CRON=1
-    tmpfs:
-    # PHP.ini 'session.save_path'
-    - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
+      # Don't change this one!
+      - ENABLE_CRON=1
+      # https://git.tt-rss.org/fox/tt-rss/src/branch/master/classes/config.php
+      - TTRSS_DB_TYPE=mysql
+      - TTRSS_DB_HOST=mysql
+      - TTRSS_DB_PORT=3306
+      - TTRSS_DB_USER=fox
+      - TTRSS_DB_NAME=fox
+      - TTRSS_DB_PASS=
+      - TTRSS_SELF_URL_PATH=https://ttrss.example.net
+      - TTRSS_REG_NOTIFY_ADDRESS=user@your.domain.dom
+      - TTRSS_SMTP_FROM_ADDRESS=noreply@your.domain.dom
+      - TTRSS_PHP_EXECUTABLE=/usr/local/bin/php
+      - TTRSS_CHECK_FOR_UPDATES=false
+      - TTRSS_PLUGINS=auth_internal, mailer_smtp, data_migration, af_zz_noautoplay
+      - TTRSS_LOG_DESTINATION=
+      - TTRSS_CHECK_FOR_PLUGIN_UPDATES=false
+      - TTRSS_ENABLE_PLUGIN_INSTALLER=false
+      # plugin: af_img_phash (optional)
+      - TTRSS_IMG_HASH_SQL_FUNCTION=true
+      #  plugin: mailer_smtp
+      # Hostname:port combination to send outgoing mail (i.e. localhost:25).
+      # Blank - use system MTA.
+      # Also change 'SMTP_FROM_NAME' and 'SMTP_FROM_ADDRESS' in config.php
+      - TTRSS_SMTP_SERVER=email-relay:25
+      # These two options enable SMTP authentication when sending
+      # outgoing mail. Only used with SMTP_SERVER.
+      - TTRSS_SMTP_LOGIN=
+      - TTRSS_SMTP_PASSWORD=
+      # Used to select a secure SMTP connection. Allowed values: ssl, tls,
+      # or empty.
+      - TTRSS_SMTP_SECURE=
+      # Accept all SSL certificates, use with caution.
+      #- TTRSS_SMTP_SKIP_CERT_CHECKS=false
+      # Use a custom CA certificate for SSL/TLS secure connections.
+      # Only used if SMTP_SKIP_CERT_CHECKS is false.
+      #- TTRSS_SMTP_CA_FILE=/path/to/ca.crt
+      # plugin: nginx_xaccel
+      #- TTRSS_NGINX_XACCEL_PREFIX=/tt-rss
     depends_on:
       mysql:
         condition: service_healthy
       email-relay:
         condition: service_started
-    volumes:
-    #- /srv/tt-rss:/var/www/html
-    - /srv/tt-rss/.well-known:/var/www/html/.well-known:ro
+    #volumes:
+      #- /srv/tt-rss:/var/www/html
     networks:
-    - ttrss-front
-    - ttrss-back-internal
-    - ttrss-back
+      - ttrss-front
+      - ttrss-back-internal
+      - ttrss-back
     cpu_shares: 64
     mem_limit: 128m
     memswap_limit: 192m
@@ -1498,9 +1557,9 @@ services:
 #      - "5353/udp"
 #      - "1900/udp"
 #    environment:
-#    - PUID=1000
-#    - PGID=1000
-#    - TZ=Europe/Paris
+#      - PUID=1000
+#      - PGID=1000
+#      - TZ=Europe/Paris
 #    devices:
 #      - "/dev/snd:/dev/snd"
 #    volumes:
@@ -1543,24 +1602,24 @@ services:
     expose:
       - "8080"
     environment:
-    # https://github.com/statping/statping/wiki/Environment-Variables
-    # https://github.com/statping/statping/wiki/Config-with-.env-File
-    # https://github.com/statping/statping/blob/dev/utils/env.go
-    - ALLOW_REPORTS=false
-    #- DISABLE_LOGS=true
-    #- REMOVE_AFTER=2160h
-    #- CLEANUP_INTERVAL=1h
-    - DB_CONN=sqlite
-    #- DISABLE_COLORS=true
-    - LANGUAGE=en
-    #- NAME=Statping Sample Data
-    #- DESCRIPTION=This status page has sample data included
-    #- DOMAIN=http://localhost:8080
-    #- ADMIN_USER=admin
-    #- ADMIN_PASSWORD=admin
-    #- ADMIN_EMAIL=info@admin.com
-    #- API_SECRET=
-    - SAMPLE_DATA=false
+      # https://github.com/statping/statping/wiki/Environment-Variables
+      # https://github.com/statping/statping/wiki/Config-with-.env-File
+      # https://github.com/statping/statping/blob/dev/utils/env.go
+      - ALLOW_REPORTS=false
+      #- DISABLE_LOGS=true
+      #- REMOVE_AFTER=2160h
+      #- CLEANUP_INTERVAL=1h
+      - DB_CONN=sqlite
+      #- DISABLE_COLORS=true
+      - LANGUAGE=en
+      #- NAME=Statping Sample Data
+      #- DESCRIPTION=This status page has sample data included
+      #- DOMAIN=http://localhost:8080
+      #- ADMIN_USER=admin
+      #- ADMIN_PASSWORD=admin
+      #- ADMIN_EMAIL=info@admin.com
+      #- API_SECRET=
+      - SAMPLE_DATA=false
     volumes:
       - /srv/statping:/app
     cap_add:
@@ -1585,12 +1644,12 @@ services:
     labels:
       - "traefik.enable=false"
     environment:
-    - GEOIPUPDATE_ACCOUNT_ID=XXXXXX
-    - GEOIPUPDATE_LICENSE_KEY=XXXXXXXXXXXXXXXX
-    - 'GEOIPUPDATE_EDITION_IDS=GeoLite2-ASN GeoLite2-City GeoLite2-Country'
-    - GEOIPUPDATE_FREQUENCY=720
-    - GEOIPUPDATE_PRESERVE_FILE_TIMES=1
-    #- GEOIPUPDATE_VERBOSE=1
+      - GEOIPUPDATE_ACCOUNT_ID=XXXXXX
+      - GEOIPUPDATE_LICENSE_KEY=XXXXXXXXXXXXXXXX
+      - 'GEOIPUPDATE_EDITION_IDS=GeoLite2-ASN GeoLite2-City GeoLite2-Country'
+      - GEOIPUPDATE_FREQUENCY=720
+      - GEOIPUPDATE_PRESERVE_FILE_TIMES=1
+      #- GEOIPUPDATE_VERBOSE=1
     volumes:
       - /srv/GeoIP:/usr/share/GeoIP
     cpu_shares: 128
@@ -1602,48 +1661,87 @@ services:
 
 ########################################################################
 
-#  jellyfin:
-#    extends:
-#      service: base-service
-#    image: jellyfin/jellyfin
-#    init: true
-#    labels:
-#      # See https://jellyfin.org/docs/general/networking/traefik2.html
-#      - "traefik.enable=false"
-#    user: 1000:1000
-#    group_add: # by id as these may not exist within the container. Needed to provide permissions to the VAAPI Devices
-#      - "107" #render
-#      - "44"  #video
-#    ports:
-#      # DLNA
-#      - "1900:1900"
-#    expose:
-#      # HTTP
-#      - "8096"
-#      # HTTPS
-#      - "8920"
-#    environment:
-#    - JELLYFIN_PublishedServerUrl=192.0.2.1
-#    volumes:
-#      - /srv/jellyfin/config:/config
-#      - /srv/jellyfin/cache:/cache
-#      - /srv/media:/media:ro
-#    healthcheck:
-#      test: ["CMD", "pgrep", "jellyfin"]
-#      interval: 240s
-#      timeout: 5s
-#      retries: 1
-#      start_period: 10s
-#    networks:
-#      - jellyfin-front
-#    # Network mode of 'host' exposes the ports on the host. This is needed for DLNA access or HDHomeRun.
-##    network_mode: host
-#    cpu_shares: 128
-#    mem_limit: 128m
-#    memswap_limit: 128m
-#    mem_reservation: 64m
-#    read_only: true
-#    restart: unless-stopped
+  # https://jellyfin.org/docs/general/administration/installing.html#container-images
+  # Alternatives:
+  #   linuxserver/jellyfin	https://github.com/linuxserver/docker-jellyfin
+  #   hotio/jellyfin:release	https://github.com/hotio/jellyfin/
+  jellyfin:
+    extends:
+      service: base-service
+    image: jellyfin/jellyfin
+    init: true
+    labels:
+      # See https://jellyfin.org/docs/general/networking/traefik2.html
+      - "traefik.enable=false"
+      - "traefik.http.routers.jellyfin-http.rule=Host(`jellyfin.docker.localhost`)"
+      - "traefik.http.routers.jellyfin-http.entrypoints=http"
+      - "traefik.http.routers.jellyfin-http.middlewares=403"
+      - "traefik.http.routers.jellyfin-https.rule=Host(`jellyfin.docker.localhost`)"
+      - "traefik.http.routers.jellyfin-https.entrypoints=https"
+      - "traefik.http.routers.jellyfin-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.services.jellyfin-service.loadbalancer.server.port=8096"
+    user: nobody:nogroup
+    group_add: # by id as these may not exist within the container. Needed to provide permissions to the VAAPI Devices
+      - "107" #render
+      - "44"  #video
+    expose:
+      # HTTP web UI
+      - "8096"
+      # HTTPS web UI (you need to set up your own certificate)
+      - "8920"
+      # Allows clients to discover Jellyfin on the local network
+      - "7359/udp"
+      # Service discovery, used by DNLA and clients; required to be in the local subnet
+      - "1900/udp"
+    ports:
+      - "1900:1900/udp"
+      - "7359:7359/udp"
+    #devices: #optional
+      # Intel QuickSync GPU for hardware accelerated video encoding (vaapi)
+      #- /dev/dri:/dev/dri
+      # tuner
+      #- /dev/dvb:/dev/dvb
+      # Raspberry Pi MMAL video decoding (Enabled as OpenMax H264 decode in gui settings)
+      #- /dev/vcsm:/dev/vcsm
+      #- /dev/vc-mem:/dev/vc-mem
+      # Raspberry Pi OpenMax video encoding
+      #- /dev/vchiq:/dev/vchiq
+      # Raspberry Pi V4L2 video encoding
+      #- /dev/video10:/dev/video10
+      #- /dev/video11:/dev/video11
+      #- /dev/video12:/dev/video12
+    environment:
+      # https://jellyfin.org/docs/general/administration/configuration.html
+      #- JELLYFIN_DATA_DIR=/config
+      #- JELLYFIN_CONFIG_DIR=/config/config
+      #- JELLYFIN_CACHE_DIR=/cache
+      - JELLYFIN_LOG_DIR=/log
+      #- JELLYFIN_MEDIA_DIR=/media
+      #- JELLYFIN_NOWEBCONTENT=false
+      - JELLYFIN_PublishedServerUrl=192.0.2.1
+    volumes:
+      - /opt/jellyfin:/config
+      - /srv/jellyfin/cache:/cache
+      - /srv/jellyfin/log:/log
+      #- /srv/jellyfin/media:/media:ro
+      # Raspberry Pi OpenMAX libs
+      #- /opt/vc/lib:/opt/vc/lib:ro
+    #healthcheck:
+    #  test: ["CMD", "pgrep", "jellyfin"]
+    #  interval: 240s
+    #  timeout: 5s
+    #  retries: 1
+    #  start_period: 10s
+    #networks:
+    #  - jellyfin-front
+    # Network mode of 'host' exposes the ports on the host. This is needed for DLNA access or HDHomeRun.
+#    network_mode: host
+    cpu_shares: 256
+    mem_limit: 256m
+    memswap_limit: 384m
+    mem_reservation: 96m
+    read_only: false
+    restart: unless-stopped
 
 ########################################################################
 ########################################################################
@@ -1675,7 +1773,7 @@ networks:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.29.1.0/24
+        - subnet: 172.29.1.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
     internal: true
@@ -1683,7 +1781,7 @@ networks:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.30.1.0/24
+        - subnet: 172.30.1.0/24
   owncloud-front:
     driver: bridge
     ipam:
@@ -1693,7 +1791,7 @@ networks:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.29.2.0/24
+        - subnet: 172.29.2.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
     internal: true
@@ -1701,17 +1799,17 @@ networks:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.30.2.0/24
+        - subnet: 172.30.2.0/24
   nextcloud-front:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.3.0/24
+        - subnet: 172.31.3.0/24
   nextcloud-back-internal:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.29.3.0/24
+        - subnet: 172.29.3.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
     internal: true
@@ -1719,17 +1817,17 @@ networks:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.30.3.0/24
+        - subnet: 172.30.3.0/24
   ttrss-front:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.4.0/24
+        - subnet: 172.31.4.0/24
   ttrss-back-internal:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.29.4.0/24
+        - subnet: 172.29.4.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
     internal: true
@@ -1737,17 +1835,17 @@ networks:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.30.4.0/24
+        - subnet: 172.30.4.0/24
   wordpress-front:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.5.0/24
+        - subnet: 172.31.5.0/24
   wordpress-back-internal:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.29.5.0/24
+        - subnet: 172.29.5.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
     internal: true
@@ -1755,17 +1853,17 @@ networks:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.30.5.0/24
+        - subnet: 172.30.5.0/24
   dokuwiki-front:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.6.0/24
+        - subnet: 172.31.6.0/24
   dokuwiki-back-internal:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.29.6.0/24
+        - subnet: 172.29.6.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
     internal: true
@@ -1773,32 +1871,32 @@ networks:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.30.6.0/24
+        - subnet: 172.30.6.0/24
   tiddlywiki-front:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.7.0/24
+        - subnet: 172.31.7.0/24
   dovecot:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.8.0/24
+        - subnet: 172.31.8.0/24
   transmission:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.9.0/24
+        - subnet: 172.31.9.0/24
   icecast-front:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.10.0/24
+        - subnet: 172.31.10.0/24
   icecast-back-internal:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.29.10.0/24
+        - subnet: 172.29.10.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
     internal: true
@@ -1806,22 +1904,22 @@ networks:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.11.0/24
+        - subnet: 172.31.11.0/24
   bitwarden:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.12.0/24
+        - subnet: 172.31.12.0/24
   http-static:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.13.0/24
+        - subnet: 172.31.13.0/24
   #daapd-front:
   #  driver: bridge
   #  ipam:
   #    config:
-  #    - subnet: 172.31.14.0/24
+  #      - subnet: 172.31.14.0/24
 #  daapd-front:
 #    driver: macvlan
 #    driver_opts:
@@ -1836,20 +1934,20 @@ networks:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.15.0/24
+        - subnet: 172.31.15.0/24
   statping-front:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.16.0/24
+        - subnet: 172.31.16.0/24
   vpn:
     driver: bridge
     ipam:
       config:
-      - subnet: 172.31.53.0/24
-        ip_range: 172.31.53.0/24
-        gateway: 172.31.53.254
-        # defining aux addresses prevents from assigning them to containers
-        #aux_addresses:
-        #  dns: 172.31.53.53
+        - subnet: 172.31.53.0/24
+          ip_range: 172.31.53.0/24
+          gateway: 172.31.53.254
+          # defining aux addresses prevents from assigning them to containers
+          #aux_addresses:
+          #  dns: 172.31.53.53
 ...

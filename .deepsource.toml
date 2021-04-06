@@ -1,5 +1,9 @@
 version = 1
 
+exclude_patterns = [
+  "baseimage/image/services/sshd/keys/insecure_key"
+]
+
 [[analyzers]]
 name = "secrets"
 enabled = true

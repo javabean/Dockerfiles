@@ -47,9 +47,9 @@ $AUTOCONFIG = array(
   // Distributed cache for multi-server ownCloud installations
   // If unset, defaults to the value of memcache.local
 //  'memcache.distributed' => '\OC\Memcache\Memcached',
-//  'memcached_servers' => 
+//  'memcached_servers' =>
 //  array (
-//    0 => 
+//    0 =>
 //    array (
 //      0 => 'memcached',
 //      1 => 11211,
@@ -78,7 +78,7 @@ $AUTOCONFIG = array(
   'memcache.locking' => '\OC\Memcache\Redis', // Because most memcache backends can clean values without warning using redis is highly recommended to avoid data loss.
   'filelocking.enabled' => 'true',
   'redis' => array(
-    'host' => 'redis', // can also be a unix domain socket: '/var/run/redis/redis.sock'
+    'host' => 'redis-owncloud', // can also be a unix domain socket: '/var/run/redis/redis.sock'
     'port' => 6379,
 //    'timeout' => 0.0,
 //    'password' => '', // Optional, if not defined no password will be used.

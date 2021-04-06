@@ -3,7 +3,7 @@ What? (purpose)
 
 WordPress server (includes https://wp-cli.org)
 
-Same usage as https://hub.docker.com/_/wordpress/ -- see restore_conf_local.sh for all available options
+This is https://hub.docker.com/_/wordpress/ with some configuration (httpd, PHP, WordPress) tacked on.
 
 Note: it will be useful to install a WP plugin like "WP-Mail-SMTP" to use our SMTP relay! :-)
 
@@ -35,12 +35,10 @@ To save your blog data, mount volumes in
 	/var/www/html/wp-includes/languages
 
     volumes:
-    - /srv/wordpress/acme-challenge/.well-known:/var/www/html/.well-known
     - /srv/wordpress/htaccess:/var/www/html/.htaccess
     - /srv/wordpress/wp-config.php:/var/www/html/wp-config.php
     - /srv/wordpress/wp-content:/var/www/html/wp-content
     - /srv/wordpress/wp-includes-languages:/var/www/html/wp-includes/languages
-    - /srv/logs/wordpress:/var/log
 
 
 Where? (ports)
@@ -59,17 +57,19 @@ build-time
 
     build:
       args:
-      - #WORDPRESS_VERSION=wordpress-4.7.5
-      - WORDPRESS_VERSION=latest
+      - DOCKER_FROM_TAG=5.6.2-php7.4-apache
 
 runtime
 -------
 
+    # See https://hub.docker.com/_/wordpress/
     environment:
     - WORDPRESS_DB_HOST=mysql
     - WORDPRESS_DB_USER=root
     - WORDPRESS_DB_PASSWORD=
     - WORDPRESS_DB_NAME=wordpress
+    - WORDPRESS_DB_CHARSET=utf8mb4
+    - WORDPRESS_DB_COLLATE=utf8_general_ci
     #- WORDPRESS_TABLE_PREFIX=
     # WordPress key generator: https://api.wordpress.org/secret-key/1.1/salt/
     #- WORDPRESS_AUTH_KEY=
@@ -80,6 +80,7 @@ runtime
     #- WORDPRESS_SECURE_AUTH_SALT=
     #- WORDPRESS_LOGGED_IN_SALT=
     #- WORDPRESS_NONCE_SALT=
+    #- WORDPRESS_CONFIG_EXTRA=
 
 
 Securing
@@ -101,4 +102,5 @@ You can use URL http://www.example.com/wp-includes/wlwmanifest.xml or https://ww
 Upgrading version
 =================
 
-WordPress: online upgrade before upgrading Docker image
+WordPress: online upgrade before upgrading Docker image  
+Updgrading the Docker image will also bring you more recent PHP and Apache httpd.

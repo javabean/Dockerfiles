@@ -19,23 +19,25 @@ All HTTP(s) services are behind a front HTTP proxy (aptly named `http-proxy`).
 As much as I would like to separate all services, there is only a single MySQL container. I don't have enough RAM for multiple MySQL instances… :-/
 
 Images hierarchy:
-tomcat
+Tomcat
+MySQL
 AdGuard Home
-mysql
-webssh
+Nextcloud
+WordPress	(requires mysql, email-relay[, memcached])
+WebSSH
+TiddlyWiki*
+php7-apache
+	Tiny Tiny RSS
+	DokuWiki	(requires email-relay)
+	owncloud	(requires email-relay, redis, memcached[, mysql])
 baseimage
-	dovecot
+	Dovecot
 	apache-base
 		http-proxy
-		php7-base
-			owncloud	(requires email-relay, redis, memcached[, mysql])
-			wordpress	(requires mysql, email-relay[, memcached])
-			dokuwiki	(requires email-relay)
-	tiddlywiki*
 	email-relay
-	openvpn	(requires AdGuard Home, ziproxy)
+	OpenVPN	(requires AdGuard Home, ziproxy)
 	ziproxy
-	transmission
+	Transmission
 	sslh
 * = not ready yet
 
@@ -69,8 +71,8 @@ TiddlyWiki: update your installed plugins, themes & languages after upgrading Do
 
 mysql/Dockerfile:
 		version upgrades:
-			https://dev.mysql.com/doc/refman/5.7/en/upgrading.html
-			https://dev.mysql.com/doc/refman/5.7/en/mysql-upgrade.html
+			https://dev.mysql.com/doc/refman/8.0/en/upgrading.html
+			https://dev.mysql.com/doc/refman/8.0/en/mysql-upgrade.html
 			mysql -u root -p --execute="SET GLOBAL innodb_fast_shutdown=0"
 			mysqladmin -u root -p shutdown
-			mysql_upgrade -u root -p
+			??? mysqlcheck -u root -p --all-databases --check-upgrade

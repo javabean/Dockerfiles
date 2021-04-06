@@ -1,0 +1,57 @@
+#!/bin/sh
+set -eu
+(set -o | grep -q pipefail) && set -o pipefail
+(set -o | grep -q posix) && set -o posix
+#shopt -s failglob
+#set -x
+
+# We are not being run (the user probably asked for a shell)
+if [ -z "${TTRSS_SELF_URL_PATH:-}" ]; then
+	exit
+fi
+
+
+# copy backup of conf dirs if mounted volume is empty
+
+if [ ! -f /var/www/html/update.php ]; then
+	cp -a /usr/src/tt-rss/. /var/www/html/
+fi
+
+if [ ! -z "${SERVER_NAME:-}" ]; then
+	sed -i'' -e "s%^\(\s*\)#*\(.*\)__SERVER_NAME__\(.*\)$%\1\2${SERVER_NAME}\3%g" /etc/apache2/conf-enabled/tt-rss.conf
+fi
+
+[ -x "$(command -v mysqladmin)" ] && /usr/local/bin/wait_for.sh mysqladmin --silent --wait=9 --connect_timeout 10 -h "${TTRSS_DB_HOST:-mysql}" -u "${TTRSS_DB_USER:-fox}" -p"${TTRSS_DB_PASS:-ttrss}" ping
+
+
+# The following heavily inspired by https://git.tt-rss.org/fox/ttrss-docker-compose
+
+DST_DIR=/var/www/html
+
+#export PGPASSWORD="${TTRSS_DB_PASS}"
+#PSQL="psql -q -h ${TTRSS_DB_HOST} -U ${TTRSS_DB_USER} ${TTRSS_DB_NAME}"
+#
+#${PSQL} -c "create extension if not exists pg_trgm"
+#
+#RESTORE_SCHEMA="${DST_DIR}/backups/restore-schema.sql.gz"
+#
+#if [ -r "${RESTORE_SCHEMA}" ]; then
+#	${PSQL} -c "drop schema public cascade; create schema public;"
+#	zcat "${RESTORE_SCHEMA}" | ${PSQL}
+##elif ! ${PSQL} -c 'select * from ttrss_version'; then
+##	${PSQL} < "${DST_DIR}/schema/ttrss_schema_pgsql.sql"
+#fi
+
+MYSQL="mysql --batch --connect-timeout=30 -h ${TTRSS_DB_HOST} -u ${TTRSS_DB_USER} -p${TTRSS_DB_PASS}"
+
+RESTORE_SCHEMA="${DST_DIR}/backups/restore-schema.sql.gz"
+
+if [ -r "${RESTORE_SCHEMA}" ]; then
+	zcat "${RESTORE_SCHEMA}" | ${MYSQL}
+#elif ! ( echo "USE \`${DB_NAME}\`;" && echo 'select * from ttrss_version;' ) | ${MYSQL}; then
+#	( echo "USE \`${TTRSS_DB_NAME}\`;" && cat "${DST_DIR}/schema/ttrss_schema_mysql.sql" ) | ${MYSQL}
+fi
+
+
+#cd "${DST_DIR}" && sudo -E -u www-data php ./update.php --update-schema=force-yes
+cd "${DST_DIR}" && chroot --skip-chdir --userspec=www-data / php ./update.php --update-schema=force-yes

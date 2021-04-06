@@ -30,7 +30,6 @@ Mount data into /srv/nextcloud/data (nextcloud data) and /srv/nextcloud/backup (
 Will automatically backup SQLite DB daily if file /srv/nextcloud/backup/nextcloud-dump.sql.gz exists
 
     volumes:
-    - /srv/nextcloud/acme-challenge/.well-known:/var/www/nextcloud/.well-known
     - /opt/nextcloud/config:/var/www/nextcloud/config
     - /opt/nextcloud/apps:/var/www/nextcloud/custom_apps
     - /opt/nextcloud/themes:/var/www/nextcloud/themes

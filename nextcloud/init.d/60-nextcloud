@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+(set -o | grep -q pipefail) && set -o pipefail
+(set -o | grep -q posix) && set -o posix
+#shopt -s failglob
+#set -x
+
+# Restore backup version.php to enable automatic upgrade
+if [ -f /var/www/html/config/version.php ] && [ ! -f /var/www/html/version.php ]; then
+	#cp -a /var/www/html/config/version.php /var/www/html/version.php
+	ln -s config/version.php /var/www/html/
+fi

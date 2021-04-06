@@ -1,7 +1,8 @@
-#FROM wordpress:latest
-#FROM php:7.3-apache
-FROM cedrik/php7-base:latest
+ARG DOCKER_FROM_TAG=5.6.2-php7.4-apache
+FROM wordpress:${DOCKER_FROM_TAG}
+ARG DOCKER_FROM_TAG=5.6.2-php7.4-apache
 LABEL org.opencontainers.image.title="WordPress" \
+      org.opencontainers.image.version="${DOCKER_FROM_TAG}" \
       org.opencontainers.image.authors="Cédrik LIME"
 
 # https://hub.docker.com/_/wordpress/
@@ -9,72 +10,91 @@ LABEL org.opencontainers.image.title="WordPress" \
 # https://wordpress.org/support/article/administration-over-ssl/
 # https://wordpress.org/support/article/hardening-wordpress/
 
-############### FIXME  change version here! ###############
-#ARG WORDPRESS_VERSION=wordpress-5.5.9
-ARG WORDPRESS_VERSION=latest
+
+# OS, Apache httpd & MySQL configuration
+
+COPY bin/* /usr/local/bin/
+COPY sbin/* /usr/local/sbin/
+COPY init.d/* /usr/local/etc/init.d/
+COPY php.ini.d/* ${PHP_INI_DIR}/conf.d/
+
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests \
+  apt-utils \
+  busybox-static curl zip unzip \
+  libapache2-mod-rpaf libapache2-mod-encoding libapache2-mod-xsendfile \
+# libapache2-mod-bw libapache2-mod-log-slow libapache2-mod-security2 \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  && mkdir -p /var/spool/cron/crontabs \
+  && a2enmod unique_id expires rewrite headers env setenvif dir mime info reqtimeout remoteip slotmem_shm socache_shmcb \
+# && a2dismod \
+# && a2enconf \
+  && a2disconf serve-cgi-bin \
+# && a2ensite \
+  && a2dissite default-ssl \
+  && sed -i'.bak' -e 's/^\(ServerTokens OS\)$/#\1\nServerTokens Prod/' \
+    -e 's/^#\(ServerSignature Off\)/\1/' \
+    -e 's/^\(ServerSignature On\)/#\1/' \
+    ${APACHE_CONFDIR}/conf-available/security.conf \
+  && echo "\n\n\n# https://httpoxy.org\nRequestHeader unset Proxy early\n" >> ${APACHE_CONFDIR}/conf-available/security.conf \
+  && echo "SetEnvIf x-forwarded-proto https HTTPS=on" > ${APACHE_CONFDIR}/conf-available/reverse-proxy.conf \
+  && a2enconf reverse-proxy \
+  && sed -i'.bak' -e 's/\(SSLProtocol all -SSLv3\)$/\1 -TLSv1 -TLSv1.1/' ${APACHE_CONFDIR}/mods-available/ssl.conf
+
+
+# PHP configuration
+
+#COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/install-php-extensions \
+  && if ! test -f /usr/src/apc.php; then curl -fsSL http://pecl.php.net/get/APCu | tar xz -C /usr/src/ --strip-components=1 --wildcards apcu*/apc.php; fi \
+  && cp -a ${PHP_INI_DIR}/php.ini-production ${PHP_INI_DIR}/php.ini \
+  && mkdir -p --mode=1733 /var/lib/php/sessions \
+  && echo 'session.save_path = "/var/lib/php/sessions"' > ${PHP_INI_DIR}/conf.d/session.ini
+
+
+# WordPress
+
+# https://make.wordpress.org/hosting/handbook/handbook/server-environment/#php-extensions
+# igbinary & msgpack are dependencies of memcached
+# exif is a dependency of gd
+RUN install-php-extensions curl dom exif fileinfo hash json mbstring mysqli sodium openssl pcre imagick xml zip \
+    filter gd iconv mcrypt simplexml xmlreader zlib \
+    opcache pcntl \
+# bash is needed for 'wp shell'
+  && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests bash imagemagick ghostscript \
+  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  && docker-php-source delete \
+  && rm -f ${PHP_INI_DIR}/conf.d/opcache-recommended.ini \
+\
+  && a2enmod rewrite expires headers env dir mime \
+  && a2dismod -f deflate \
+  && a2dissite 000-default \
+\
+  && rm -f /usr/src/wordpress/index.html /usr/src/wordpress/readme.html /usr/src/wordpress/license.txt \
+  && mkdir -p /usr/src/wordpress/wp-content/uploads \
+  && { \
+    echo "# Kill PHP execution"; \
+    echo "<Files *.php>"; \
+    echo "	Require all denied"; \
+    echo "</Files>"; \
+  } >> /usr/src/wordpress/wp-content/uploads/.htaccess \
+  && chown -R www-data:www-data /usr/src/wordpress/wp-content/uploads \
+\
+# https://make.wordpress.org/cli/handbook/installing/
+  && curl -fsSLR -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
+  && chmod +x /usr/local/bin/wp \
+  && if test -d /etc/bash_completion.d; then curl -fsSLR -o /etc/bash_completion.d/wp-completion.bash https://raw.githubusercontent.com/wp-cli/wp-cli/master/utils/wp-completion.bash; fi
+
+# https://wordpress.org/support/article/hardening-wordpress/#file-permissions
+# https://wordpress.org/support/article/updating-wordpress/#file-ownership
+#  && chown -R root:www-data /usr/src/wordpress/*.php /usr/src/wordpress/wp-admin /usr/src/wordpress/wp-includes \
+#  && chown -R www-data:www-data -R /usr/src/wordpress/.htaccess /usr/src/wordpress/wp-content \
 
 COPY wordpress.conf /etc/apache2/conf-enabled/
-COPY backup_conf_local.sh restore_conf_local.sh wp-changeDomainName.sh  /usr/local/bin/
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-	#php7.3-mysql mysql-client=${MYSQL_VERSION}.* mysql-common=${MYSQL_VERSION}.* \
-	libpng16-16 libjpeg62 libjpeg8 libjpeg-turbo8 libjpeg9 php7.3-gd php7.3-mysql \
-	php7.3-curl libxml2 openssl php7.3-soap \
-	php7.3-json php7.3-intl \
-	php7.3-memcache php7.3-memcached \
-	php7.3-apcu \
-	sudo \
-	# bash is needed for 'wp shell'
-	bash \
-	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
-	&& for m in "rewrite expires headers mime"; do a2enmod $m; done \
-	# PHP configuration
-	&& sed -i'.bak' \
-		# WP_MEMORY_LIMIT/64M for user area, WP_MAX_MEMORY_LIMIT/256M for admin tasks
-		-e 's%\(memory_limit\) = .*M%\1 = 256M%' \
-		-e 's%\(upload_max_filesize\) = .*M%\1 = 8M%' \
-		/etc/php/7.3/apache2/php.ini
+HEALTHCHECK --interval=5m --timeout=10s --start-period=5s --retries=2 \
+	CMD ["/usr/local/bin/docker-healthcheck.sh"]
 
-# set recommended PHP.ini settings
-# see https://secure.php.net/manual/en/opcache.installation.php
-#RUN { \
-#		echo 'opcache.memory_consumption=128'; \
-#		echo 'opcache.interned_strings_buffer=8'; \
-#		echo 'opcache.max_accelerated_files=4000'; \
-#		echo 'opcache.revalidate_freq=60'; \
-#		echo 'opcache.fast_shutdown=1'; \
-#		echo 'opcache.enable_cli=1'; \
-#	} > /usr/local/etc/php/conf.d/opcache-recommended.ini
-
-#RUN docker-php-ext-configure gd --with-png-dir=/usr --with-jpeg-dir=/usr \
-#	&& docker-php-ext-install gd mysqli opcache
-
-RUN curl -fsSL https://wordpress.org/${WORDPRESS_VERSION}.tar.gz | tar xz -C /var/www/html/ --strip-components=1 \
-	&& rm /var/www/html/index.html /var/www/html/readme.html /var/www/html/license.txt \
-	&& mkdir /var/www/html/wp-content/uploads \
-	&& echo "# Kill PHP execution" >> /var/www/html/wp-content/uploads/.htaccess \
-	&& echo "<Files *.php>"        >> /var/www/html/wp-content/uploads/.htaccess \
-	&& echo "	Require all denied"  >> /var/www/html/wp-content/uploads/.htaccess \
-	&& echo "</Files>"             >> /var/www/html/wp-content/uploads/.htaccess \
-	&& chown www-data:www-data -R /var/www/html/ \
-# https://make.wordpress.org/cli/handbook/installing/
-	&& curl -fsSLR -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
-	&& chmod +x /usr/local/bin/wp \
-	&& if test -d /etc/bash_completion.d; then curl -fsSLR -o /etc/bash_completion.d/wp-completion.bash https://raw.githubusercontent.com/wp-cli/wp-cli/master/utils/wp-completion.bash; fi \
-# statistics tool
-	&& if test -f /usr/share/doc/php*-apcu/apc.php; then ln -s /usr/share/doc/php*-apcu/apc.php "/var/www/html/wp-admin/"; fi \
-	&& rm -rf /tmp/* \
-# copy conf dirs to enable populating empty volumes (see runit_apache2)
-	&& /usr/local/bin/backup_conf.sh
-
-#VOLUME /var/www/html
-#VOLUME ["/var/log"]
-#VOLUME ["/var/www/html/wp-content", "/var/www/wp-includes/languages"]
-
-EXPOSE 80 443
-
-#ADD https://raw.githubusercontent.com/docker-library/wordpress/master/apache/docker-entrypoint.sh  /usr/local/bin/
-#ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-
-ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "/usr/local/bin/docker-entrypoint.sh"]
-CMD ["/usr/local/bin/apache2-foreground"]
+ENTRYPOINT ["/usr/local/sbin/docker-init.sh", "docker-entrypoint.sh"]
+CMD ["apache2-foreground"]
