@@ -46,3 +46,4 @@ COPY tt-rss.conf /etc/apache2/conf-enabled/
 COPY 60-init-upgrade  /usr/local/etc/init.d/
 COPY consul-healthcheck.sh /usr/local/bin/
 COPY --from=build --chown=www-data:www-data /usr/src/tt-rss /usr/src/tt-rss
+COPY --chown=www-data:www-data themes.local/* /usr/src/tt-rss/themes.local/
