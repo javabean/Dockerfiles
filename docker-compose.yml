@@ -28,6 +28,8 @@ services:
       - NODE_ENV=production
       - RAILS_ENV=production
       - MIX_ENV=prod
+      - JDK_JAVA_OPTIONS="-Djdk.disableLastUsageTracking"
+      - JAVA_TOOL_OPTIONS="-Djava.net.useSystemProxies=true -Djava.awt.headless=true"
     tmpfs:
       # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
       - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
@@ -217,7 +219,6 @@ services:
       - wordpress-front
       - dokuwiki-front
       - tiddlywiki-front
-      - droppy
       - transmission
       - bitwarden
       - icecast-front
@@ -279,7 +280,6 @@ services:
       #- wordpress
       #- dokuwiki
       #- tiddlywiki
-      #- droppy
       #- transmission
       #- portainer
     volumes:
@@ -305,7 +305,6 @@ services:
       - wordpress-front
       - dokuwiki-front
       - tiddlywiki-front
-      - droppy
       - transmission
       #- bitwarden
       #- icecast-front
@@ -429,8 +428,8 @@ services:
     build:
       context: owncloud
       args:
-        #- OWNCLOUD_VERSION=10.5.0
-        - OWNCLOUD_VERSION=stable
+        #- OWNCLOUD_VERSION=10.7.0
+        - OWNCLOUD_VERSION=latest
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.owncloud-http.rule=Host(`owncloud.example.net`)"
@@ -505,6 +504,7 @@ services:
       #- MYSQL_PASSWORD=HJ79WetJELxrbgc3rwed9Jzh
       - REDIS_HOST=redis-nextcloud
       #- REDIS_HOST_PORT=6379
+      - REDIS_HOST_PASSWORD=redis
       - SMTP_HOST=email-relay
       - MAIL_FROM_ADDRESS=nextcloud-noreply
       - MAIL_DOMAIN=example.com
@@ -569,9 +569,7 @@ services:
     build:
       context: wordpress
       args:
-        #- WORDPRESS_VERSION=latest
-        - WORDPRESS_VERSION=wordpress-5.6.2
-        - DOCKER_FROM_TAG=5.6.2-php7.4-apache
+        - DOCKER_FROM_TAG=5.7.2-php7.4-apache
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.wordpress-http.rule=Host(`wordpress.example.net`)"
@@ -765,47 +763,6 @@ services:
 
 ########################################################################
 
-  # https://github.com/silverwind/droppy
-  droppy:
-    extends:
-      service: base-service
-    image: silverwind/droppy
-    init: true
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.droppy-http.rule=Host(`droppy.example.net`)"
-      - "traefik.http.routers.droppy-http.entrypoints=http"
-      - "traefik.http.routers.droppy-http.middlewares=defaultchain-http"
-      - "traefik.http.routers.droppy-https.rule=Host(`droppy.example.net`)"
-      - "traefik.http.routers.droppy-https.entrypoints=https"
-      - "traefik.http.routers.droppy-https.middlewares=defaultchain-https"
-      - "traefik.http.services.droppy-service.loadbalancer.server.port=8989"
-    command: ["/usr/bin/droppy", "start", "--color", "-f", "/files", "-c", "/config"]
-    expose:
-      - "8989"
-    #environment:
-      #- UID=nobody
-      #- GID=nogroup
-    user: nobody:nogroup
-    volumes:
-      - /opt/droppy:/config
-      - /srv/droppy:/files:ro
-    networks:
-      - droppy
-    healthcheck:
-      test: wget -q -O /dev/null localhost:8989 || exit 1
-      interval: 240s
-      timeout: 5s
-      retries: 1
-      start_period: 10s
-    cpu_shares: 128
-    mem_limit: 192m
-    memswap_limit: 256m
-    mem_reservation: 128m
-    restart: unless-stopped
-
-########################################################################
-
   email-relay:
     extends:
       service: base-service
@@ -976,14 +933,16 @@ services:
 ########################################################################
 
   redis:
-    image: redis:5-alpine
+    image: redis:6-alpine
     init: true
     labels:
       - "com.symfony.server.service-prefix=REDIS"
-    # https://raw.githubusercontent.com/antirez/redis/5.0/redis.conf
-    command: ["--daemonize", "no", "--protected-mode", "no", "--tcp-backlog", "511", "--loglevel", "notice", "--logfile", "", "--databases", "1", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--stop-writes-on-bgsave-error", "yes", "--dbfilename", "dump.rdb", "--dir", "/data", "--maxclients", "100", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction", "--slowlog-log-slower-than", "10000", "--slowlog-max-len", "128"]
+    # https://raw.githubusercontent.com/redis/redis/6.2/redis.conf
+    command: ["--daemonize", "no", "--protected-mode", "no", "--tcp-backlog", "511", "--loglevel", "notice", "--logfile", "", "--databases", "1", "--save", "900", "1", "--save", "300", "10", "--save", "60", "10000", "--stop-writes-on-bgsave-error", "yes", "--dbfilename", "dump.rdb", "--dir", "/data", "--maxclients", "100", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction", "--slowlog-log-slower-than", "10000", "--slowlog-max-len", "128", "--requirepass", "redis"]
     expose:
-    - "6379"
+      - "6379"
+    environment:
+      - REDISCLI_AUTH=redis
     #volumes:
     #- /srv/redis:/data
     healthcheck:
@@ -1215,13 +1174,18 @@ services:
       - "443"
       # DoT
       - "853/tcp"
-      # DoQ
+      # DoQ (deprecated)
       - "784/udp"
+      # DoQ
+      - "8853/udp"
       # web console
       - "3000"
       # DNSCrypt
       - "5443/tcp"
       - "5443/udp"
+      # debug_pprof e.g. http://localhost:6060/debug/pprof/profile?seconds=30
+      # if you have go and graphwiz installed, you can take a look: go tool pprof -http localhost:3434 path_to_dump will open a nice UI interface for exploring the dump
+      - "6060"
     volumes:
       - /opt/adguard-home:/opt/adguardhome/conf
       - /srv/adguard-home:/opt/adguardhome/work
@@ -1711,6 +1675,7 @@ services:
       #- /dev/video11:/dev/video11
       #- /dev/video12:/dev/video12
     environment:
+      - DOTNET_CLI_TELEMETRY_OPTOUT=1
       # https://jellyfin.org/docs/general/administration/configuration.html
       #- JELLYFIN_DATA_DIR=/config
       #- JELLYFIN_CONFIG_DIR=/config/config
@@ -1900,11 +1865,6 @@ networks:
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
     internal: true
-  droppy:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.31.11.0/24
   bitwarden:
     driver: bridge
     ipam:

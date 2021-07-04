@@ -81,7 +81,7 @@ $AUTOCONFIG = array(
     'host' => 'redis-owncloud', // can also be a unix domain socket: '/var/run/redis/redis.sock'
     'port' => 6379,
 //    'timeout' => 0.0,
-//    'password' => '', // Optional, if not defined no password will be used.
+    'password' => 'redis', // Optional, if not defined no password will be used.
 //    'dbindex' => 0, // Optional, if undefined SELECT will not run and will use Redis Server's default DB Index.
   ),
 

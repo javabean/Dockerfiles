@@ -12,7 +12,7 @@ include .env
 
 DOCKER_APT_VERSION = 20.10.*
 # url fragment
-DOCKER_COMPOSE_VERSION = 1.28.6
+DOCKER_COMPOSE_VERSION = 1.29.2
 
 DOCKER_FROM_IMAGE ?= ubuntu
 DOCKER_FROM_VERSION ?= 18.04
@@ -55,8 +55,7 @@ pull: ## pull base Docker images from Docker Hub
 	docker image pull $(DOCKER_FROM)
 	#docker-compose pull
 	#docker image pull memcached:1.6-alpine
-	docker image pull redis:5-alpine
-	#docker image pull silverwind/droppy
+	docker image pull redis:6-alpine
 	#docker image pull portainer/portainer-ce
 	#docker image pull certbot/certbot
 	#docker image pull traefik:$(TRAEFIK_VERSION)
@@ -184,7 +183,6 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	                                              /srv/logs/ziproxy \
 	  /srv/transmission \
 	  /srv/bitwarden \
-	/opt/droppy \
 	/opt/portainer/certs  /srv/portainer/data \
 	/opt/icecaste  /srv/logs/icecast  /opt/darkice
 
@@ -207,7 +205,6 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	sudo chown -R 103:104 /opt/email-relay
 	sudo chown 101:102 /srv/transmission
 	sudo chown 100:101 /srv/redis*
-	sudo chown -R nobody:nogroup /srv/droppy /opt/droppy
 	sudo touch /opt/icecast/htpasswd && sudo chown 100:101 /opt/icecast/htpasswd
 
 ########################################################################
