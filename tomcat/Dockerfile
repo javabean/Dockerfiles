@@ -16,7 +16,8 @@ RUN	if ! getent group "tomcat" > /dev/null 2>&1 ; then \
 	fi
 
 # Install procps & curl (for health check)
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apt-utils && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends procps curl \
+# Install libxp6 libxt6 libxtst6 libx11-6 for java.awt.headless
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apt-utils && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends libxt6 libxtst6 libx11-6  procps curl \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ## make the "en_US.UTF-8" locale so tomcat will be utf-8 enabled by default

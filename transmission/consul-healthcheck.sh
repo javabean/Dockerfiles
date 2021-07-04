@@ -14,6 +14,7 @@ if [ "$num_processes" -eq 0 ]; then
 	exit 2
 fi
 
-curl -fsS -o /dev/null http://localhost:9091 || exit 2
+# shellcheck disable=SC2086
+curl -fsS -o /dev/null ${HC_CURL_TRANSMISSION_CREDENTIALS} http://localhost:9091/transmission/web/javascript/main.js || exit 2
 
 exit 0

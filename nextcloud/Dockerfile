@@ -35,7 +35,14 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     -e 's/^#\(ServerSignature Off\)/\1/' \
     -e 's/^\(ServerSignature On\)/#\1/' \
     ${APACHE_CONFDIR}/conf-available/security.conf \
-  && echo "\n\n\n# https://httpoxy.org\nRequestHeader unset Proxy early\n" >> ${APACHE_CONFDIR}/conf-available/security.conf \
+  && { \
+    echo "\n\n\n"; \
+    echo "# https://httpoxy.org"; \
+    echo "RequestHeader unset Proxy early"; \
+    echo ""; \
+    echo "# https://developer.chrome.com/blog/floc/#how-can-websites-opt-out-of-the-floc-computation"; \
+    echo "Header setifempty Permissions-Policy \"interest-cohort=() geolocation=(self 'https://example.com')\""; \
+  } >> ${APACHE_CONFDIR}/conf-available/security.conf \
   && echo "SetEnvIf x-forwarded-proto https HTTPS=on" > ${APACHE_CONFDIR}/conf-available/reverse-proxy.conf \
   && a2enconf reverse-proxy \
   && sed -i'.bak' -e 's/\(SSLProtocol all -SSLv3\)$/\1 -TLSv1 -TLSv1.1/' ${APACHE_CONFDIR}/mods-available/ssl.conf
