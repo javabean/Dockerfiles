@@ -1,4 +1,4 @@
-FROM buildpack-deps:bionic as builder
+FROM buildpack-deps:stable as builder
 
 ARG MOD_MAXMINDDB_VERSION=1.2.0
 
@@ -16,6 +16,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 
 FROM cedrik/baseimage:18.04
 LABEL org.opencontainers.image.authors="Cédrik LIME"
+
+ENV APACHE_CONFDIR /etc/apache2
+ENV APACHE_ENVVARS ${APACHE_CONFDIR}/envvars
 
 #RUN echo "Apachai Hopachai" > /etc/container_environment/MY_NAME
 

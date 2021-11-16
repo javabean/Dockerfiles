@@ -18,7 +18,7 @@ if [ ! -f /var/www/html/update.php ]; then
 fi
 
 if [ ! -z "${SERVER_NAME:-}" ]; then
-	sed -i'' -e "s%^\(\s*\)#*\(.*\)__SERVER_NAME__\(.*\)$%\1\2${SERVER_NAME}\3%g" /etc/apache2/conf-enabled/tt-rss.conf
+	sed -i'' -e "s%^\(\s*\)#*\(.*\)__SERVER_NAME__\(.*\)$%\1\2${SERVER_NAME}\3%g" ${APACHE_CONFDIR}/conf-enabled/tt-rss.conf
 fi
 
 [ -x "$(command -v mysqladmin)" ] && /usr/local/bin/wait_for.sh mysqladmin --silent --wait=9 --connect_timeout 10 -h "${TTRSS_DB_HOST:-mysql}" -u "${TTRSS_DB_USER:-fox}" -p"${TTRSS_DB_PASS:-ttrss}" ping

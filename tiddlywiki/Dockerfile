@@ -14,7 +14,8 @@ USER node
 #ENV NPM_CONFIG_LOGLEVEL info
 ENV NODE_ENV=production \
     NPM_CONFIG_PREFIX=/home/node/.npm-global \
-    PATH=$PATH:/home/node/.npm-global/bin
+    PATH=$PATH:/home/node/.npm-global/bin \
+    npm_config_send_metrics=false
 
 RUN npm install -g --production tiddlywiki \
   # To update: npm update -g tiddlywiki
