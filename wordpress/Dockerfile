@@ -1,6 +1,6 @@
-ARG DOCKER_FROM_TAG=5.6.2-php7.4-apache
+ARG DOCKER_FROM_TAG=5.9.3-php7.4-apache
 FROM wordpress:${DOCKER_FROM_TAG}
-ARG DOCKER_FROM_TAG=5.6.2-php7.4-apache
+ARG DOCKER_FROM_TAG=5.9.3-php7.4-apache
 LABEL org.opencontainers.image.title="WordPress" \
       org.opencontainers.image.version="${DOCKER_FROM_TAG}" \
       org.opencontainers.image.authors="Cédrik LIME"
@@ -9,6 +9,11 @@ LABEL org.opencontainers.image.title="WordPress" \
 # https://wordpress.org/support/article/editing-wp-config-php/
 # https://wordpress.org/support/article/administration-over-ssl/
 # https://wordpress.org/support/article/hardening-wordpress/
+
+
+ARG NEWRELIC_PHP_AGENT_URL=https://download.newrelic.com/php_agent/release/newrelic-php5-9.21.0.311-linux.tar.gz
+ARG NEWRELIC_LICENSE_KEY=
+ARG NEWRELIC_APPLICATION_NAME=Wordpress
 
 
 # OS, Apache httpd & MySQL configuration
@@ -60,14 +65,57 @@ RUN chmod +x /usr/local/bin/install-php-extensions \
   && echo 'session.save_path = "/var/lib/php/sessions"' > ${PHP_INI_DIR}/conf.d/session.ini
 
 
+# Newrelic
+# https://docs.newrelic.com/docs/agents/php-agent/advanced-installation/docker-other-container-environments-install-php-agent/
+# https://docs.newrelic.com/docs/agents/php-agent/advanced-installation/silent-mode-install-script-advanced/
+RUN \
+  #echo 'deb http://apt.newrelic.com/debian/ newrelic non-free' | sudo tee /etc/apt/sources.list.d/newrelic.list \
+  #&& curl -fsL https://download.newrelic.com/548C16BF.gpg | apt-key add - \
+  ##&& echo newrelic-php5 newrelic-php5/application-name string "My App Name" | debconf-set-selections \
+  #&& echo newrelic-php5 newrelic-php5/license-key string "${NEWRELIC_LICENSE_KEY}" | debconf-set-selections \
+  #&& apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends --no-install-suggests newrelic-php5 \
+  #&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+  curl -fsSL ${NEWRELIC_PHP_AGENT_URL} | tar -C /tmp -zx && \
+  export NR_INSTALL_USE_CP_NOT_LN=1 && \
+  export NR_INSTALL_SILENT=1 && \
+  export NR_INSTALL_KEY=${NEWRELIC_LICENSE_KEY} && \
+  /tmp/newrelic-php5-*/newrelic-install install && \
+  rm -rf /tmp/newrelic-php5-* /tmp/nrinstall* && \
+  # https://docs.newrelic.com/docs/agents/php-agent/configuration/php-agent-configuration/ \
+  sed -i \
+      -e "s/\"REPLACE_WITH_REAL_KEY\"/\"${NEWRELIC_LICENSE_KEY}\"/" \
+      #-e 's/newrelic.appname = "PHP Application"/newrelic.appname = "YOUR_APPLICATION_NAME"/' \
+      #-e 's/;newrelic.high_security =.*/newrelic.high_security=1/' \
+      #-e 's/;newrelic.labels =.*/newrelic.labels="Server:One;Data Center:Primary"/' \
+      #-e 's/;newrelic.distributed_tracing_enabled =.*/newrelic.distributed_tracing_enabled=1/' \
+      #-e 's/;newrelic.browser_monitoring.auto_instrument =.*/newrelic.browser_monitoring.auto_instrument=false/' \
+      -e 's/;newrelic.transaction_tracer.detail =.*/newrelic.transaction_tracer.detail=0/' \
+      -e 's/;newrelic.transaction_tracer.max_segments_web =.*/newrelic.transaction_tracer.max_segments_web=100000/' \
+      -e 's/;newrelic.transaction_tracer.max_segments_cli =.*/newrelic.transaction_tracer.max_segments_cli=100000/' \
+      -e 's/;newrelic.distributed_tracing_exclude_newrelic_header =.*/newrelic.distributed_tracing_exclude_newrelic_header=true/' \
+      #-e 's/;newrelic.enabled =.*/newrelic.enabled=false/' \
+      -e 's/;newrelic.daemon.dont_launch =.*/newrelic.daemon.dont_launch=3/' \
+      -e 's/;newrelic.daemon.address =.*/newrelic.daemon.address=newrelic-php-daemon:31339/' \
+      -e 's/;newrelic.daemon.app_connect_timeout =.*/newrelic.daemon.app_connect_timeout=15s/' \
+      -e 's/;newrelic.daemon.start_timeout =.*/newrelic.daemon.start_timeout=5s/' \
+      -e 's/;newrelic.daemon.app_timeout =.*/newrelic.daemon.app_timeout=4h/' \
+      -e 's%newrelic.logfile =.*%newrelic.logfile=/proc/self/fd/1%' \
+    ${PHP_INI_DIR}/conf.d/newrelic.ini
+
+
 # WordPress
+
+COPY wordpress.conf ${APACHE_CONFDIR}/conf-enabled/
 
 # https://make.wordpress.org/hosting/handbook/handbook/server-environment/#php-extensions
 # igbinary & msgpack are dependencies of memcached
 # exif is a dependency of gd
-RUN install-php-extensions curl dom exif fileinfo hash json mbstring mysqli sodium openssl pcre imagick xml zip \
-    filter gd iconv mcrypt simplexml xmlreader zlib \
+RUN echo "newrelic.logfile=/dev/null" > ${PHP_INI_DIR}/conf.d/zz_newrelic_tmp.ini \
+  && install-php-extensions json mysqli \
+    curl dom exif fileinfo hash imagick mbstring openssl pcre xml zip \
+    bcmath filter gd iconv intl mcrypt simplexml sodium xmlreader zlib \
     opcache pcntl \
+  && rm -f ${PHP_INI_DIR}/conf.d/zz_newrelic_tmp.ini \
 # bash is needed for 'wp shell'
   && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests bash imagemagick ghostscript \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
@@ -91,14 +139,19 @@ RUN install-php-extensions curl dom exif fileinfo hash json mbstring mysqli sodi
 # https://make.wordpress.org/cli/handbook/installing/
   && curl -fsSLR -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
   && chmod +x /usr/local/bin/wp \
-  && if test -d /etc/bash_completion.d; then curl -fsSLR -o /etc/bash_completion.d/wp-completion.bash https://raw.githubusercontent.com/wp-cli/wp-cli/master/utils/wp-completion.bash; fi
+  && if test -d /etc/bash_completion.d; then curl -fsSLR -o /etc/bash_completion.d/wp-completion.bash https://raw.githubusercontent.com/wp-cli/wp-cli/master/utils/wp-completion.bash; fi \
+\
+  && sed -i \
+       -e "s/newrelic.appname = \"PHP Application\"/newrelic.appname = \"${NEWRELIC_APPLICATION_NAME}\"/" \
+       ${PHP_INI_DIR}/conf.d/newrelic.ini \
+  && sed -i \
+       -e "s/_NEWRELIC_APPLICATION_NAME_/${NEWRELIC_APPLICATION_NAME}/" \
+       ${APACHE_CONFDIR}/conf-enabled/wordpress.conf
 
 # https://wordpress.org/support/article/hardening-wordpress/#file-permissions
 # https://wordpress.org/support/article/updating-wordpress/#file-ownership
 #  && chown -R root:www-data /usr/src/wordpress/*.php /usr/src/wordpress/wp-admin /usr/src/wordpress/wp-includes \
 #  && chown -R www-data:www-data -R /usr/src/wordpress/.htaccess /usr/src/wordpress/wp-content \
-
-COPY wordpress.conf /etc/apache2/conf-enabled/
 
 HEALTHCHECK --interval=5m --timeout=10s --start-period=5s --retries=2 \
 	CMD ["/usr/local/bin/docker-healthcheck.sh"]

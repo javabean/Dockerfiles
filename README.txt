@@ -28,8 +28,6 @@ WebSSH
 TiddlyWiki*
 php7-apache
 	Tiny Tiny RSS
-	DokuWiki	(requires email-relay)
-	owncloud	(requires email-relay, redis, memcached[, mysql])
 baseimage
 	Dovecot
 	apache-base
@@ -58,8 +56,6 @@ MAINTENANCE
 `.env` : check and adjust `MYSQL_VERSION`
 
 `vpn-openvpn/Dockerfile`: check and adjust EasyRSA version
-
-ownCloud: manually `/usr/local/bin/ownCloudUpgrade.sh` after Docker image upgrade
 
 WordPress: online upgrade before upgrading Docker image
 

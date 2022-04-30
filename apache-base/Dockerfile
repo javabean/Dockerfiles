@@ -1,10 +1,10 @@
-FROM buildpack-deps:stable as builder
+FROM buildpack-deps:20.04 as builder
 
 ARG MOD_MAXMINDDB_VERSION=1.2.0
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apt-utils software-properties-common \
-  && LC_ALL=C.UTF-8  add-apt-repository -y --no-update ppa:ondrej/apache2 \
-  && LC_ALL=C.UTF-8  add-apt-repository -y --no-update ppa:maxmind/ppa \
+  && LC_ALL=C.UTF-8  add-apt-repository --no-update -y ppa:ondrej/apache2 \
+  && LC_ALL=C.UTF-8  add-apt-repository --no-update -y ppa:maxmind/ppa \
   && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends apache2 apache2-dev libmaxminddb0 libmaxminddb-dev \
 	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
   && curl -fsSL https://github.com/maxmind/mod_maxminddb/releases/download/${MOD_MAXMINDDB_VERSION}/mod_maxminddb-${MOD_MAXMINDDB_VERSION}.tar.gz | tar xz -C /usr/src \
@@ -31,7 +31,7 @@ COPY consul-healthcheck.sh backup_conf.sh restore_conf.sh docker-entrypoint.sh  
 
 COPY security-add.conf /tmp/
 
-ADD https://raw.githubusercontent.com/docker-library/php/master/7.4/buster/apache/apache2-foreground  /usr/local/bin/
+ADD https://raw.githubusercontent.com/docker-library/php/master/8.1/bullseye/apache/apache2-foreground  /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/apache2-foreground \
   && LC_ALL=C.UTF-8  add-apt-repository -y --no-update ppa:ondrej/apache2 \

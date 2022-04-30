@@ -71,6 +71,10 @@ services:
       - "80"
     #environment:
       #- ENABLE_CRON=1
+    # WTF?!? services with 'depends_on' cannot be extended
+    #depends_on:
+    #  newrelic-php-daemon:
+    #    condition: service_healthy
     tmpfs:
       # PHP.ini 'session.save_path'
       - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
@@ -81,14 +85,16 @@ services:
   traefik:
     extends:
       service: base-service
-    image: traefik:${TRAEFIK_VERSION:-2.4}
+    image: traefik:${TRAEFIK_VERSION:-2.7}
     init: true
-    # https://docs.traefik.io/v2.4/reference/dynamic-configuration/docker/
+    # https://docs.traefik.io/v2.7/reference/dynamic-configuration/docker/
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=default"
       - "traefik.http.routers.traefik-http.rule=Host(`traefik.docker.localhost`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
       - "traefik.http.routers.traefik-http.entrypoints=http"
       - "traefik.http.routers.traefik-http.middlewares=403"
+      - "traefik.http.routers.traefik-http.service=api@internal"
       - "traefik.http.routers.traefik-https.rule=Host(`traefik.docker.localhost`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
       - "traefik.http.routers.traefik-https.entrypoints=https"
       - "traefik.http.routers.traefik-https.middlewares=std-ipwhitelist,traefik-authentication,defaultchain-https"
@@ -126,8 +132,10 @@ services:
           traefik.http.middlewares.std-ipwhitelist.ipwhitelist.sourcerange=192.168.0.0/16, 172.16.0.0/12,
           10.0.0.0/8
       - "traefik.http.middlewares.403.ipwhitelist.sourcerange=127.1.2.7"
+      - "traefik.http.middlewares.inflightreq.inflightreq.amount=500"
+      - "traefik.http.middlewares.inflightreq.inflightreq.sourcecriterion.ipstrategy.excludedips=127.0.0.1/32, 192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8"
       - "traefik.http.middlewares.defaultchain-http.chain.middlewares=std-headers,redirect"
-      - "traefik.http.middlewares.defaultchain-https.chain.middlewares=std-headers,compress"
+      - "traefik.http.middlewares.defaultchain-https.chain.middlewares=std-headers,inflightreq,compress"
       # The file provider is the only available method to configure the certificates (as well as the options and the stores).
       # https://doc.traefik.io/traefik/v2.4/https/tls/
       #- "traefik.tls.options.default.minVersion=VersionTLS12"
@@ -156,10 +164,10 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      # https://docs.traefik.io/v2.4/reference/static-configuration/env/
+      # https://docs.traefik.io/v2.7/reference/static-configuration/env/
       - TRAEFIK_GLOBAL_CHECKNEWVERSION=false
       - TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE=false
-      - TRAEFIK_PROVIDERS_PROVIDERSTHROTTLEDURATION=2
+      - TRAEFIK_PROVIDERS_PROVIDERSTHROTTLEDURATION=2s
       - TRAEFIK_PROVIDERS_DOCKER=true
       - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
       #- TRAEFIK_PROVIDERS_DOCKER_NETWORK=
@@ -213,14 +221,12 @@ services:
       - default
       - http-static
       - tomcat-front
-      - owncloud-front
       - nextcloud-front
       - ttrss-front
       - wordpress-front
-      - dokuwiki-front
       - tiddlywiki-front
       - transmission
-      - bitwarden
+      - vaultwarden
       - icecast-front
 #      - daapd-front
       - statping-front
@@ -276,9 +282,7 @@ services:
       - "443:443"
     #depends_on:
       #- tomcat
-      #- owncloud
       #- wordpress
-      #- dokuwiki
       #- tiddlywiki
       #- transmission
       #- portainer
@@ -299,14 +303,12 @@ services:
       # "default" needed to get connectivity from outside(!)
       - default
       - tomcat-front
-      - owncloud-front
       - nextcloud-front
       - ttrss-front
       - wordpress-front
-      - dokuwiki-front
       - tiddlywiki-front
       - transmission
-      #- bitwarden
+      #- vaultwarden
       #- icecast-front
       #- statping-front
       - vpn
@@ -314,7 +316,7 @@ services:
     cpu_shares: 256
     mem_limit: 128m
     memswap_limit: 192m
-    mem_reservation: 96m
+    mem_reservation: 64m
     restart: unless-stopped
 
   sslh:
@@ -365,6 +367,7 @@ services:
     expose:
       - "8000"
       - "9000"
+      - "9443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       #- /opt/portainer/certs:/certs
@@ -387,6 +390,7 @@ services:
     init: true
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=tomcat-front"
       - "traefik.http.routers.tomcat-http.rule=Host(`example.com`,`example.net`)"
       - "traefik.http.routers.tomcat-http.entrypoints=http"
       - "traefik.http.routers.tomcat-http.middlewares=403"
@@ -421,57 +425,6 @@ services:
 
 ########################################################################
 
-  owncloud:
-    extends:
-      service: base-php-service
-    #image: owncloud/server:latest
-    build:
-      context: owncloud
-      args:
-        #- OWNCLOUD_VERSION=10.7.0
-        - OWNCLOUD_VERSION=latest
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.owncloud-http.rule=Host(`owncloud.example.net`)"
-      - "traefik.http.routers.owncloud-http.entrypoints=http"
-      - "traefik.http.routers.owncloud-http.middlewares=defaultchain-http"
-      - "traefik.http.routers.owncloud-https.rule=Host(`owncloud.example.net`)"
-      - "traefik.http.routers.owncloud-https.entrypoints=https"
-      - "traefik.http.routers.owncloud-https.middlewares=std-ipwhitelist,owncloud-dav-redirect,defaultchain-https"
-      - "traefik.http.services.owncloud-service.loadbalancer.server.port=80"
-      # redirect DAV well-known endpoints
-      - "traefik.http.middlewares.owncloud-dav-redirect.redirectregex.permanent=true"
-      - "traefik.http.middlewares.owncloud-dav-redirect.redirectregex.regex=https://(.*)/.well-known/(card|cal)dav"
-      - "traefik.http.middlewares.owncloud-dav-redirect.redirectregex.replacement=https://$$1/remote.php/dav/"
-    environment:
-      - ENABLE_CRON=1
-    depends_on:
-      mysql:
-        condition: service_healthy
-      #memcached-owncloud:
-      #  condition: service_healthy
-      redis-owncloud:
-        condition: service_healthy
-      email-relay:
-        condition: service_started
-    volumes:
-      - /opt/owncloud/config:/var/www/owncloud/config
-      - /opt/owncloud/apps:/var/www/owncloud/apps-external
-      - /opt/owncloud/ip-restriction.conf:/etc/apache2/conf-enabled/ip-restriction.conf:ro
-      - /srv/owncloud:/srv/owncloud
-      - /srv/logs/owncloud:/var/log
-    networks:
-      - owncloud-front
-      - owncloud-back-internal
-      - owncloud-back
-    mem_limit: 384m
-    memswap_limit: 512m
-    mem_reservation: 256m
-    read_only: false
-    restart: unless-stopped
-
-########################################################################
-
   nextcloud:
     extends:
       service: base-php-service
@@ -480,11 +433,13 @@ services:
       context: nextcloud
       args:
         # https://nextcloud.com/release-channels/
-        #- DOCKER_FROM_TAG=21-apache
+        #- DOCKER_FROM_TAG=23-apache
         #- DOCKER_FROM_TAG=stable-apache
         - DOCKER_FROM_TAG=production-apache
+        - NEWRELIC_LICENSE_KEY=${NEWRELIC_LICENSE_KEY}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=nextcloud-front"
       - "traefik.http.routers.nextcloud-http.rule=Host(`nextcloud.example.net`)"
       - "traefik.http.routers.nextcloud-http.entrypoints=http"
       - "traefik.http.routers.nextcloud-http.middlewares=defaultchain-http"
@@ -512,8 +467,18 @@ services:
       #- NEXTCLOUD_ADMIN_PASSWORD=x4uhbXqGsG9qU43mPBrvAYE8
       - NEXTCLOUD_DATA_DIR=/srv/nextcloud/data
       #- NEXTCLOUD_TRUSTED_DOMAINS="example.com www.example.com"
+      - OVERWRITEHOST=example.net
+      - OVERWRITEPROTOCOL=https
+      - TRUSTED_PROXIES=127.0.0.1 192.168.0.0/16 172.16.0.0/12 10.0.0.0/8
       # Launch a cron daemon in the background (instead of relying on an external cron)
       #- ENABLE_CRON=1
+    expose:
+      - "80"
+      # High performance backend for Nextcloud Files
+      - "7867"
+      # High performance backend for Nextcloud Talk
+      - "3478/tcp"
+      - "3478/udp"
     depends_on:
       mysql:
         condition: service_healthy
@@ -522,6 +487,8 @@ services:
       redis-nextcloud:
         condition: service_healthy
       email-relay:
+        condition: service_started
+      imaginary:
         condition: service_started
     volumes:
       - /opt/nextcloud/config:/var/www/html/config
@@ -532,10 +499,37 @@ services:
       - nextcloud-front
       - nextcloud-back-internal
       - nextcloud-back
-    mem_limit: 384m
-    memswap_limit: 512m
+    mem_limit: 512m
+    memswap_limit: 768m
     mem_reservation: 256m
     read_only: false
+    restart: unless-stopped
+
+  imaginary:
+    image: h2non/imaginary
+    init: true
+    labels:
+      - "traefik.enable=false"
+    environment:
+      - MALLOC_ARENA_MAX=2
+      - GOLANG_LOG=warn
+    command: -concurrency 10 -cpus 2 -enable-url-source
+    expose:
+      #- "8088"
+      - "9000"
+    networks:
+      - nextcloud-back-internal
+    healthcheck:
+      #test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/"]
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 1
+      start_period: 10s
+    mem_limit: 128m
+    memswap_limit: 512m
+    mem_reservation: 96m
+    read_only: true
     restart: unless-stopped
 
   nextcloud-cron:
@@ -569,9 +563,11 @@ services:
     build:
       context: wordpress
       args:
-        - DOCKER_FROM_TAG=5.7.2-php7.4-apache
+        - DOCKER_FROM_TAG=5.9.3-php7.4-apache
+        - NEWRELIC_LICENSE_KEY=${NEWRELIC_LICENSE_KEY}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=wordpress-front"
       - "traefik.http.routers.wordpress-http.rule=Host(`wordpress.example.net`)"
       - "traefik.http.routers.wordpress-http.entrypoints=http"
       - "traefik.http.routers.wordpress-http.middlewares=defaultchain-http"
@@ -678,50 +674,7 @@ services:
       - wordpress-back
     mem_limit: 448m
     memswap_limit: 512m
-    mem_reservation: 384m
-    read_only: false
-    restart: unless-stopped
-
-########################################################################
-
-  dokuwiki:
-    extends:
-      service: base-php-service
-    build:
-      context: dokuwiki
-      args:
-        #- DOKUWIKI_VERSION=2020-07-29
-        - DOKUWIKI_VERSION=stable
-        # Languages to keep (delete all others)
-        #- STRIP_LANGS_KEEP=en,fr
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dokuwiki-http.rule=Host(`dokuwiki.example.net`)"
-      - "traefik.http.routers.dokuwiki-http.entrypoints=http"
-      - "traefik.http.routers.dokuwiki-http.middlewares=defaultchain-http"
-      - "traefik.http.routers.dokuwiki-https.rule=Host(`dokuwiki.example.net`)"
-      - "traefik.http.routers.dokuwiki-https.entrypoints=https"
-      - "traefik.http.routers.dokuwiki-https.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.services.dokuwiki-service.loadbalancer.server.port=80"
-      # ToDo ip-whitelist on /admin
-    environment:
-      - ENABLE_CRON=1
-    depends_on:
-      email-relay:
-        condition: service_started
-    volumes:
-      - /srv/dokuwiki/conf:/var/www/html/conf
-      - /srv/dokuwiki/lib/plugins:/var/www/html/lib/plugins
-      #- /srv/dokuwiki/lib/tpl:/var/www/html/lib/tpl
-      - /srv/dokuwiki/data:/var/www/html/data
-      - /srv/logs/dokuwiki:/var/log
-    networks:
-      - dokuwiki-front
-      - dokuwiki-back-internal
-      - dokuwiki-back
-    mem_limit: 192m
-    memswap_limit: 256m
-    mem_reservation: 128m
+    mem_reservation: 256m
     read_only: false
     restart: unless-stopped
 
@@ -780,16 +733,14 @@ services:
       - /srv/logs/email-relay:/var/log
     networks:
       - tomcat-back
-      - owncloud-back
       - nextcloud-back
       - ttrss-back
       - wordpress-back
-      - dokuwiki-back
-      - bitwarden
+      - vaultwarden
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
-    mem_reservation: 32m
+    mem_reservation: 16m
     read_only: false
     restart: always
 
@@ -857,7 +808,6 @@ services:
       - SYS_NICE # Fix "mbind: Operation not permitted"
     networks:
       #- tomcat-back-internal
-      - owncloud-back-internal
       - nextcloud-back-internal
       - ttrss-back-internal
       - wordpress-back-internal
@@ -899,6 +849,8 @@ services:
   memcached:
     image: memcached:1.6-alpine
     init: true
+    labels:
+      - "com.symfony.server.service-prefix=MEMCACHED"
     command: ["memcached", "--memory-limit=64", "--port=11211", "--udp-port=11211", "--conn-limit=256", "--threads=2"]
     expose:
       - "11211/tcp"
@@ -915,13 +867,6 @@ services:
     mem_swappiness: 1
     read_only: true
     restart: always
-
-  memcached-owncloud:
-    extends:
-      service: memcached
-    command: ["memcached", "-m", "32", "-p", "11211", "-c", "256", "-t", "1"]
-    networks:
-      - owncloud-back-internal
 
   memcached-wordpress:
     extends:
@@ -959,17 +904,9 @@ services:
     cpu_shares: 128
     mem_limit: 128m
     memswap_limit: 128m
-    mem_reservation: 80m
+    mem_reservation: 72m
     read_only: true
     restart: always
-
-  redis-owncloud:
-    extends:
-      service: redis
-    volumes:
-      - /srv/redis-owncloud:/data
-    networks:
-      - owncloud-back-internal
 
   redis-nextcloud:
     extends:
@@ -1015,104 +952,126 @@ services:
 
 ########################################################################
 
-  # https://github.com/dani-garcia/bitwarden_rs/wiki
-  bitwarden:
+  # https://github.com/dani-garcia/vaultwarden/wiki
+  vaultwarden:
     extends:
       service: base-service
-    #image: bitwardenrs/server:latest
-    image: bitwardenrs/server:alpine
+    #image: vaultwarden/server:latest
+    image: vaultwarden/server:alpine
     init: true
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.bitwarden-http.rule=Host(`vault.example.net`)"
-      - "traefik.http.routers.bitwarden-http.entrypoints=http"
-      - "traefik.http.routers.bitwarden-http.middlewares=403"
-      - "traefik.http.routers.bitwarden-https.rule=Host(`vault.example.net`)"
-      - "traefik.http.routers.bitwarden-https.entrypoints=https"
-      - "traefik.http.routers.bitwarden-https.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.routers.bitwarden-https.service=bitwarden-web"
-      - "traefik.http.services.bitwarden-web.loadbalancer.server.port=80"
+      - "traefik.http.routers.vaultwarden-http.rule=Host(`vault.example.net`)"
+      - "traefik.http.routers.vaultwarden-http.entrypoints=http"
+      - "traefik.http.routers.vaultwarden-http.middlewares=403"
+      - "traefik.http.routers.vaultwarden-http.service=vaultwarden-web"
+      - "traefik.http.routers.vaultwarden-https.rule=Host(`vault.example.net`)"
+      - "traefik.http.routers.vaultwarden-https.entrypoints=https"
+      - "traefik.http.routers.vaultwarden-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.vaultwarden-https.service=vaultwarden-web"
+      - "traefik.http.services.vaultwarden-web.loadbalancer.server.port=80"
       
-      - "traefik.http.routers.bitwarden-hub.rule=Host(`vault.example.net`) && PathPrefix(`/notifications/hub`)"
-      - "traefik.http.routers.bitwarden-hub.entrypoints=https"
-      - "traefik.http.routers.bitwarden-hub.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.routers.bitwarden-hub.service=bitwarden-hub"
-      - "traefik.http.services.bitwarden-hub.loadbalancer.server.port=3012"
+      - "traefik.http.routers.vaultwarden-hub.rule=Host(`vault.example.net`) && PathPrefix(`/notifications/hub`)"
+      - "traefik.http.routers.vaultwarden-hub.entrypoints=https"
+      - "traefik.http.routers.vaultwarden-hub.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.vaultwarden-hub.service=vaultwarden-hub"
+      - "traefik.http.services.vaultwarden-hub.loadbalancer.server.port=3012"
       
-      - "traefik.http.routers.bitwarden-negociate.rule=Host(`vault.example.net`) && PathPrefix(`/notifications/hub/negotiate`)"
-      - "traefik.http.routers.bitwarden-negociate.entrypoints=https"
-      - "traefik.http.routers.bitwarden-negociate.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.routers.bitwarden-negociate.service=bitwarden-negociate"
-      - "traefik.http.services.bitwarden-negociate.loadbalancer.server.port=80"
+      - "traefik.http.routers.vaultwarden-negociate.rule=Host(`vault.example.net`) && PathPrefix(`/notifications/hub/negotiate`)"
+      - "traefik.http.routers.vaultwarden-negociate.entrypoints=https"
+      - "traefik.http.routers.vaultwarden-negociate.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.vaultwarden-negociate.service=vaultwarden-negociate"
+      - "traefik.http.services.vaultwarden-negociate.loadbalancer.server.port=80"
       
       # IP restriction on https /admin endpoint
       # Forbid admin endpoint on plain http
-      - "traefik.http.routers.bitwarden-403.rule=Host(`vault.example.net`) && PathPrefix(`/admin`)"
-      - "traefik.http.routers.bitwarden-403.entrypoints=http"
-      - "traefik.http.routers.bitwarden-403.priority=65535"
-      - "traefik.http.routers.bitwarden-403.middlewares=403"
+      - "traefik.http.routers.vaultwarden-403.rule=Host(`vault.example.net`) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.vaultwarden-403.entrypoints=http"
+      - "traefik.http.routers.vaultwarden-403.priority=65535"
+      - "traefik.http.routers.vaultwarden-403.middlewares=403"
+      - "traefik.http.routers.vaultwarden-403.service=vaultwarden-web"
       # IP restriction on https admin endpoint
-      - "traefik.http.routers.bitwarden-407.rule=Host(`vault.example.net`) && PathPrefix(`/admin`)"
-      - "traefik.http.routers.bitwarden-407.entrypoints=https"
-      - "traefik.http.routers.bitwarden-407.priority=65535"
-      - "traefik.http.routers.bitwarden-407.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.vaultwarden-407.rule=Host(`vault.example.net`) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.vaultwarden-407.entrypoints=https"
+      - "traefik.http.routers.vaultwarden-407.priority=65535"
+      - "traefik.http.routers.vaultwarden-407.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.vaultwarden-407.service=vaultwarden-web"
     expose:
       - "80"
       - "3012"
-    # See https://github.com/dani-garcia/bitwarden_rs/blob/master/.env.template
+    # See https://github.com/dani-garcia/vaultwarden/blob/master/.env.template
     environment:
-      #- DOMAIN=https://bw.example.com
+      #- DOMAIN=https://vw.example.com
       - SIGNUPS_ALLOWED=false
+      #- SIGNUPS_DOMAINS_WHITELIST=example.com,example.net,example.org
+      - SIGNUPS_VERIFY=true
       - INVITATIONS_ALLOWED=false
+      #- INVITATION_ORG_NAME=Vaultwarden
+      #- ORG_CREATION_USERS=none
+      - USER_ATTACHMENT_LIMIT=1048576
+      - ORG_ATTACHMENT_LIMIT=1073741824
+      - TRASH_AUTO_DELETE_DAYS=366
       # generate token: e.g. `openssl rand -base64 48`
       #- ADMIN_TOKEN=Vy2VyYTTsKPv8W5aEOWUbB/Bt3DEKePbHmI4m9VcemUMS2rEviDowNAFqYi1xjmp
+      #- LOGIN_RATELIMIT_SECONDS=60
+      #- LOGIN_RATELIMIT_MAX_BURST=10
+      #- ADMIN_RATELIMIT_SECONDS=300
+      #- ADMIN_RATELIMIT_MAX_BURST=3
       #- WEB_VAULT_ENABLED=true
       - WEBSOCKET_ENABLED=true
+      - SENDS_ALLOWED=false
       #- SHOW_PASSWORD_HINT=true
       #- DISABLE_ICON_DOWNLOAD=false
-      #- ICON_CACHE_TTL=2592000
-      #- ICON_CACHE_NEGTTL=259200
-      - ICON_BLACKLIST_REGEX=192\.168\.[1-2]?[0-9]?[0-9]\.[0-9].*^
       #- ROCKET_PORT=80
       #- ROCKET_LIMITS={json=10485760}
-      #- ROCKET_WORKERS=10
       - ROCKET_ENV=production
+      #- IP_HEADER=X-Real-IP
+      - SMTP_FROM=vaultwarden@example.com
+      - SMTP_FROM_NAME=Vaultwarden
       - SMTP_HOST=email-relay
-      - SMTP_FROM=bitwarden@example.com
       - SMTP_PORT=25
-      - SMTP_SSL=false
+      - SMTP_SECURITY=starttls
       #- SMTP_USERNAME=
       #- SMTP_PASSWORD=
+      #- HIBP_API_KEY=
       # Logging to file; it is recommended to also set 'ROCKET_CLI_COLORS=off'
-      #- LOG_FILE=/data/bitwarden.log
+      #- LOG_FILE=/data/vaultwarden.log
+      - LOG_LEVEL=warn
     depends_on:
       email-relay:
         condition: service_started
     volumes:
-      - /srv/bitwarden:/data
-      #- /opt/bitwarden/web-vault:/web-vault:ro
+      - /srv/vaultwarden/data:/data
     networks:
-      - bitwarden
+      - vaultwarden
     cpu_shares: 512
     mem_limit: 128m
     memswap_limit: 192m
     mem_reservation: 32m
     restart: unless-stopped
 
-  # https://gitlab.com/1O/bitwarden_rs-backup
-  bitwarden-db-backup:
+  # https://gitlab.com/1O/vaultwarden-backup
+  vaultwarden-db-backup:
     extends:
       service: base-service
-    image: registry.gitlab.com/1o/bitwarden_rs-backup:latest
-    #image: registry.gitlab.com/1o/bitwarden_rs-backup:rpi3
+    image: bruceforce/vaultwarden-backup:latest
     init: true
-    #environment:
-      #- CRON_TIME=0 5 * * *
-      #- DB_FILE=/data/db.sqlite3
-      #- BACKUP_FILE=/data/db-backup/backup.sqlite3
-      #- TIMESTAMP=false
+    environment:
+      #- BACKUP_DIR=/backup
+      - BACKUP_ADD_DATABASE=true
+      - BACKUP_ADD_ATTACHMENTS=false
+      - BACKUP_ADD_CONFIG_JSON=false
+      - BACKUP_ADD_ICON_CACHE=false
+      - BACKUP_ADD_RSA_KEY=false
+      - BACKUP_ADD_SENDS=false
+      - DELETE_AFTER=15
+      - TIMESTAMP=true
+      #- HEALTHCHECK_URL=
+      - LOG_LEVEL=WARNING
     volumes:
-      - /srv/bitwarden:/data
+      - /srv/vaultwarden/data:/data:ro
+      - /srv/vaultwarden/backup:/backup
+      #- /srv/logs/vaultwarden-backup:/app/log
 
 ########################################################################
 
@@ -1131,8 +1090,46 @@ services:
     expose:
       - "8888"
       - "4433"
+    environment:
+      - NEW_RELIC_LICENSE_KEY=${NEWRELIC_LICENSE_KEY}
+      - NEW_RELIC_APP_NAME=WebSSH
+      #- NEW_RELIC_HIGH_SECURITY=true
+      - NEW_RELIC_LOG=stdout
+      - NEW_RELIC_LOG_LEVEL=info
     volumes:
       - /srv/webssh:/srv
+    networks:
+      - webssh
+    cpu_shares: 256
+    mem_limit: 64m
+    memswap_limit: 96m
+    mem_reservation: 24m
+    read_only: true
+    restart: unless-stopped
+
+  # https://github.com/nirui/sshwifty
+  sshwifty:
+    image: niruix/sshwifty
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sshwifty-http.rule=Host(`webssh.docker.localhost`)"
+      - "traefik.http.routers.sshwifty-http.entrypoints=http"
+      - "traefik.http.routers.sshwifty-http.middlewares=403"
+      - "traefik.http.routers.sshwifty-https.rule=Host(`webssh.docker.localhost`)"
+      - "traefik.http.routers.sshwifty-https.entrypoints=https"
+      - "traefik.http.routers.sshwifty-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.services.sshwifty-service.loadbalancer.server.port=8182"
+    expose:
+      - "8182"
+    environment:
+      # HTTP Host. Keep it empty to accept request from all hosts, otherwise, only
+      # specified host is allowed to access
+      - SSHWIFTY_HOSTNAME=
+      # Web interface access password. Set to empty to allow public access
+      - SharedKey=WEB_ACCESS_PASSWORD
+    #volumes:
+    #  - /srv/webssh:/srv
     networks:
       - webssh
     cpu_shares: 256
@@ -1161,7 +1158,7 @@ services:
       #- "192.0.2.1:53:53/tcp"
       #- "192.0.2.1:53:53/udp"
       - "853:853/tcp"
-      - "784:784/udp"
+      - "853:853/udp"
     expose:
       # DNS
       - "53/tcp"
@@ -1176,8 +1173,10 @@ services:
       - "853/tcp"
       # DoQ (deprecated)
       - "784/udp"
-      # DoQ
+      # DoQ (deprecated)
       - "8853/udp"
+      # DoQ
+      - "853/udp"
       # web console
       - "3000"
       # DNSCrypt
@@ -1203,8 +1202,8 @@ services:
       #- net.core.rmem_max=2500000
     cpu_shares: 512
     mem_limit: 384m
-    memswap_limit: 384m
-    mem_reservation: 64m
+    memswap_limit: 512m
+    mem_reservation: 96m
     read_only: true
     restart: always
 
@@ -1226,7 +1225,7 @@ services:
     cpu_shares: 128
     mem_limit: 128m
     memswap_limit: 192m
-    mem_reservation: 32m
+    mem_reservation: 8m
     restart: unless-stopped
 
 ########################################################################
@@ -1297,7 +1296,7 @@ services:
     cpu_shares: 128
     mem_limit: 64m
     memswap_limit: 96m
-    mem_reservation: 32m
+    mem_reservation: 8m
     restart: unless-stopped
 
 ########################################################################
@@ -1333,7 +1332,7 @@ services:
     cpu_shares: 64
     mem_limit: 128m
     memswap_limit: 192m
-    mem_reservation: 96m
+    mem_reservation: 64m
     #blkio-weight: 10
     restart: "no"
 
@@ -1346,6 +1345,7 @@ services:
       context: tt-rss
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=ttrss-front"
       - "traefik.http.routers.ttrss-http.rule=Host(`ttrss.example.net`))"
       - "traefik.http.routers.ttrss-http.entrypoints=http"
       - "traefik.http.routers.ttrss-http.middlewares=403"
@@ -1398,6 +1398,8 @@ services:
         condition: service_healthy
       email-relay:
         condition: service_started
+      newrelic-php-daemon:
+        condition: service_healthy
     #volumes:
       #- /srv/tt-rss:/var/www/html
     networks:
@@ -1407,7 +1409,7 @@ services:
     cpu_shares: 64
     mem_limit: 128m
     memswap_limit: 192m
-    mem_reservation: 96m
+    mem_reservation: 64m
     read_only: false
     restart: unless-stopped
 
@@ -1421,6 +1423,7 @@ services:
     init: true
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=icecast-front"
       - "traefik.http.routers.icecast-http.rule=Host(`icecast.docker.localhost`)"
       - "traefik.http.routers.icecast-http.entrypoints=http"
       - "traefik.http.routers.icecast-http.middlewares=403"
@@ -1538,12 +1541,56 @@ services:
 #      start_period: 10s
 #    networks:
 #      - daapd-front
-##    network_mode: host
+##    network_mode: "host"
 #    cpu_shares: 128
 #    mem_limit: 64m
 #    memswap_limit: 96m
 #    mem_reservation: 24m
 #    read_only: false
+#    restart: unless-stopped
+
+########################################################################
+
+#  # https://homebridge.io
+#  homebridge:
+#    extends:
+#      service: base-service
+#    image: oznu/homebridge:latest
+#    init: true
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.docker.network=homebridge-front"
+#      - "traefik.http.routers.homebridge-http.rule=Host(`homebridge.docker.localhost`)"
+#      - "traefik.http.routers.homebridge-http.entrypoints=http"
+#      - "traefik.http.routers.homebridge-http.middlewares=403"
+#      - "traefik.http.routers.homebridge-https.rule=Host(`homebridge.docker.localhost`)"
+#      - "traefik.http.routers.homebridge-https.entrypoints=https"
+#      - "traefik.http.routers.homebridge-https.middlewares=std-ipwhitelist,defaultchain-https"
+#      - "traefik.http.services.homebridge-service.loadbalancer.server.port=8581"
+#    volumes:
+#      - /opt/homebridge:/homebridge
+#    healthcheck:
+#      test: ["CMD", "pgrep", "-x", "homebridge"]
+#      interval: 240s
+#      timeout: 5s
+#      retries: 1
+#      start_period: 10s
+#    network_mode: host
+#    networks:
+#      - homebridge-front
+#      - homebridge-back-internal
+#    expose:
+#      - "8581"
+#    environment:
+#      - TZ=Europe/Paris
+#      - PGID=1000
+#      - PUID=1000
+#      - HOMEBRIDGE_CONFIG_UI=1
+#      - HOMEBRIDGE_CONFIG_UI_PORT=8581
+#    cpu_shares: 128
+#    mem_limit: 128m
+#    memswap_limit: 192m
+#    mem_reservation: 32m
 #    restart: unless-stopped
 
 ########################################################################
@@ -1614,13 +1661,14 @@ services:
       - GEOIPUPDATE_FREQUENCY=720
       - GEOIPUPDATE_PRESERVE_FILE_TIMES=1
       #- GEOIPUPDATE_VERBOSE=1
+      - GEOIPUPDATE_CONF_FILE=/usr/share/GeoIP/GeoIP.conf
     volumes:
       - /srv/GeoIP:/usr/share/GeoIP
     cpu_shares: 128
-    mem_limit: 128m
-    memswap_limit: 128m
-    mem_reservation: 64m
-    read_only: false
+    mem_limit: 64m
+    memswap_limit: 96m
+    mem_reservation: 8m
+    read_only: true
     restart: unless-stopped
 
 ########################################################################
@@ -1700,13 +1748,90 @@ services:
     #networks:
     #  - jellyfin-front
     # Network mode of 'host' exposes the ports on the host. This is needed for DLNA access or HDHomeRun.
-#    network_mode: host
+#    network_mode: "host"
     cpu_shares: 256
     mem_limit: 256m
     memswap_limit: 384m
     mem_reservation: 96m
     read_only: false
     restart: unless-stopped
+
+########################################################################
+
+  # https://docs.newrelic.com/docs/release-notes/infrastructure-release-notes/infrastructure-agent-release-notes/
+  newrelic-infrastructure:
+    extends:
+      service: base-service
+    image: newrelic/infrastructure
+    init: false
+    labels:
+      - "traefik.enable=false"
+    environment:
+      # https://docs.newrelic.com/docs/infrastructure/install-infrastructure-agent/configuration/infrastructure-agent-configuration-settings/
+      - NRIA_LICENSE_KEY=
+      #- NRIA_DISPLAY_NAME=
+      - NRIA_PAYLOAD_COMPRESSION_LEVEL=3
+      - NRIA_DOCKER_API_VERSION=1.41
+      - NRIA_ENABLE_PROCESS_METRICS=true
+      - TINI_SUBREAPER=
+    volumes:
+      - /:/host:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /srv/newrelic/data:/var/db/newrelic-infra/data
+      - /srv/newrelic/user_data:/var/db/newrelic-infra/user_data
+    # https://docs.newrelic.com/docs/infrastructure/install-infrastructure-agent/manage-your-agent/infrastructure-agent-performance-overhead/
+    healthcheck:
+      test: if [ -z "$$(pgrep newrelic-infra)" ]; then echo "No newrelic-infra process!"; exit 1; else exit 0; fi
+      interval: 240s
+      timeout: 5s
+      retries: 1
+    cap_add:
+      - SYS_PTRACE
+    network_mode: "host"
+    pid: "host"
+    expose:
+      - "8001"
+    cpu_shares: 256
+    mem_limit: 64m
+    memswap_limit: 96m
+    mem_reservation: 32m
+    privileged: true
+    restart: always
+
+  newrelic-php-daemon:
+    extends:
+      service: base-service
+    image: newrelic/php-daemon
+    init: true
+    labels:
+      - "traefik.enable=false"
+    #command: ["-c", "/etc/newrelic/newrelic.cfg", "--define", "utilization.detect_docker=true"]
+    command: ["--define", "utilization.detect_docker=true", "--define", "app_timeout=24h"]
+    #volumes:
+    #  # https://docs.newrelic.com/docs/agents/php-agent/configuration/proxy-daemon-newreliccfg-settings/
+    #  - /opt/newrelic-php-daemon/newrelic.cfg:/etc/newrelic/newrelic.cfg:ro
+    healthcheck:
+      test: if [ -z "$$(pgrep newrelic-daemon)" ]; then echo "No newrelic-daemon process!"; exit 1; else exit 0; fi
+      interval: 240s
+      timeout: 5s
+      retries: 1
+    depends_on:
+      newrelic-infrastructure:
+        condition: service_started
+    networks:
+      # "default" needed to get connectivity to outside
+      - default
+      - nextcloud-back-internal
+      - ttrss-back-internal
+      - wordpress-back-internal
+    expose:
+      - "31339"
+    cpu_shares: 256
+    mem_limit: 48m
+    memswap_limit: 64m
+    mem_reservation: 24m
+    #privileged: false
+    restart: always
 
 ########################################################################
 ########################################################################
@@ -1725,17 +1850,22 @@ services:
 
 networks:
   #default:
+  #  enable_ipv6: false
+  #  ipam:
+  #    config:
+  #      - subnet: 192.0.2.0/24
+  #        # defining aux addresses prevents from assigning them to containers
+  #        #aux_addresses:
+  #        #  host1: 192.0.2.42
   #  driver_opts:
   #    com.docker.network.bridge.enable_icc: "false"
   #    com.docker.network.bridge.enable_ip_masquerade: "false"
-  #    com.docker.network.enable_ipv6: "false"
+  #  internal: true
   tomcat-front:
-    driver: bridge
     ipam:
       config:
       - subnet: 172.31.1.0/24
   tomcat-back-internal:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.29.1.0/24
@@ -1743,35 +1873,14 @@ networks:
       com.docker.network.bridge.enable_ip_masquerade: "false"
     internal: true
   tomcat-back:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.30.1.0/24
-  owncloud-front:
-    driver: bridge
-    ipam:
-      config:
-      - subnet: 172.31.2.0/24
-  owncloud-back-internal:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.29.2.0/24
-    driver_opts:
-      com.docker.network.bridge.enable_ip_masquerade: "false"
-    internal: true
-  owncloud-back:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.30.2.0/24
   nextcloud-front:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.31.3.0/24
   nextcloud-back-internal:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.29.3.0/24
@@ -1779,17 +1888,14 @@ networks:
       com.docker.network.bridge.enable_ip_masquerade: "false"
     internal: true
   nextcloud-back:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.30.3.0/24
   ttrss-front:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.31.4.0/24
   ttrss-back-internal:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.29.4.0/24
@@ -1797,17 +1903,14 @@ networks:
       com.docker.network.bridge.enable_ip_masquerade: "false"
     internal: true
   ttrss-back:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.30.4.0/24
   wordpress-front:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.31.5.0/24
   wordpress-back-internal:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.29.5.0/24
@@ -1815,68 +1918,41 @@ networks:
       com.docker.network.bridge.enable_ip_masquerade: "false"
     internal: true
   wordpress-back:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.30.5.0/24
-  dokuwiki-front:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.31.6.0/24
-  dokuwiki-back-internal:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.29.6.0/24
-    driver_opts:
-      com.docker.network.bridge.enable_ip_masquerade: "false"
-    internal: true
-  dokuwiki-back:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.30.6.0/24
   tiddlywiki-front:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.31.7.0/24
   dovecot:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.31.8.0/24
   transmission:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.31.9.0/24
   icecast-front:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.31.10.0/24
   icecast-back-internal:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.29.10.0/24
     driver_opts:
       com.docker.network.bridge.enable_ip_masquerade: "false"
     internal: true
-  bitwarden:
-    driver: bridge
+  vaultwarden:
     ipam:
       config:
         - subnet: 172.31.12.0/24
   http-static:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.31.13.0/24
   #daapd-front:
-  #  driver: bridge
   #  ipam:
   #    config:
   #      - subnet: 172.31.14.0/24
@@ -1891,17 +1967,14 @@ networks:
 #          gateway: 192.168.1.254
 #          ip_range: 192.168.1.128/31 # IP from this pool are assigned automatically
   webssh:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.31.15.0/24
   statping-front:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.31.16.0/24
   vpn:
-    driver: bridge
     ipam:
       config:
         - subnet: 172.31.53.0/24

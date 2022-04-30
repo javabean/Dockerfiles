@@ -1,4 +1,4 @@
-FROM buildpack-deps:stable-scm as build
+FROM buildpack-deps:20.04-scm as build
 
 RUN cd /usr/src \
   && git clone --depth=1 https://git.tt-rss.org/fox/tt-rss.git tt-rss \
@@ -30,19 +30,24 @@ LABEL org.opencontainers.image.title="Tiny Tiny RSS" \
 #RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends curl git \
 #	&& apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 RUN for m in "remoteip headers env dir mime expires setenvif"; do a2enmod $m; done \
-	&& a2dissite 000-default \
-	&& rm -f /var/www/html/index.html \
-	&& install-php-extensions pdo pdo_mysql json xml intl mbstring fileinfo curl posix gd opcache  session dom pcntl zip openssl \
+  && a2dissite 000-default \
+  && rm -f /var/www/html/index.html \
+  && echo "newrelic.logfile=/dev/null" > ${PHP_INI_DIR}/conf.d/zz_newrelic_tmp.ini \
+  && install-php-extensions pdo pdo_mysql json xml intl mbstring fileinfo curl posix gd opcache  session dom pcntl zip openssl \
+  && rm -f ${PHP_INI_DIR}/conf.d/zz_newrelic_tmp.ini \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
   && docker-php-source delete \
   && echo "memory_limit = 256M" > ${PHP_INI_DIR}/conf.d/memory-limit.ini \
 # update.php requires php to be in /usr/bin/...
-  && ln -s /usr/local/bin/php /usr/bin/
+  && ln -s /usr/local/bin/php /usr/bin/ \
+  && sed -i \
+       -e 's/newrelic.appname = "PHP Application"/newrelic.appname = "Tiny Tiny RSS"/' \
+       ${PHP_INI_DIR}/conf.d/newrelic.ini
 
 # min[0-59] hour[0-23] dom[1-31] month[1-12] dow[0-7]  command
 RUN echo "*/30  *  *  *  *  php /var/www/html/update.php --feeds --quiet > /dev/null 2>&1" | busybox crontab -u www-data -
 
-COPY tt-rss.conf /etc/apache2/conf-enabled/
+COPY tt-rss.conf ${APACHE_CONFDIR}/conf-enabled/
 COPY 60-init-upgrade  /usr/local/etc/init.d/
 COPY consul-healthcheck.sh /usr/local/bin/
 COPY --from=build --chown=www-data:www-data /usr/src/tt-rss /usr/src/tt-rss

@@ -35,7 +35,7 @@ APT_MIRROR ?= fr.archive.ubuntu.com
 # END set versions here
 ########################################################################
 
-docker_compose_build = http-proxy http-static tomcat dovecot email-relay mysql-cron owncloud nextcloud wordpress dokuwiki tiddlywiki openvpn web-accelerator transmission tt-rss sslh
+docker_compose_build = http-proxy http-static tomcat dovecot email-relay mysql-backup owncloud nextcloud wordpress tiddlywiki openvpn web-accelerator transmission tt-rss sslh web-ssh
 .PHONY: $(docker_compose_build)
 
 
@@ -52,19 +52,12 @@ help: ## Display this help menu
 
 .PHONY: pull
 pull: ## pull base Docker images from Docker Hub
-	docker image pull $(DOCKER_FROM)
 	#docker-compose pull
 	#docker image pull memcached:1.6-alpine
 	docker image pull redis:6-alpine
 	#docker image pull portainer/portainer-ce
 	#docker image pull certbot/certbot
 	#docker image pull traefik:$(TRAEFIK_VERSION)
-	#docker image pull nextcloud:production-apache
-	docker image pull node:lts-alpine
-	#docker image pull python:3.8-slim
-	#docker image pull tomat:9-jdk11-openjdk-slim
-	docker image pull docker:20.10
-	docker image pull php:7.4-apache
 
 .PHONY: build
 build: ## build all Docker images
@@ -73,6 +66,7 @@ build: $(docker_compose_build)
 .PHONY: baseimage
 baseimage: ## build Docker base image
 baseimage: pull
+	docker image pull $(DOCKER_FROM)
 	docker image build --build-arg BASE_IMAGE=$(DOCKER_FROM) --build-arg APT_MIRROR=$(APT_MIRROR) -t cedrik/baseimage:$(DOCKER_FROM_VERSION) --rm baseimage/image
 
 .PHONY: httpd-base
@@ -83,18 +77,31 @@ httpd-base: baseimage
 .PHONY: php7-apache
 php7-apache: ## build Docker base PHP 7 image (Apache httpd-based) with MySQL client
 php7-apache:
-	docker image build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) -t cedrik/php7-apache --rm php7-apache
+	docker image pull php:7.4-apache
+	docker image build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) --build-arg NEWRELIC_LICENSE_KEY=$(NEWRELIC_LICENSE_KEY) -t cedrik/php7-apache --rm php7-apache
 
 
-$(docker_compose_build): baseimage
-	docker-compose build $@
+dovecot email-relay web-accelerator transmission: baseimage
+mysql-backup:
+	docker image pull docker:20.10
+nextcloud: pull
+	#docker image pull nextcloud:production-apache
+wordpress: pull
+tiddlywiki:
+	docker image pull node:lts-alpine
+tomcat:
+	#docker image pull tomat:9-jdk11-openjdk-slim
+web-ssh:
+	docker image pull python:3.8-slim
 
-http-proxy: httpd-base
-owncloud wordpress dokuwiki tt-rss: php7-apache
+http-proxy http-static: httpd-base
+owncloud tt-rss: php7-apache
 #owncloud: memcached-owncloud redis-owncloud
 owncloud wordpress: email-relay
-dokuwiki: email-relay
 openvpn: web-accelerator
+
+$(docker_compose_build):
+	docker-compose build $@
 
 ########################################################################
 
@@ -174,8 +181,6 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	  /srv/mysql/data /srv/mysql/backup           /srv/logs/mysql/mysql \
 	/opt/dovecot           /srv/dovecot           /srv/logs/dovecot \
 	/opt/email-relay/dkim/keys                    /srv/logs/email-relay \
-      /srv/dokuwiki/conf  /srv/dokuwiki/lib/plugins  /srv/dokuwiki/lib/tpl  /srv/dokuwiki/data \
-                                                  /srv/logs/dokuwiki/apache2 \
       /srv/tiddlywiki  \
       /srv/wordpress/wp-content  /srv/wordpress/wp-includes-languages \
                                                   /srv/logs/wordpress/apache2 \
@@ -195,7 +200,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	sudo chown -R 999:999 /srv/mysql/data /srv/mysql/backup /srv/logs/mysql/mysql
 	if [ ! -f /srv/wordpress/wp-config.php ]; then touch /srv/wordpress/wp-config.php; fi
 	if [ ! -f /srv/wordpress/htaccess ]; then touch /srv/wordpress/htaccess; fi
-	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/wordpress /srv/dokuwiki /srv/tiddlywiki /srv/tt-rss
+	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/wordpress /srv/tiddlywiki /srv/tt-rss
 	# if [ "$(ls -A /opt/dovecot/*.pem)" ]; then
 	if ls -A /opt/dovecot/*.pem > /dev/null 2>&1; then sudo chmod 0400 /opt/dovecot/*.pem; fi
 	# usd:gid 101:103 == dovecot
@@ -227,6 +232,7 @@ install-docker: ## install Docker; this target also works for a Raspberry Pi
 
 .PHONY: install-docker-compose
 install-docker-compose: ## install docker-compose
+	# v1
 	#pip install docker-compose
 	sudo rm -f /usr/local/bin/docker-compose /etc/bash_completion.d/docker-compose
 	sudo curl -fsSLR -o /usr/local/bin/docker-compose https://github.com/docker/compose/releases/download/$(DOCKER_COMPOSE_VERSION)/docker-compose-`uname -s`-`uname -m`
@@ -234,19 +240,9 @@ install-docker-compose: ## install docker-compose
 	#sudo curl -fsSLR -o /etc/bash_completion.d/docker-compose https://raw.githubusercontent.com/docker/compose/$$(docker-compose version --short)/contrib/completion/bash/docker-compose
 	sudo curl -fsSLR -o /etc/bash_completion.d/docker-compose https://raw.githubusercontent.com/docker/compose/$(DOCKER_COMPOSE_VERSION)/contrib/completion/bash/docker-compose
 	sudo touch -r /usr/local/bin/docker-compose /etc/bash_completion.d/docker-compose
-
-.PHONY: install-docker-compose-rpi
-install-docker-compose-rpi: ## install docker-compose on a Raspberry Pi
-	#sudo apt-get -y install --no-install-recommends python3-yaml python3-pip  &&  sudo pip3 install docker-compose
-	if [ ! -f /etc/apt/sources.list.d/Hypriot_Schatzkiste.list ]; then \
-		sudo apt-get install apt-transport-https \
-		sudo curl -fsSLR -o /etc/apt/sources.list.d/Hypriot_Schatzkiste.list "https://packagecloud.io/install/repositories/Hypriot/Schatzkiste/config_file.list?os=raspbian&dist=8&source=script" \
-		curl -fsSL https://packagecloud.io/Hypriot/Schatzkiste/gpgkey | sudo apt-key add - \
-		sudo usermod -aG docker `whoami`; \
-	fi \
-	sudo apt-get update && sudo apt-get install docker-compose=$(DOCKER_APT_VERSION); \
-	sudo curl -fsSLR -o /etc/bash_completion.d/docker-compose https://raw.githubusercontent.com/docker/compose/$$(docker-compose version --short)/contrib/completion/bash/docker-compose
-	sudo touch -r /usr/local/bin/docker-compose /etc/bash_completion.d/docker-compose
+	# v2
+	for d in ("$HOME/.docker/cli-plugins" "/usr/local/lib/docker/cli-plugins" "/usr/local/libexec/docker/cli-plugins" "/usr/lib/docker/cli-plugins" "/usr/libexec/docker/cli-plugins"); do if [ -d "$d" ]; then sudo curl -fsSLR -o "$d"/docker-compose https://github.com/docker/compose/releases/download/$(DOCKER_COMPOSE_VERSION)/docker-compose-`uname -s`-`uname -m`; sudo chmod +x "$d"/docker-compose; fi done
+	# or use: apt-get install docker-compose-plugin
 
 .PHONY: install
 install: ## install docker + docker-compose & create required directories (see 'mkdirs')
@@ -257,6 +253,6 @@ uninstall: ## remove all traces of Docker save for data in  /opt  and  /srv
 uninstall: distclean
 	rm /usr/local/bin/docker-* /etc/bash_completion.d/docker-*
 	#pip uninstall docker-compose
-	sudo apt-get purge -y docker docker-engine docker.io docker-ce docker-hypriot docker-compose docker-machine
+	sudo apt-get purge -y docker docker-engine docker.io docker-hypriot docker-ce docker-ce-cli docker-ce-rootless-extras docker-scan-plugin containerd containerd.io docker-compose docker-machine docker-compose-plugin
 	#sudo rm -rf /var/lib/docker
 	echo "Left over: config & data dirs: /opt /srv"

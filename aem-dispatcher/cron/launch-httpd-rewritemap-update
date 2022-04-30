@@ -15,7 +15,7 @@ main() {
 
 	while IFS=$'\n' read -r CRON_COMMAND; do
 
-		CONTAINERS=$(docker container ps --format '{{.Names}}' --filter "label=dispatcher" --filter="status=running" --filter="health=healthy")
+		CONTAINERS=$(docker container ls --format '{{.Names}}' --filter "label=dispatcher" --filter="status=running" --filter="health=healthy")
 		for CONTAINER_NAME in $CONTAINERS; do
 			# shellcheck disable=SC2086
 			docker container exec -ti "${CONTAINER_NAME}" ${CRON_COMMAND}

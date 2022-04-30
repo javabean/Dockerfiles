@@ -28,7 +28,7 @@ main() {
 		CRON_MYSQL_PASSWORD="${MYSQL_ROOT_PASSWORD}"
 	fi
 
-	CONTAINERS=$(docker container ps --format '{{.Names}}' --filter "label=${MYSQL_CRON_LABEL:-mysql-cron-backup}" --filter="status=running" --filter="health=healthy")
+	CONTAINERS=$(docker container ls --format '{{.Names}}' --filter "label=${MYSQL_CRON_LABEL:-mysql-cron-backup}" --filter="status=running" --filter="health=healthy")
 	# Altough there is a loop, this utility is really intended for a single container...
 	for CONTAINER_NAME in $CONTAINERS; do
 

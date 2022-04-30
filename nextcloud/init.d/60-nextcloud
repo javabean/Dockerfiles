@@ -10,3 +10,9 @@ if [ -f /var/www/html/config/version.php ] && [ ! -f /var/www/html/version.php ]
 	#cp -a /var/www/html/config/version.php /var/www/html/version.php
 	ln -s config/version.php /var/www/html/
 fi
+
+# https://github.com/nextcloud/notify_push
+if [ -x /var/www/html/custom_apps/notify_push/bin/$(uname -m)/notify_push ]; then
+	# Can not use --glob-config with community Docker image: unsupported syntax getenv('REDIS_HOST')
+	chroot --skip-chdir --userspec=www-data:www-data / /var/www/html/custom_apps/notify_push/bin/$(uname -m)/notify_push /var/www/html/config/config.php &
+fi

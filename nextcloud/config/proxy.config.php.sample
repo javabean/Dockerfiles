@@ -2,13 +2,14 @@
 $CONFIG = array (
   // https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/reverse_proxy_configuration.html
   // https://docs.nextcloud.com/server/stable/admin_manual/configuration_server/config_sample_php_parameters.html#proxy-configurations
-  //'overwritehost' => 'nextcloud.example.net',
-  'overwriteprotocol' => 'https',
-  //'overwritewebroot' => '/',
+  // see also reverse-proxy.config.php
+//  //'overwritehost' => 'nextcloud.example.net',
+//  'overwriteprotocol' => 'https',
+//  //'overwritewebroot' => '/',
   'overwrite.cli.url' => 'https://nextcloud.example.net/',
   // After setting this value run `occ maintenance:update:htaccess`.
   'htaccess.RewriteBase' => '/',
-  'trusted_proxies' => array('127.0.0.1', '192.168.0.0/16', '172.16.0.0/12', '10.0.0.0/8'),
+//  'trusted_proxies' => array('127.0.0.1', '192.168.0.0/16', '172.16.0.0/12', '10.0.0.0/8'),
   //'forwarded_for_headers' => array('HTTP_X_FORWARDED_FOR'),
 );
 
