@@ -17,8 +17,8 @@ RUN cd /usr/src \
   && git clone --depth=1 https://github.com/DigitalDJ/tinytinyrss-fever-plugin fever
 
 
-#FROM php:7.4-apache
-FROM cedrik/php7-apache
+#FROM php:8.0-apache
+FROM cedrik/php8-apache
 LABEL org.opencontainers.image.title="Tiny Tiny RSS" \
       org.opencontainers.image.authors="Cédrik LIME"
 

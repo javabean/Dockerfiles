@@ -563,8 +563,9 @@ services:
     build:
       context: wordpress
       args:
-        - DOCKER_FROM_TAG=5.9.3-php7.4-apache
+        - DOCKER_FROM_TAG=5.9.3-apache
         - NEWRELIC_LICENSE_KEY=${NEWRELIC_LICENSE_KEY}
+        - NEWRELIC_APPLICATION_NAME=WordPress
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=wordpress-front"

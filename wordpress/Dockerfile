@@ -1,6 +1,6 @@
-ARG DOCKER_FROM_TAG=5.9.3-php7.4-apache
+ARG DOCKER_FROM_TAG=5.9.3-apache
 FROM wordpress:${DOCKER_FROM_TAG}
-ARG DOCKER_FROM_TAG=5.9.3-php7.4-apache
+ARG DOCKER_FROM_TAG=5.9.3-apache
 LABEL org.opencontainers.image.title="WordPress" \
       org.opencontainers.image.version="${DOCKER_FROM_TAG}" \
       org.opencontainers.image.authors="Cédrik LIME"

@@ -35,7 +35,7 @@ APT_MIRROR ?= fr.archive.ubuntu.com
 # END set versions here
 ########################################################################
 
-docker_compose_build = http-proxy http-static tomcat dovecot email-relay mysql-backup owncloud nextcloud wordpress tiddlywiki openvpn web-accelerator transmission tt-rss sslh web-ssh
+docker_compose_build = http-proxy http-static tomcat dovecot email-relay mysql-backup nextcloud wordpress tiddlywiki openvpn web-accelerator transmission tt-rss sslh web-ssh
 .PHONY: $(docker_compose_build)
 
 
@@ -58,6 +58,11 @@ pull: ## pull base Docker images from Docker Hub
 	#docker image pull portainer/portainer-ce
 	#docker image pull certbot/certbot
 	#docker image pull traefik:$(TRAEFIK_VERSION)
+	docker image pull docker:20.10
+	#docker image pull tomat:9-jdk11-openjdk-slim
+	#docker image pull nextcloud:production-apache
+	docker image pull node:lts-alpine
+	docker image pull python:3.8-slim
 
 .PHONY: build
 build: ## build all Docker images
@@ -74,30 +79,17 @@ httpd-base: ## build Docker base Apache httpd image
 httpd-base: baseimage
 	docker image build --build-arg MOD_MAXMINDDB_VERSION=$(MOD_MAXMINDDB_VERSION) -t cedrik/httpd-base --rm apache-base
 
-.PHONY: php7-apache
-php7-apache: ## build Docker base PHP 7 image (Apache httpd-based) with MySQL client
-php7-apache:
-	docker image pull php:7.4-apache
-	docker image build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) --build-arg NEWRELIC_LICENSE_KEY=$(NEWRELIC_LICENSE_KEY) -t cedrik/php7-apache --rm php7-apache
+.PHONY: php8-apache
+php8-apache: ## build Docker base PHP 8 image (Apache httpd-based) with MySQL client
+php8-apache:
+	docker image pull php:8.0-apache
+	docker image build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) --build-arg NEWRELIC_LICENSE_KEY=$(NEWRELIC_LICENSE_KEY) -t cedrik/php8-apache --rm php8-apache
 
 
 dovecot email-relay web-accelerator transmission: baseimage
-mysql-backup:
-	docker image pull docker:20.10
-nextcloud: pull
-	#docker image pull nextcloud:production-apache
-wordpress: pull
-tiddlywiki:
-	docker image pull node:lts-alpine
-tomcat:
-	#docker image pull tomat:9-jdk11-openjdk-slim
-web-ssh:
-	docker image pull python:3.8-slim
-
 http-proxy http-static: httpd-base
-owncloud tt-rss: php7-apache
-#owncloud: memcached-owncloud redis-owncloud
-owncloud wordpress: email-relay
+tt-rss: php8-apache
+wordpress: email-relay
 openvpn: web-accelerator
 
 $(docker_compose_build):
@@ -173,8 +165,6 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	/opt/http-proxy/conf-available /opt/http-proxy/conf-enabled /opt/http-proxy/conf-include /opt/http-proxy/mods-available /opt/http-proxy/mods-enabled /opt/http-proxy/sites-available /opt/http-proxy/sites-enabled /opt/http-proxy/tls \
 	                       /srv/http-proxy        /srv/logs/http-proxy/apache2 \
 	/opt/tomcat                                   /srv/logs/tomcat \
-	/opt/owncloud/config /opt/owncloud/apps  /srv/owncloud/data     /srv/logs/owncloud/apache2 \
-	                                              /srv/redis-owncloud \
 	/opt/nextcloud/config /opt/nextcloud/custom_apps /opt/nextcloud/themes  /srv/nextcloud/data     /srv/logs/nextcloud/apache2 \
 	                                              /srv/redis-nextcloud \
 	/opt/mysql/docker-entrypoint-initdb.d /opt/mysql/healthcheck.cnf /opt/mysql/mysql-init-complete \
@@ -200,7 +190,7 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	sudo chown -R 999:999 /srv/mysql/data /srv/mysql/backup /srv/logs/mysql/mysql
 	if [ ! -f /srv/wordpress/wp-config.php ]; then touch /srv/wordpress/wp-config.php; fi
 	if [ ! -f /srv/wordpress/htaccess ]; then touch /srv/wordpress/htaccess; fi
-	sudo chown -R www-data:www-data /opt/owncloud /srv/owncloud/data /srv/wordpress /srv/tiddlywiki /srv/tt-rss
+	sudo chown -R www-data:www-data /opt/nextcloud /srv/nextcloud/data /srv/wordpress /srv/tiddlywiki /srv/tt-rss
 	# if [ "$(ls -A /opt/dovecot/*.pem)" ]; then
 	if ls -A /opt/dovecot/*.pem > /dev/null 2>&1; then sudo chmod 0400 /opt/dovecot/*.pem; fi
 	# usd:gid 101:103 == dovecot

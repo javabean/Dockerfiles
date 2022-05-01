@@ -1,4 +1,4 @@
-FROM php:7.4-apache
+FROM php:8.0-apache
 LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 ############### FIXME  change depending on base OS / version! ###############
@@ -46,7 +46,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 # MySQL client
 # https://dev.mysql.com/downloads/repo/apt/
 # https://dev.mysql.com/doc/mysql-apt-repo-quick-guide/en/#repo-qg-apt-repo-manual-setup
-# http://dev.mysql.com/doc/refman/5.7/en/checking-gpg-signature.html
+# http://dev.mysql.com/doc/refman/8.0/en/checking-gpg-signature.html
 \
 #RUN gpg --keyserver keys.gnupg.net --recv-keys 3A79BD29  &&  gpg --export -a 3A79BD29 | apt-key add -
   && savedAptMark="$(apt-mark showmanual)" \

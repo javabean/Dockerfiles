@@ -1,7 +1,7 @@
 What? (purpose)
 ===============
 
-Base Apache + PHP 7.4 image (via mod-php7, not php-fmp)
+Base Apache + PHP 8.0 image (via mod-php8, not php-fmp)
 
 
 Who? (dependencies)
@@ -13,7 +13,7 @@ Who? (dependencies)
 How? (usage)
 ============
 
-Dockerfile: `FROM cedrik/php7-apache:latest`
+Dockerfile: `FROM cedrik/php8-apache:latest`
 
 To run `read_only: true`, you will need:
     tmpfs:
