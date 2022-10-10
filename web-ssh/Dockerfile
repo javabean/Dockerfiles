@@ -1,4 +1,4 @@
-FROM python:3.8-slim
+FROM python:3.9-slim
 LABEL org.opencontainers.image.title="WebSSH" \
       org.opencontainers.image.authors="Cédrik LIME"
 
