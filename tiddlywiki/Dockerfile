@@ -17,8 +17,8 @@ ENV NODE_ENV=production \
     PATH=$PATH:/home/node/.npm-global/bin \
     npm_config_send_metrics=false
 
-RUN npm install -g --production tiddlywiki \
-  # To update: npm update -g tiddlywiki
+RUN npm_config_update_notifier="false"  npm install --location=global --omit=dev --no-fund tiddlywiki \
+  # To update: npm update --location=global tiddlywiki
   && tiddlywiki --version
 #  && cd /srv \
 #  && tiddlywiki wiki --init server
