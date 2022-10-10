@@ -11,7 +11,7 @@ LABEL org.opencontainers.image.title="WordPress" \
 # https://wordpress.org/support/article/hardening-wordpress/
 
 
-ARG NEWRELIC_PHP_AGENT_URL=https://download.newrelic.com/php_agent/release/newrelic-php5-9.21.0.311-linux.tar.gz
+ARG NEWRELIC_PHP_AGENT_URL=https://download.newrelic.com/php_agent/release/newrelic-php5-10.2.0.314-linux.tar.gz
 ARG NEWRELIC_LICENSE_KEY=
 ARG NEWRELIC_APPLICATION_NAME=Wordpress
 
@@ -45,8 +45,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     echo "# https://httpoxy.org"; \
     echo "RequestHeader unset Proxy early"; \
     echo ""; \
-    echo "# https://developer.chrome.com/blog/floc/#how-can-websites-opt-out-of-the-floc-computation"; \
-    echo "Header setifempty Permissions-Policy \"interest-cohort=() geolocation=(self 'https://example.com')\""; \
+    echo "Header setifempty Permissions-Policy \"geolocation=(self 'https://example.com') gyroscope=(self 'https://example.com') magnetometer=(self 'https://example.com')\""; \
   } >> ${APACHE_CONFDIR}/conf-available/security.conf \
   && echo "SetEnvIf x-forwarded-proto https HTTPS=on" > ${APACHE_CONFDIR}/conf-available/reverse-proxy.conf \
   && a2enconf reverse-proxy \
