@@ -1,4 +1,4 @@
-FROM buildpack-deps:20.04 as builder
+FROM buildpack-deps:22.04 as builder
 
 ARG MOD_MAXMINDDB_VERSION=1.2.0
 

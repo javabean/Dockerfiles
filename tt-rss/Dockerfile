@@ -1,4 +1,4 @@
-FROM buildpack-deps:20.04-scm as build
+FROM buildpack-deps:22.04-scm as build
 
 RUN cd /usr/src \
   && git clone --depth=1 https://git.tt-rss.org/fox/tt-rss.git tt-rss \
