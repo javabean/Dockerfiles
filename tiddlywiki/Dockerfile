@@ -11,7 +11,7 @@ RUN apk add --no-cache curl \
 USER node
 
 # Node.js default log level: warn
-#ENV NPM_CONFIG_LOGLEVEL info
+#ENV NPM_CONFIG_LOGLEVEL=info
 ENV NODE_ENV=production \
     NPM_CONFIG_PREFIX=/home/node/.npm-global \
     PATH=$PATH:/home/node/.npm-global/bin \

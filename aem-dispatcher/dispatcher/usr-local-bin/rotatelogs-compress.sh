@@ -29,17 +29,17 @@ main() {
 		if [ -x "$(command -v pzstd)" ]; then
 			pzstd -q --rm "${old_log_file}"
 		elif [ -x "$(command -v zstd)" ]; then
-			zstd -q --rm "${old_log_file}"
+			zstd -q --rm --rsyncable -T0 --adapt --exclude-compressed "${old_log_file}"
 		elif [ -x "$(command -v pigz)" ]; then
-			pigz "${old_log_file}"
+			pigz --rsyncable "${old_log_file}"
 		elif [ -x "$(command -v lz4)" ]; then
-			lz4 -q "${old_log_file}" && rm "${old_log_file}"
+			lz4 -q --rm "${old_log_file}"
 		elif [ -x "$(command -v gzip)" ]; then
-			gzip -3 "${old_log_file}"
+			gzip -q -3 "${old_log_file}"
 		elif [ -x "$(command -v xz)" ]; then
-			xz -2 "${old_log_file}"
+			xz -q -2 -T0 --memlimit-compress=50% "${old_log_file}"
 		elif [ -x "$(command -v bzip2)" ]; then
-			bzip2 "${old_log_file}"
+			bzip2 -q "${old_log_file}"
 		fi
 		compress_exit_code=${?}
 	fi

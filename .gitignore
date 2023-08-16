@@ -1,3 +1,5 @@
 .DS_Store
 docker-compose.override.yml
-
+docker-compose.override.yaml
+compose.override*.yml
+compose.override*.yaml

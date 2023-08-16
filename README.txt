@@ -26,13 +26,12 @@ Nextcloud
 WordPress	(requires mysql, email-relay[, memcached])
 WebSSH
 TiddlyWiki*
-php7-apache
+php8-apache
 	Tiny Tiny RSS
 baseimage
 	Dovecot
 	apache-base
 		http-proxy
-	email-relay
 	OpenVPN	(requires AdGuard Home, ziproxy)
 	ziproxy
 	Transmission

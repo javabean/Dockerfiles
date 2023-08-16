@@ -11,7 +11,7 @@ LABEL org.opencontainers.image.title="Nextcloud" \
 # https://docs.nextcloud.com/server/23/admin_manual/installation/source_installation.html#prerequisites-label
 
 
-ARG NEWRELIC_PHP_AGENT_URL=https://download.newrelic.com/php_agent/release/newrelic-php5-10.2.0.314-linux.tar.gz
+ARG NEWRELIC_PHP_AGENT_URL=https://download.newrelic.com/php_agent/release/newrelic-php5-10.11.0.3-linux.tar.gz
 ARG NEWRELIC_LICENSE_KEY=
 ARG NEWRELIC_APPLICATION_NAME=Nextcloud
 
@@ -116,16 +116,21 @@ COPY --chown=www-data:www-data config/* /usr/src/nextcloud/config/
 #  && apt-get purge -y libbz2-dev \
 #  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Fix "Module php-imagick in this instance has no SVG support. For better compatibility it is recommended to install it."
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests libmagickcore-6.q16-6-extra \
-  && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
 # rm -f /usr/src/nextcloud/AUTHORS /usr/src/nextcloud/COPYING \
 # min[0-59] hour[0-23] dom[1-31] month[1-12] dow[0-7]  command
 RUN echo " 0  *  *  *  *    php -f /var/www/html/occ activity:send-mails hourly > /dev/null 2>&1"  >> /var/spool/cron/crontabs/www-data \
   && echo "30  7  *  *  *    php -f /var/www/html/occ activity:send-mails daily"  >> /var/spool/cron/crontabs/www-data \
   && echo "30  7  *  *  MON  php -f /var/www/html/occ activity:send-mails weekly"  >> /var/spool/cron/crontabs/www-data \
+#  && echo "40  *  *  *  *    php -f /var/www/html/occ preview:pre-generate"  >> /var/spool/cron/crontabs/www-data \
   && echo "03  0  *  *  *    /usr/local/bin/nextcloud-sqlite-dump.sh"  >> /var/spool/cron/crontabs/www-data \
+  && echo "newrelic.logfile=/dev/null" > ${PHP_INI_DIR}/conf.d/zz_newrelic_tmp.ini \
+# https://memories.gallery/install/#requirements
+# ImageMagick is included in the official Nextcloud docker image
+#  && install-php-extensions imagick \
+# https://github.com/the-djmaze/snappymail/wiki/Installation-instructions#requirements
+  && install-php-extensions mbstring zlib json libxml dom \
+       curl exif gd imagick iconv intl openssl pdo redis sodium tidy uuid zip \
+  && rm -f ${PHP_INI_DIR}/conf.d/zz_newrelic_tmp.ini \
 # using Redis session handler, not a FS-based one
 # Nextcloud Docker image comes with its own "opcache-recommended.ini"
   && rm ${PHP_INI_DIR}/conf.d/session.ini ${PHP_INI_DIR}/conf.d/opcache.ini \
@@ -140,17 +145,17 @@ RUN echo " 0  *  *  *  *    php -f /var/www/html/occ activity:send-mails hourly 
   && sed -i --follow-symlinks 's%if version_greater "$image_version" "$installed_version"; then%if version_greater "$image_version" "$installed_version" || [ "$image_version" = "$installed_version" ]; then%' /entrypoint.sh \
 # PHP statistics tool
 #  && if ! test -f /usr/src/nextcloud/apc.php; then cp -a /usr/src/apc.php /usr/src/nextcloud/; fi \
-  && sed -i \
-       -e "s/newrelic.appname = \"PHP Application\"/newrelic.appname = \"${NEWRELIC_APPLICATION_NAME}\"/" \
-       ${PHP_INI_DIR}/conf.d/newrelic.ini \
-  && sed -i \
-       -e "s/_NEWRELIC_APPLICATION_NAME_/${NEWRELIC_APPLICATION_NAME}/" \
-       ${APACHE_CONFDIR}/conf-enabled/nextcloud.conf \
   # required for startup script which calls php and parses output
   && sed -i \
       -e 's%newrelic.logfile =.*%newrelic.logfile=/dev/null%' \
       -e 's%newrelic.logfile=.*%newrelic.logfile=/dev/null%' \
     ${PHP_INI_DIR}/conf.d/newrelic.ini
+RUN sed -i \
+       -e "s/newrelic.appname = \"PHP Application\"/newrelic.appname = \"${NEWRELIC_APPLICATION_NAME}\"/" \
+       ${PHP_INI_DIR}/conf.d/newrelic.ini \
+  && sed -i \
+       -e "s/_NEWRELIC_APPLICATION_NAME_/${NEWRELIC_APPLICATION_NAME}/" \
+       ${APACHE_CONFDIR}/conf-enabled/nextcloud.conf
 
 HEALTHCHECK --interval=5m --timeout=10s --start-period=30s --retries=3 \
   CMD ["/usr/local/bin/docker-healthcheck.sh"]

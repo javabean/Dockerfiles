@@ -1,19 +1,29 @@
 FROM buildpack-deps:22.04-scm as build
 
 RUN cd /usr/src \
+# ToDo: shall we use https://dev.tt-rss.org/tt-rss/ instead?
   && git clone --depth=1 https://git.tt-rss.org/fox/tt-rss.git tt-rss \
-  && rm -rf /usr/src/tt-rss/.editorconfig /usr/src/tt-rss/.eslintrc.js /usr/src/tt-rss/.git /usr/src/tt-rss/.gitignore /usr/src/tt-rss/gulpfile.js /usr/src/tt-rss/.vscode \
+  && rm -rf /usr/src/tt-rss/.editorconfig /usr/src/tt-rss/.eslintrc.js /usr/src/tt-rss/.git /usr/src/tt-rss/.gitignore /usr/src/tt-rss/.vscode /usr/src/tt-rss/Jenkinsfile /usr/src/tt-rss/gulpfile.js /usr/src/tt-rss/phpstan.neon /usr/src/tt-rss/phpunit.xml /usr/src/tt-rss/tests \
   && cd tt-rss/plugins.local \
-  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-api-resize.git api_resize_media \
-  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-perceptual-image-hash.git af_img_phash \
-  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-mailer-smtp.git mailer_smtp \
-  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-nginx-xaccel.git nginx_xaccel \
-  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-time-to-read.git time_to_read \
-  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-data-migration.git data_migration \
-#  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-video-fill-poster.git af_video_fill_poster \
-#  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-hotkeys-ru.git hotkeys_ru \
-  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-enclosure-fix-type af_enclosure_fix_type \
-  && git clone --depth=1 https://github.com/joshp23/ttrss-to-wallabag-v2 wallabag_v2 \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-af-unburn.git          af_unburn  \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-api-resize.git         api_resize_media \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-data-migration.git     data_migration \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-enclosure-fix-type.git af_enclosure_fix_type \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-favicon-unread.git     favicon_unread \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-highlightjs.git        highlightjs \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-img-placeholders.git   img_placeholders \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-mailer-smtp.git        mailer_smtp \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-names-to-tags.git      names_to_tags \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-nginx-xaccel.git       nginx_xaccel \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-no-title-counters.git  no_title_counters \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-no-url-hashes.git      no_url_hashes \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-no-video-preload.git   no_video_preload \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-pause-bg.git           pause_bg \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-perceptual-image-hash.git  af_img_phash \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-prefs-effective-config.git prefs_effective_config \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-profile-chooser.git    profile_chooser \
+  && git clone --depth=1 https://git.tt-rss.org/fox/ttrss-proxy-http.git         proxy_http \
+  && git clone --depth=1 https://github.com/joshp23/ttrss-to-wallabag-v2       wallabag_v2 \
   && git clone --depth=1 https://github.com/DigitalDJ/tinytinyrss-fever-plugin fever
 
 

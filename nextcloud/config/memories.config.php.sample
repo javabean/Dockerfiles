@@ -1,0 +1,11 @@
+<?php
+$CONFIG = array (
+  // https://memories.gallery/system-config/
+
+  // Makes the memories instance readonly
+  'memories.readonly' => true,
+
+  // Disable transcoding
+  'memories.vod.disable' => true,
+);
+

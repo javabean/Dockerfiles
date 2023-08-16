@@ -17,8 +17,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 FROM cedrik/baseimage:18.04
 LABEL org.opencontainers.image.authors="Cédrik LIME"
 
-ENV APACHE_CONFDIR /etc/apache2
-ENV APACHE_ENVVARS ${APACHE_CONFDIR}/envvars
+ENV APACHE_CONFDIR=/etc/apache2
+ENV APACHE_ENVVARS=${APACHE_CONFDIR}/envvars
 
 #RUN echo "Apachai Hopachai" > /etc/container_environment/MY_NAME
 
@@ -31,7 +31,7 @@ COPY consul-healthcheck.sh backup_conf.sh restore_conf.sh docker-entrypoint.sh  
 
 COPY security-add.conf /tmp/
 
-ADD https://raw.githubusercontent.com/docker-library/php/master/8.1/bullseye/apache/apache2-foreground  /usr/local/bin/
+ADD https://raw.githubusercontent.com/docker-library/php/master/8.2/bullseye/apache/apache2-foreground  /usr/local/bin/
 
 RUN chmod +x /usr/local/bin/apache2-foreground \
   && LC_ALL=C.UTF-8  add-apt-repository -y --no-update ppa:ondrej/apache2 \

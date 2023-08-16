@@ -1,101 +1,110 @@
-%YAML 1.2
+#%YAML 1.2
 ---
 # https://docs.docker.com/compose/compose-file/
 # https://hub.docker.com/explore/
 
-version: '2.4'
+#version: 2023-05-16  # deprecated
 
-services:
+x-base-service: &base-service
+  labels:
+    - "traefik.enable=false"
+  #expose:
+    ## Consul agent ports
+    #- "8301"
+    #- "8301/udp"
+    ##- "8400"
+    ##- "8500"
+  environment:
+    # please note that SYSLOG requires read_only: false (as it needs creating /dev/log) for Docker < 17.12.0
+    #- ENABLE_SYSLOG=1
+    #- ENABLE_CRON=1
+    #- ENABLE_CONSUL=1
+    # Force PHP/Symfony, NodeJS, Ruby on Rails & Elixir applications to production
+    - APP_ENV=prod
+    - APP_DEBUG=0
+    - NODE_ENV=production
+    - RAILS_ENV=production
+    - MIX_ENV=prod
+    - JDK_JAVA_OPTIONS="-Djdk.disableLastUsageTracking"
+    - JAVA_TOOL_OPTIONS="-Djava.net.useSystemProxies=true -Djava.awt.headless=true"
+    - DOTNET_CLI_TELEMETRY_OPTOUT=1
+    # https://servicebinding.io/
+    #- SERVICE_BINDING_ROOT=/run/secrets
+  tmpfs:
+    # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
+    - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
+    - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k,mode=1777
+    #- /var/log
+    #- /var/cache
+    #- /var/tmp
+    - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
+    # required for syslog
+    #- /var/lib/syslog-ng:rw,nosuid,nodev,noexec,relatime,size=16k
+    # required for logrotate
+    - /var/lib/logrotate:rw,nosuid,nodev,noexec,relatime,size=16k
+    # mount work dir for runit
+    - /var/lib/runit-sv:rw,suid,nodev,exec,size=1024k
+    # mount work dir for consul
+    #- /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
+  #shm_size: 64M
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "5m"
+      max-file: "2"
+      compress: "true"
+  cpu_shares: 1024
+  mem_swappiness: 1
+  memswap_limit: 192m
+  deploy:
+    resources:
+      limits:
+        cpus: '1.0'  # number of cores
+        memory: 128m
+      reservations:
+        cpus: '0.05'  # number of cores
+        #memory: 128m
+    restart_policy:
+      condition: unless-stopped # no, on-failure[:max-retries], always, unless-stopped (default: no)
+      delay: 5s  # (default: 0)
+      #max_attempts: 3  # (default: never give up)
+      window: 30s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
+  read_only: true
 
-  base-service:
-    build: .
-    labels:
-      - "traefik.enable=false"
-    #expose:
-      ## Consul agent ports
-      #- "8301"
-      #- "8301/udp"
-      ##- "8400"
-      ##- "8500"
-    environment:
-      # please note that SYSLOG requires read_only: false (as it needs creating /dev/log) for Docker < 17.12.0
-      #- ENABLE_SYSLOG=1
-      #- ENABLE_CRON=1
-      #- ENABLE_CONSUL=1
-      # Force PHP/Symfony, NodeJS, Ruby on Rails & Elixir applications to production
-      - APP_ENV=prod
-      - APP_DEBUG=0
-      - NODE_ENV=production
-      - RAILS_ENV=production
-      - MIX_ENV=prod
-      - JDK_JAVA_OPTIONS="-Djdk.disableLastUsageTracking"
-      - JAVA_TOOL_OPTIONS="-Djava.net.useSystemProxies=true -Djava.awt.headless=true"
-    tmpfs:
-      # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
-      - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
-      - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k,mode=1777
-      #- /var/log
-      #- /var/cache
-      #- /var/tmp
-      - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
-      # required for syslog
-      #- /var/lib/syslog-ng:rw,nosuid,nodev,noexec,relatime,size=16k
-      # required for logrotate
-      - /var/lib/logrotate:rw,nosuid,nodev,noexec,relatime,size=16k
-      # mount work dir for runit
-      - /var/lib/runit-sv:rw,suid,nodev,exec,size=1024k
-      # mount work dir for consul
-      #- /usr/local/etc/consul.d:rw,nosuid,nodev,noexec,size=128k
-    #shm_size: 64M
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "5m"
-        max-file: "2"
-        compress: "true"
-    cpu_shares: 1024
-    mem_limit: 128m
-    memswap_limit: 192m
-    mem_swappiness: 1
-    #mem_reservation: 128m
-    read_only: true
-    #restart: "no"
-    restart: unless-stopped
-
-  base-php-service:
-    extends:
-      service: base-service
-    build: .
-    init: true
-    expose:
-      - "80"
-    #environment:
-      #- ENABLE_CRON=1
-    # WTF?!? services with 'depends_on' cannot be extended
-    #depends_on:
-    #  newrelic-php-daemon:
-    #    condition: service_healthy
-    tmpfs:
-      # PHP.ini 'session.save_path'
-      - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
+x-base-php-service: &base-php-service
+  #extends:
+  #  service: base-service
+  <<: *base-service
+  init: true
+  expose:
+    - "80"
+  #environment:
+    #- ENABLE_CRON=1
+  depends_on:
+    newrelic-php-daemon:
+      condition: service_healthy
+  tmpfs:
+    # PHP.ini 'session.save_path'
+    - /var/lib/php/sessions:rw,nosuid,nodev,noexec,relatime,size=65536k,mode=1733
 
 ########################################################################
 
+services:
+
   # to configure backends: https://docs.traefik.io/providers/docker/
   traefik:
-    extends:
-      service: base-service
-    image: traefik:${TRAEFIK_VERSION:-2.7}
+    <<: *base-service
+    image: traefik:${TRAEFIK_VERSION:-2.10}
     init: true
-    # https://docs.traefik.io/v2.7/reference/dynamic-configuration/docker/
+    # https://docs.traefik.io/v2.10/reference/dynamic-configuration/docker/
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=default"
-      - "traefik.http.routers.traefik-http.rule=Host(`traefik.docker.localhost`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      #- "traefik.docker.network=default"
+      - "traefik.http.routers.traefik-http.rule=Host(`traefik.docker.localhost`) && PathPrefix(`/api`,`/dashboard`)"
       - "traefik.http.routers.traefik-http.entrypoints=http"
       - "traefik.http.routers.traefik-http.middlewares=403"
       - "traefik.http.routers.traefik-http.service=api@internal"
-      - "traefik.http.routers.traefik-https.rule=Host(`traefik.docker.localhost`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.traefik-https.rule=Host(`traefik.docker.localhost`) && PathPrefix(`/api`,`/dashboard`)"
       - "traefik.http.routers.traefik-https.entrypoints=https"
       - "traefik.http.routers.traefik-https.middlewares=std-ipwhitelist,traefik-authentication,defaultchain-https"
       - "traefik.http.routers.traefik-https.service=api@internal"
@@ -119,6 +128,8 @@ services:
       - "traefik.http.middlewares.redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.redirect.redirectscheme.permanent=true"
       - "traefik.http.middlewares.compress.compress=true"
+      - "traefik.http.middlewares.compress.compress.minResponseBodyBytes=1420"
+      - "traefik.http.middlewares.compress.compress.excludedContentTypes=video/*,audio/*,video/h266,video/h265,video/h264,video/av1,video/mp4,video/vp9,video/vp8,video/x-matroska,video/x-msvideo,audio/aac,audio/mp4,audio/mp3,audio/ac3,audio/opus,audio/vorbis,audio/ogg,image/heif,image/webp,image/jpeg,image/png,application/gzip,application/zip,application/zstd"
       - "traefik.http.middlewares.std-headers.headers.addvaryheader=true"
       - "traefik.http.middlewares.std-headers.headers.browserxssfilter=true"
       - "traefik.http.middlewares.std-headers.headers.contentsecuritypolicy=frame-ancestors 'self' example.com *.example.net ; object-src 'none' ; connect-src 'self' * ;"
@@ -128,6 +139,7 @@ services:
       - "traefik.http.middlewares.std-headers.headers.stspreload=false"
       - "traefik.http.middlewares.std-headers.headers.customrequestheaders.Proxy=" # https://httpoxy.org
       #- "traefik.http.middlewares.std-headers.headers.customresponseheaders.name0=foobar"
+      - "traefik.http.middlewares.no-robots.headers.customresponseheaders.X-Robots-Tag=noindex,nofollow,nosnippet,noarchive,notranslate,noimageindex"
       - >-
           traefik.http.middlewares.std-ipwhitelist.ipwhitelist.sourcerange=192.168.0.0/16, 172.16.0.0/12,
           10.0.0.0/8
@@ -137,9 +149,12 @@ services:
       - "traefik.http.middlewares.defaultchain-http.chain.middlewares=std-headers,redirect"
       - "traefik.http.middlewares.defaultchain-https.chain.middlewares=std-headers,inflightreq,compress"
       # The file provider is the only available method to configure the certificates (as well as the options and the stores).
-      # https://doc.traefik.io/traefik/v2.4/https/tls/
+      # https://doc.traefik.io/traefik/v2.10/https/tls/
       #- "traefik.tls.options.default.minVersion=VersionTLS12"
       ##- "traefik.tls.options.default.sniStrict=true"
+      #- "traefik.tls.stores.default.defaultgeneratedcert.resolver=letsencrypt"
+      #- "traefik.tls.stores.default.defaultgeneratedcert.domain.main=www.example.com"
+      #- "traefik.tls.stores.default.defaultgeneratedcert.domain.sans=www.example.net, www.example.org"
       #- "traefik.docker.network=default"
       
       # To disallow /admin path, one can not simply use negative lookaround:
@@ -164,16 +179,17 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      # https://docs.traefik.io/v2.7/reference/static-configuration/env/
+      # https://docs.traefik.io/v2.10/reference/static-configuration/env/
       - TRAEFIK_GLOBAL_CHECKNEWVERSION=false
       - TRAEFIK_GLOBAL_SENDANONYMOUSUSAGE=false
       - TRAEFIK_PROVIDERS_PROVIDERSTHROTTLEDURATION=2s
       - TRAEFIK_PROVIDERS_DOCKER=true
+      #- TRAEFIK_PROVIDERS_DOCKER_ALLOWEMPTYSERVICES=false
       - TRAEFIK_PROVIDERS_DOCKER_EXPOSEDBYDEFAULT=false
       #- TRAEFIK_PROVIDERS_DOCKER_NETWORK=
       - TRAEFIK_API=true
       - TRAEFIK_API_DASHBOARD=true
-      - TRAEFIK_PILOT_DASHBOARD=false
+      - TRAEFIK_API_DISABLEDASHBOARDAD=true
       - TRAEFIK_PING=true
       - TRAEFIK_PING_ENTRYPOINT=http
       - TRAEFIK_ENTRYPOINTS_traefik=true
@@ -205,6 +221,7 @@ services:
       #- /opt/traefik/traefik.toml:/etc/traefik/traefik.toml:ro
       # create with: touch /opt/traefik/acme.json && chmod 600 /opt/traefik/acme.json
       - /opt/traefik/acme.json:/acme.json
+      #- /opt/traefik/plugins-local:/plugins-local:ro
       # docker container run --rm -ti httpd:2.4-alpine htpasswd -n <user> >> /opt/traefik/htpasswd
       # docker container run --rm -ti -v /opt/traefik/htpasswd:/.htpasswd httpd:2.4-alpine htpasswd /.htpasswd <user>
       - /opt/traefik/htpasswd:/.htpasswd:ro
@@ -212,35 +229,42 @@ services:
       - /opt/traefik/htdigest:/.htdigest:ro
     healthcheck:
       test: ["CMD", "/usr/local/bin/traefik", "healthcheck"]
-      interval: 240s
+      interval: 60s
       timeout: 5s
       retries: 1
-      start_period: 10s
+      start_period: 20s
     networks:
       # "default" needed to get connectivity from outside(!)
       - default
       - http-static
       - tomcat-front
       - nextcloud-front
+      - kavita-front
       - ttrss-front
       - wordpress-front
       - tiddlywiki-front
       - transmission
-      - vaultwarden
-      - icecast-front
+#      - vaultwarden
+#      - icecast-front
 #      - daapd-front
-      - statping-front
       - vpn
       - webssh
+      - rclone-front
     cpu_shares: 256
-    mem_limit: 128m
     memswap_limit: 192m
-    mem_reservation: 64m
-    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+        reservations:
+          memory: 64m
+      restart_policy:
+        condition: always  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 
   http-static:
-    extends:
-      service: base-service
+    <<: *base-service
     build: apache-static
     labels:
       - "traefik.enable=true"
@@ -266,14 +290,20 @@ services:
     networks:
       - http-static
     cpu_shares: 256
-    mem_limit: 128m
     memswap_limit: 192m
-    mem_reservation: 96m
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+        reservations:
+          memory: 96m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 
   http-proxy:
-    extends:
-      service: base-service
+    <<: *base-service
     build: apache-proxy
 #    expose:
 #      - "443"
@@ -304,24 +334,30 @@ services:
       - default
       - tomcat-front
       - nextcloud-front
+      - kavita-front
       - ttrss-front
       - wordpress-front
       - tiddlywiki-front
       - transmission
       #- vaultwarden
       #- icecast-front
-      #- statping-front
       - vpn
       - webssh
     cpu_shares: 256
-    mem_limit: 128m
     memswap_limit: 192m
-    mem_reservation: 64m
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+        reservations:
+          memory: 64m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 
   sslh:
-    extends:
-      service: base-service
+    <<: *base-service
     build: sslh
     #command: ["--ssl", "http-proxy:443", "--openvpn", "openvpn:1194", "--on-timeout", "http-proxy:443"]
     command: ["--tls", "http-proxy:443", "--on-timeout", "http-proxy:443"]
@@ -341,16 +377,22 @@ services:
       - default
 #      - vpn
     cpu_shares: 128
-    mem_limit: 64m
     memswap_limit: 96m
-    mem_reservation: 32m
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+        reservations:
+          memory: 32m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 
 ########################################################################
 
   portainer:
-    extends:
-      service: base-service
+    <<: *base-service
     image: portainer/portainer-ce
     init: true
     labels:
@@ -373,20 +415,26 @@ services:
       #- /opt/portainer/certs:/certs
       - /srv/portainer/data:/data
     cpu_shares: 128
-    mem_limit: 64m
     memswap_limit: 96m
-    mem_reservation: 32m
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+        reservations:
+          memory: 32m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 
 ########################################################################
 
   tomcat:
-    extends:
-      service: base-service
+    <<: *base-service
     build:
       context: tomcat
       args:
-        - DOCKER_FROM_VERSION=9-jdk11-openjdk-slim
+        - DOCKER_FROM_VERSION=${TOMCAT_VERSION:-9-jdk11}
     init: true
     labels:
       - "traefik.enable=true"
@@ -408,34 +456,34 @@ services:
       # and $CATALINA_BASE/bin/setenv.sh for additional configuration
       - CATALINA_BASE=/opt/tomcat/my-instance
     user: tomcat
-    depends_on:
-      email-relay:
-        condition: service_started
     volumes:
       - /opt/tomcat:/opt/tomcat
     networks:
       - tomcat-front
       - tomcat-back-internal
       - tomcat-back
-    mem_limit: 1024m
-    memswap_limit: 1024m
     mem_swappiness: 1
-    mem_reservation: 1024m
-    restart: unless-stopped
+    memswap_limit: 1024m
+    deploy:
+      resources:
+        limits:
+          memory: 1024m
+        reservations:
+          memory: 1024m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 
 ########################################################################
 
-  nextcloud:
-    extends:
-      service: base-php-service
+  base-nextcloud:
+    <<: *base-php-service
     #image: nextcloud:latest
     build:
       context: nextcloud
       args:
-        # https://nextcloud.com/release-channels/
-        #- DOCKER_FROM_TAG=23-apache
-        #- DOCKER_FROM_TAG=stable-apache
-        - DOCKER_FROM_TAG=production-apache
+        - DOCKER_FROM_TAG=${NEXTCLOUD_VERSION:-27-apache}
         - NEWRELIC_LICENSE_KEY=${NEWRELIC_LICENSE_KEY}
     labels:
       - "traefik.enable=true"
@@ -445,13 +493,21 @@ services:
       - "traefik.http.routers.nextcloud-http.middlewares=defaultchain-http"
       - "traefik.http.routers.nextcloud-https.rule=Host(`nextcloud.example.net`)"
       - "traefik.http.routers.nextcloud-https.entrypoints=https"
+      - "traefik.http.routers.nextcloud-https.priority=1"
       - "traefik.http.routers.nextcloud-https.middlewares=std-ipwhitelist,nextcloud-dav-redirect,defaultchain-https"
       - "traefik.http.services.nextcloud-service.loadbalancer.server.port=80"
       # redirect DAV well-known endpoints
       - "traefik.http.middlewares.nextcloud-dav-redirect.redirectregex.permanent=true"
       - "traefik.http.middlewares.nextcloud-dav-redirect.redirectregex.regex=https://(.*)/.well-known/(card|cal)dav"
       - "traefik.http.middlewares.nextcloud-dav-redirect.redirectregex.replacement=https://$$1/remote.php/dav/"
-    # https://github.com/nextcloud/docker/blob/master/README.md
+      # https://github.com/nextcloud/notify_push
+      - "traefik.http.routers.nextcloud-push-service.rule=Host(`nextcloud.example.net`) && PathPrefix(`/push`)"
+      - "traefik.http.routers.nextcloud-push-service.entryPoints=https"
+      - "traefik.http.routers.nextcloud-push-service.priority=2"
+      - "traefik.http.routers.nextcloud-push-service.middlewares=std-ipwhitelist,nextcloud_strip_push,defaultchain-https"
+      - "traefik.http.services.nextcloud-push-service.loadbalancer.server.port=7867"
+      # necessary for the notify_push app to work:
+      - "traefik.http.middlewares.nextcloud_strip_push.stripprefix.prefixes=/push"    # https://github.com/nextcloud/docker/blob/master/README.md
     environment:
       - MYSQL_HOST=mysql
       - MYSQL_DATABASE=nextcloud
@@ -479,17 +535,53 @@ services:
       # High performance backend for Nextcloud Talk
       - "3478/tcp"
       - "3478/udp"
+    #depends_on:
+    #  mysql:
+    #    condition: service_healthy
+    #  memcached-nextcloud:
+    #    condition: service_healthy
+    #  redis-nextcloud:
+    #    condition: service_healthy
+    #  imaginary:
+    #    condition: service_started
+    #  newrelic-php-daemon:
+    #    condition: service_healthy
+    volumes:
+      - /opt/nextcloud/config:/var/www/html/config
+      - /opt/nextcloud/custom_apps:/var/www/html/custom_apps
+      - /opt/nextcloud/themes:/var/www/html/themes
+      - /srv/nextcloud/data:/srv/nextcloud/data
+    #networks:
+    #  - nextcloud-front
+    #  - nextcloud-back-internal
+    #  - nextcloud-back
+    memswap_limit: 768m
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+        reservations:
+          memory: 256m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
+    read_only: false
+
+  nextcloud:
+    extends:
+      service: base-nextcloud
     depends_on:
       mysql:
         condition: service_healthy
-      #memcached-nextcloud:
-      #  condition: service_healthy
+      memcached-nextcloud:
+        condition: service_healthy
       redis-nextcloud:
         condition: service_healthy
-      email-relay:
-        condition: service_started
       imaginary:
         condition: service_started
+      newrelic-php-daemon:
+        condition: service_healthy
     volumes:
       - /opt/nextcloud/config:/var/www/html/config
       - /opt/nextcloud/custom_apps:/var/www/html/custom_apps
@@ -499,14 +591,10 @@ services:
       - nextcloud-front
       - nextcloud-back-internal
       - nextcloud-back
-    mem_limit: 512m
-    memswap_limit: 768m
-    mem_reservation: 256m
-    read_only: false
-    restart: unless-stopped
 
   imaginary:
-    image: h2non/imaginary
+    #image: h2non/imaginary
+    image: docker.io/nextcloud/aio-imaginary
     init: true
     labels:
       - "traefik.enable=false"
@@ -517,53 +605,66 @@ services:
     expose:
       #- "8088"
       - "9000"
+    cap_add:
+      - SYS_NICE
     networks:
       - nextcloud-back-internal
-    healthcheck:
-      #test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/"]
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 1
-      start_period: 10s
-    mem_limit: 128m
+   # healthcheck:
+   #   #test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/"]
+   #   test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/health"]
+   #   interval: 30s
+   #   timeout: 5s
+   #   retries: 1
+   #   start_period: 10s
     memswap_limit: 512m
-    mem_reservation: 96m
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+        reservations:
+          memory: 96m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     read_only: true
-    restart: unless-stopped
 
   nextcloud-cron:
-    image: nextcloud:production-apache
+    image: nextcloud:${NEXTCLOUD_VERSION:-27-apache}
     init: true
     depends_on:
       mysql:
         condition: service_healthy
       nextcloud:
         condition: service_healthy
-      email-relay:
-        condition: service_started
     volumes_from:
       - nextcloud
     command: [ "/cron.sh" ]
     networks:
       - nextcloud-back-internal
       - nextcloud-back
-    mem_limit: 384m
     memswap_limit: 512m
-    mem_reservation: 256m
+    deploy:
+      resources:
+        limits:
+          memory: 384m
+        reservations:
+          memory: 256m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     read_only: true
-    restart: unless-stopped
 
 ########################################################################
 
   wordpress:
-    extends:
-      service: base-php-service
+    <<: *base-php-service
     #image: wordpress:latest
     build:
       context: wordpress
       args:
-        - DOCKER_FROM_TAG=5.9.3-apache
+        - DOCKER_FROM_TAG=${WORDPRESS_VERSION:-6.2.3-apache}
         - NEWRELIC_LICENSE_KEY=${NEWRELIC_LICENSE_KEY}
         - NEWRELIC_APPLICATION_NAME=WordPress
     labels:
@@ -662,8 +763,8 @@ services:
         condition: service_healthy
       #memcached-wordpress:
       #  condition: service_healthy
-      email-relay:
-        condition: service_started
+      newrelic-php-daemon:
+        condition: service_healthy
     volumes:
       - /srv/wordpress/htaccess:/var/www/html/.htaccess
       - /srv/wordpress/wp-config.php:/var/www/html/wp-config.php
@@ -673,17 +774,23 @@ services:
       - wordpress-front
       - wordpress-back-internal
       - wordpress-back
-    mem_limit: 448m
     memswap_limit: 512m
-    mem_reservation: 256m
+    deploy:
+      resources:
+        limits:
+          memory: 448m
+        reservations:
+          memory: 256m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     read_only: false
-    restart: unless-stopped
 
 ########################################################################
 
   tiddlywiki:
-    extends:
-      service: base-service
+    <<: *base-service
     build:
       context: tiddlywiki
     init: true
@@ -710,46 +817,22 @@ services:
       - /srv/tiddlywiki:/srv
     networks:
       - tiddlywiki-front
-    mem_limit: 384m
     memswap_limit: 512m
-    mem_reservation: 256m
-    restart: unless-stopped
-
-########################################################################
-
-  email-relay:
-    extends:
-      service: base-service
-    build:
-      context: email-relay
-      args:
-      - POSTFIX_HOSTNAME=myhost.example.net
-    expose:
-      - "25"
-    environment:
-      - ENABLE_SYSLOG=1
-      - ENABLE_CRON=1
-    volumes:
-      - /opt/email-relay/dkim:/usr/local/etc/dkim:ro
-      - /srv/logs/email-relay:/var/log
-    networks:
-      - tomcat-back
-      - nextcloud-back
-      - ttrss-back
-      - wordpress-back
-      - vaultwarden
-    cpu_shares: 128
-    mem_limit: 64m
-    memswap_limit: 96m
-    mem_reservation: 16m
-    read_only: false
-    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 384m
+        reservations:
+          memory: 256m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 
 ########################################################################
 
   mysql:
-    extends:
-      service: base-service
+    <<: *base-service
     #image: mysql/mysql-server:${MYSQL_VERSION:-8.0}
     image: mysql:${MYSQL_VERSION:-8.0}
     init: true
@@ -765,30 +848,29 @@ services:
       - "33062"
     environment:
       - MYSQL_ROOT_PASSWORD=
-      #- MYSQL_LOG_CONSOLE=true
-      #- MYSQL_CUSTOM_OPTS=--key_buffer_size=4M --sort_buffer_size=128K --read_buffer_size=64K --net_buffer_length=8K
-      #- MYSQL_CUSTOM_OPTS=--innodb_buffer_pool_size=64M --innodb_log_buffer_size=8M
-      #- MYSQL_CUSTOM_OPTS=--default-storage-engine=MyISAM --default_tmp_storage_engine=MyISAM
-      #- MYSQL_CUSTOM_OPTS=--sql-mode=NO_ENGINE_SUBSTITUTION
       # http://bugs.mysql.com/bug.php?id=68287 [MySQL 5.6]
       # There are thresholds based on table_open_cache and table_definition_cache and max_connections and crossing the thresholds produces a big increase in RAM used. The thresholds work by first deciding if the server size is small, medium or large.
       # Small: all three are same as or less than defaults (2000, 400, 151). (max 52.6 megabytes RAM)
       # Large: any of the three is more than twice the default. (min 400 megabytes RAM)
       # Medium: others. (90.7-98.4 megabytes RAM)
+      # instead of turning off performance_schema, you can reduce RAM usage with --table_open_cache=2000 --table_definition_cache=400 --max_connections=151
       # default values: [MySQL 5.7]
       #   table_open_cache = 2000
       #   table_definition_cache = min(2000, 400 + (table_open_cache / 2))
       #   max_connections = 151
+      # https://github.com/mysql/mysql-server/blob/8.0/storage/perfschema/pfs_autosize.cc#estimate_hints
+      # https://github.com/mysql/mysql-server/blob/8.0/sql/sys_vars.h
+      # https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html
       # default values: [MySQL 8.0]
       #   table_open_cache = 4000
       #   table_definition_cache = min(2000, 400 + (table_open_cache / 2))
       #   max_connections = 151
-      # instead of turning off performance_schema, you can reduce RAM usage with --table_open_cache=400 --table_definition_cache=400 --max_connections=151
-      #- MYSQL_CUSTOM_OPTS=--performance_schema=off --table_definition_cache=800
-      # ToDo: switch to --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --skip-character-set-client-handshake
-    command: ["--datadir=/var/lib/mysql", "--user=mysql", "--bind-address=0.0.0.0", "--log-error=/var/log/mysql/error.log", "--pid-file=/var/run/mysqld/mysqld.pid", "--socket=/var/run/mysqld/mysqld.sock", "--port=3306", "--performance_schema=off", "--table_definition_cache=800", "--disable-log-bin"]
+      # MySQL 8.0 defaults to utf8mb4: https://dev.mysql.com/blog-archive/new-defaults-in-mysql-8-0/
+      # To see the effective # open tables:  docker container exec -ti -e MYSQL_PWD=... docker-mysql-1 mysqladmin status
+    command: ["--datadir=/var/lib/mysql", "--user=mysql", "--bind-address=0.0.0.0", "--log-error=/var/log/mysql/error.log", "--pid-file=/var/run/mysqld/mysqld.pid", "--socket=/var/run/mysqld/mysqld.sock", "--port=3306", "--performance_schema=off", "--table_open_cache=2000", "--table_definition_cache=800", "--max_connections=101", "--disable-log-bin"]
     tmpfs:
-      - /run/mysqld:rw,nosuid,dev,noexec,relatime,size=16k,uid=999,gid=999,mode=755
+      - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
+      - /run/mysqld:rw,nosuid,dev,noexec,relatime,size=16k,uid=999,gid=999,mode=750
     volumes:
       - /opt/mysql/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d:ro
       # following 2 files are a hack to enable read_only: true
@@ -818,10 +900,17 @@ services:
     #    soft: 20000
     #    hard: 40000
     #cpu_shares: 512
-    mem_limit: 448m
     memswap_limit: 512m
-    mem_reservation: 416m
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 448m
+        reservations:
+          memory: 416m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 
   mysql-backup:
     build:
@@ -837,18 +926,25 @@ services:
       - /srv/mysql/backup:/srv
       - /var/run/docker.sock:/var/run/docker.sock:ro
     cpu_shares: 256
-    mem_limit: 64m
-    memswap_limit: 128m
     mem_swappiness: 10
-    mem_reservation: 8m
+    memswap_limit: 128m
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+        reservations:
+          memory: 8m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     # logrotate needs /var/lib/logrotate.status and /var/log/messages
     read_only: false
-    restart: unless-stopped
 
 ########################################################################
 
   memcached:
-    image: memcached:1.6-alpine
+    image: memcached:${MEMCACHED_VERSION:-1.6-alpine}
     init: true
     labels:
       - "com.symfony.server.service-prefix=MEMCACHED"
@@ -863,11 +959,19 @@ services:
       retries: 1
       start_period: 2s
     cpu_shares: 128
-    mem_limit: 128m
-    memswap_limit: 128m
     mem_swappiness: 1
+    memswap_limit: 128m
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+        reservations:
+          memory: 72m
+      restart_policy:
+        condition: always  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     read_only: true
-    restart: always
 
   memcached-wordpress:
     extends:
@@ -876,10 +980,17 @@ services:
     networks:
       - wordpress-back-internal
 
+  memcached-nextcloud:
+    extends:
+      service: memcached
+    command: ["memcached", "-m", "64", "-p", "11211", "-c", "256", "-t", "1"]
+    networks:
+      - nextcloud-back-internal
+
 ########################################################################
 
   redis:
-    image: redis:6-alpine
+    image: redis:${REDIS_VERSION:-6-alpine}
     init: true
     labels:
       - "com.symfony.server.service-prefix=REDIS"
@@ -903,11 +1014,18 @@ services:
       #- vm.overcommit_memory=1
       #- sys.kernel.mm.transparent_hugepage.enabled=never
     cpu_shares: 128
-    mem_limit: 128m
     memswap_limit: 128m
-    mem_reservation: 72m
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+        reservations:
+          memory: 72m
+      restart_policy:
+        condition: always  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     read_only: true
-    restart: always
 
   redis-nextcloud:
     extends:
@@ -920,8 +1038,7 @@ services:
 ########################################################################
 
   dovecot:
-    extends:
-      service: base-service
+    <<: *base-service
     build: dovecot-imap
     ports:
     # IMAP(s)
@@ -946,17 +1063,23 @@ services:
     networks:
       - dovecot
     cpu_shares: 256
-    mem_limit: 128m
     memswap_limit: 192m
-    mem_reservation: 96m
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+        reservations:
+          memory: 96m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 
 ########################################################################
 
   # https://github.com/dani-garcia/vaultwarden/wiki
   vaultwarden:
-    extends:
-      service: base-service
+    <<: *base-service
     #image: vaultwarden/server:latest
     image: vaultwarden/server:alpine
     init: true
@@ -1038,23 +1161,27 @@ services:
       # Logging to file; it is recommended to also set 'ROCKET_CLI_COLORS=off'
       #- LOG_FILE=/data/vaultwarden.log
       - LOG_LEVEL=warn
-    depends_on:
-      email-relay:
-        condition: service_started
     volumes:
       - /srv/vaultwarden/data:/data
     networks:
       - vaultwarden
     cpu_shares: 512
-    mem_limit: 128m
     memswap_limit: 192m
-    mem_reservation: 32m
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+        reservations:
+          memory: 64m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
+    read_only: true
 
   # https://gitlab.com/1O/vaultwarden-backup
   vaultwarden-db-backup:
-    extends:
-      service: base-service
+    <<: *base-service
     image: bruceforce/vaultwarden-backup:latest
     init: true
     environment:
@@ -1102,11 +1229,18 @@ services:
     networks:
       - webssh
     cpu_shares: 256
-    mem_limit: 64m
     memswap_limit: 96m
-    mem_reservation: 24m
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+        reservations:
+          memory: 24m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     read_only: true
-    restart: unless-stopped
 
   # https://github.com/nirui/sshwifty
   sshwifty:
@@ -1134,11 +1268,18 @@ services:
     networks:
       - webssh
     cpu_shares: 256
-    mem_limit: 64m
     memswap_limit: 96m
-    mem_reservation: 24m
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+        reservations:
+          memory: 24m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     read_only: true
-    restart: unless-stopped
 
 ########################################################################
 
@@ -1153,7 +1294,7 @@ services:
       - "traefik.http.routers.adguardhome-http.middlewares=403"
       - "traefik.http.routers.adguardhome-https.rule=Host(`adguard.docker.localhost`)"
       - "traefik.http.routers.adguardhome-https.entrypoints=https"
-      - "traefik.http.routers.adguardhome-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.adguardhome-https.middlewares=std-ipwhitelist,defaultchain-https,no-robots"
       - "traefik.http.services.adguardhome-service.loadbalancer.server.port=3000"
     ports:
       #- "192.0.2.1:53:53/tcp"
@@ -1172,10 +1313,6 @@ services:
       - "443"
       # DoT
       - "853/tcp"
-      # DoQ (deprecated)
-      - "784/udp"
-      # DoQ (deprecated)
-      - "8853/udp"
       # DoQ
       - "853/udp"
       # web console
@@ -1202,17 +1339,23 @@ services:
       # https://github.com/lucas-clemente/quic-go/wiki/UDP-Receive-Buffer-Size
       #- net.core.rmem_max=2500000
     cpu_shares: 512
-    mem_limit: 384m
     memswap_limit: 512m
-    mem_reservation: 96m
+    deploy:
+      resources:
+        limits:
+          memory: 384m
+        reservations:
+          memory: 96m
+      restart_policy:
+        condition: always  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     read_only: true
-    restart: always
 
 ########################################################################
 
   web-accelerator:
-    extends:
-      service: base-service
+    <<: *base-service
     build: ziproxy
     expose:
       - "3128"
@@ -1224,16 +1367,22 @@ services:
       vpn:
         ipv4_address: 172.31.53.28
     cpu_shares: 128
-    mem_limit: 128m
     memswap_limit: 192m
-    mem_reservation: 8m
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+        reservations:
+          memory: 8m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 
 ########################################################################
 
   openvpn:
-    extends:
-      service: base-service
+    <<: *base-service
     build:
       context: vpn-openvpn
       args:
@@ -1295,16 +1444,22 @@ services:
       - net.ipv6.conf.default.forwarding=1
       - net.ipv6.conf.all.forwarding=1
     cpu_shares: 128
-    mem_limit: 64m
     memswap_limit: 96m
-    mem_reservation: 8m
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+        reservations:
+          memory: 8m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 
 ########################################################################
 
   transmission:
-    extends:
-      service: base-service
+    <<: *base-service
     build:
       context: transmission
     labels:
@@ -1331,17 +1486,24 @@ services:
       #- net.core.rmem_max=4194304
       #- net.core.wmem_max=1048576
     cpu_shares: 64
-    mem_limit: 128m
     memswap_limit: 192m
-    mem_reservation: 64m
-    #blkio-weight: 10
-    restart: "no"
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+        reservations:
+          memory: 64m
+      restart_policy:
+        condition: "no"  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
+    #blkio_config:
+    #   weight: 10  # 10..1000
 
 ########################################################################
 
   tt-rss:
-    extends:
-      service: base-php-service
+    <<: *base-php-service
     build:
       context: tt-rss
     labels:
@@ -1357,7 +1519,7 @@ services:
     environment:
       # Don't change this one!
       - ENABLE_CRON=1
-      # https://git.tt-rss.org/fox/tt-rss/src/branch/master/classes/config.php
+      # https://git.tt-rss.org/fox/tt-rss.git/tree/classes/config.php
       - TTRSS_DB_TYPE=mysql
       - TTRSS_DB_HOST=mysql
       - TTRSS_DB_PORT=3306
@@ -1384,8 +1546,7 @@ services:
       # outgoing mail. Only used with SMTP_SERVER.
       - TTRSS_SMTP_LOGIN=
       - TTRSS_SMTP_PASSWORD=
-      # Used to select a secure SMTP connection. Allowed values: ssl, tls,
-      # or empty.
+      # Used to select a secure SMTP connection. Allowed values: ssl, tls, or empty.
       - TTRSS_SMTP_SECURE=
       # Accept all SSL certificates, use with caution.
       #- TTRSS_SMTP_SKIP_CERT_CHECKS=false
@@ -1397,8 +1558,6 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      email-relay:
-        condition: service_started
       newrelic-php-daemon:
         condition: service_healthy
     #volumes:
@@ -1408,17 +1567,23 @@ services:
       - ttrss-back-internal
       - ttrss-back
     cpu_shares: 64
-    mem_limit: 128m
     memswap_limit: 192m
-    mem_reservation: 64m
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+        reservations:
+          memory: 64m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     read_only: false
-    restart: unless-stopped
 
 ########################################################################
 
   icecast:
-    extends:
-      service: base-service
+    <<: *base-service
     build:
       context: icecast
     init: true
@@ -1453,14 +1618,20 @@ services:
       - "8443"
     command: ["icecast", "-c", "/etc/icecast.xml"]
     cpu_shares: 128
-    mem_limit: 32m
     memswap_limit: 32m
-    mem_reservation: 4m
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 32m
+        reservations:
+          memory: 4m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 
   darkice:
-    extends:
-      service: base-service
+    <<: *base-service
     build:
       context: darkice
     init: true
@@ -1473,7 +1644,7 @@ services:
       - audio
       # /dev/snd is group-owned by `audio` which is not the same gid on host than in container!
       # getent group audio | awk -F: '{print $3}'
-      - 29
+      - "29"
     devices:
       - "/dev/snd:/dev/snd"
     volumes:
@@ -1492,17 +1663,23 @@ services:
     #security_opt:
     #  - systempaths:unconfined
     cpu_shares: 256
-    mem_limit: 16m
     memswap_limit: 16m
-    mem_reservation: 4m
+    deploy:
+      resources:
+        limits:
+          memory: 16m
+        reservations:
+          memory: 4m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     #privileged: false
-    restart: unless-stopped
 
 ########################################################################
 
 #  forked-daapd:
-#    extends:
-#      service: base-service
+#    <<: *base-service
 #    image: linuxserver/daapd
 #    init: false
 #    labels:
@@ -1544,18 +1721,24 @@ services:
 #      - daapd-front
 ##    network_mode: "host"
 #    cpu_shares: 128
-#    mem_limit: 64m
 #    memswap_limit: 96m
-#    mem_reservation: 24m
+#    deploy:
+#      resources:
+#        limits:
+#          memory: 64m
+#        reservations:
+#          memory: 24m
+#      restart_policy:
+#        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+#        delay: 5s  # (default: 0)
+#        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 #    read_only: false
-#    restart: unless-stopped
 
 ########################################################################
 
 #  # https://homebridge.io
 #  homebridge:
-#    extends:
-#      service: base-service
+#    <<: *base-service
 #    image: oznu/homebridge:latest
 #    init: true
 #    labels:
@@ -1589,69 +1772,24 @@ services:
 #      - HOMEBRIDGE_CONFIG_UI=1
 #      - HOMEBRIDGE_CONFIG_UI_PORT=8581
 #    cpu_shares: 128
-#    mem_limit: 128m
 #    memswap_limit: 192m
-#    mem_reservation: 32m
-#    restart: unless-stopped
-
-########################################################################
-
-  # https://github.com/statping/statping/wiki/Docker-Compose
-  statping:
-    extends:
-      service: base-service
-    image: statping/statping
-    init: true
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.statping-http.rule=Host(`statping.docker.localhost`)"
-      - "traefik.http.routers.statping-http.entrypoints=http"
-      - "traefik.http.routers.statping-http.middlewares=403"
-      - "traefik.http.routers.statping-https.rule=Host(`statping.docker.localhost`)"
-      - "traefik.http.routers.statping-https.entrypoints=https"
-      - "traefik.http.routers.statping-https.middlewares=std-ipwhitelist,defaultchain-https"
-      - "traefik.http.services.statping-service.loadbalancer.server.port=8080"
-    expose:
-      - "8080"
-    environment:
-      # https://github.com/statping/statping/wiki/Environment-Variables
-      # https://github.com/statping/statping/wiki/Config-with-.env-File
-      # https://github.com/statping/statping/blob/dev/utils/env.go
-      - ALLOW_REPORTS=false
-      #- DISABLE_LOGS=true
-      #- REMOVE_AFTER=2160h
-      #- CLEANUP_INTERVAL=1h
-      - DB_CONN=sqlite
-      #- DISABLE_COLORS=true
-      - LANGUAGE=en
-      #- NAME=Statping Sample Data
-      #- DESCRIPTION=This status page has sample data included
-      #- DOMAIN=http://localhost:8080
-      #- ADMIN_USER=admin
-      #- ADMIN_PASSWORD=admin
-      #- ADMIN_EMAIL=info@admin.com
-      #- API_SECRET=
-      - SAMPLE_DATA=false
-    volumes:
-      - /srv/statping:/app
-    cap_add:
-      - NET_RAW
-    networks:
-      - statping-front
-    cpu_shares: 128
-    mem_limit: 128m
-    memswap_limit: 128m
-    mem_reservation: 64m
-    read_only: true
-    restart: unless-stopped
+#    deploy:
+#      resources:
+#        limits:
+#          memory: 128m
+#        reservations:
+#          memory: 32m
+#      restart_policy:
+#        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+#        delay: 5s  # (default: 0)
+#        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
 
 ########################################################################
 
   # https://github.com/maxmind/geoipupdate/blob/master/doc/docker.md
   geoipupdate:
-    extends:
-      service: base-service
-    image: maxmindinc/geoipupdate
+    <<: *base-service
+    image: ghcr.io/maxmind/geoipupdate
     init: true
     labels:
       - "traefik.enable=false"
@@ -1664,13 +1802,22 @@ services:
       #- GEOIPUPDATE_VERBOSE=1
       - GEOIPUPDATE_CONF_FILE=/usr/share/GeoIP/GeoIP.conf
     volumes:
+      - /opt/GeoIP:/var/lib/geoipupdate
       - /srv/GeoIP:/usr/share/GeoIP
+    user: nobody
     cpu_shares: 128
-    mem_limit: 64m
     memswap_limit: 96m
-    mem_reservation: 8m
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+        reservations:
+          memory: 8m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     read_only: true
-    restart: unless-stopped
 
 ########################################################################
 
@@ -1679,19 +1826,19 @@ services:
   #   linuxserver/jellyfin	https://github.com/linuxserver/docker-jellyfin
   #   hotio/jellyfin:release	https://github.com/hotio/jellyfin/
   jellyfin:
-    extends:
-      service: base-service
+    <<: *base-service
     image: jellyfin/jellyfin
     init: true
     labels:
       # See https://jellyfin.org/docs/general/networking/traefik2.html
       - "traefik.enable=false"
+      #- "traefik.docker.network=default"
       - "traefik.http.routers.jellyfin-http.rule=Host(`jellyfin.docker.localhost`)"
       - "traefik.http.routers.jellyfin-http.entrypoints=http"
       - "traefik.http.routers.jellyfin-http.middlewares=403"
       - "traefik.http.routers.jellyfin-https.rule=Host(`jellyfin.docker.localhost`)"
       - "traefik.http.routers.jellyfin-https.entrypoints=https"
-      - "traefik.http.routers.jellyfin-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.routers.jellyfin-https.middlewares=std-ipwhitelist,defaultchain-https,no-robots"
       - "traefik.http.services.jellyfin-service.loadbalancer.server.port=8096"
     user: nobody:nogroup
     group_add: # by id as these may not exist within the container. Needed to provide permissions to the VAAPI Devices
@@ -1710,6 +1857,7 @@ services:
       - "1900:1900/udp"
       - "7359:7359/udp"
     #devices: #optional
+      # https://jellyfin.org/docs/general/administration/hardware-acceleration.html
       # Intel QuickSync GPU for hardware accelerated video encoding (vaapi)
       #- /dev/dri:/dev/dri
       # tuner
@@ -1732,7 +1880,7 @@ services:
       - JELLYFIN_LOG_DIR=/log
       #- JELLYFIN_MEDIA_DIR=/media
       #- JELLYFIN_NOWEBCONTENT=false
-      - JELLYFIN_PublishedServerUrl=192.0.2.1
+      - JELLYFIN_PublishedServerUrl=http://192.0.2.1
     volumes:
       - /opt/jellyfin:/config
       - /srv/jellyfin/cache:/cache
@@ -1740,29 +1888,337 @@ services:
       #- /srv/jellyfin/media:/media:ro
       # Raspberry Pi OpenMAX libs
       #- /opt/vc/lib:/opt/vc/lib:ro
-    #healthcheck:
-    #  test: ["CMD", "pgrep", "jellyfin"]
-    #  interval: 240s
-    #  timeout: 5s
-    #  retries: 1
-    #  start_period: 10s
     #networks:
     #  - jellyfin-front
     # Network mode of 'host' exposes the ports on the host. This is needed for DLNA access or HDHomeRun.
 #    network_mode: "host"
     cpu_shares: 256
-    mem_limit: 256m
     memswap_limit: 384m
-    mem_reservation: 96m
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+        reservations:
+          memory: 96m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
+    read_only: false
+
+########################################################################
+
+  # https://github.com/plexinc/pms-docker
+  plex:
+    #image: plexinc/pms-docker:latest
+    build:
+      context: pms-docker
+      dockerfile: Dockerfile.armv7
+      args:
+        # https://hub.docker.com/r/plexinc/pms-docker/tags
+        - TAG=1.31.3.6868-28fc46b27
+        #- URL=https://downloads.plex.tv/plex-media-server-new/1.31.3.6868-28fc46b27/debian/plexmediaserver_1.31.3.6868-28fc46b27_armhf.deb
+    init: false
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=pms-front"
+      - "traefik.http.routers.pms-http.rule=Host(`plex.docker.localhost`)"
+      - "traefik.http.routers.pms-http.entrypoints=http"
+      - "traefik.http.routers.pms-http.middlewares=403"
+      - "traefik.http.routers.pms-http.service=pms-web"
+      - "traefik.http.routers.pms-https.rule=Host(`plex.docker.localhost`)"
+      - "traefik.http.routers.pms-https.entrypoints=https"
+      - "traefik.http.routers.pms-https.middlewares=std-ipwhitelist,defaultchain-https,no-robots"
+      - "traefik.http.routers.pms-https.service=pms-web"
+      - "traefik.http.services.pms-web.loadbalancer.server.port=32400"
+    expose:
+      # https://support.plex.tv/hc/en-us/articles/201543147-What-network-ports-do-I-need-to-allow-through-my-firewall
+      # access to the Plex Media Server (required)
+      - "32400"
+      # controlling Plex for Roku via Plex Companion
+      - "8324"
+      # access to the Plex DLNA Server
+      - "32469"
+      # access to the Plex DLNA Server
+      - "1900/udp"
+      # current GDM network discovery
+      - "32410/udp"
+      - "32412/udp"
+      - "32413/udp"
+      - "32414/udp"
+      # older Bonjour/Avahi network discovery
+      - "5353/udp"
+    #devices:
+      # Intel QuickSync GPU for hardware accelerated video encoding (vaapi)
+      #- /dev/dri:/dev/dri
+      #- /dev/dvb:/dev/dvb
+    hostname: PlexServer
+    environment:
+      - HOSTNAME=PlexServer
+      - TZ=Europe/Paris
+      #- PLEX_CLAIM=<claimToken>
+      - ADVERTISE_IP=https://plex.docker.localhost:443/
+      #- PLEX_UID=1000
+      #- PLEX_GID=1000
+      - CHANGE_CONFIG_DIR_OWNERSHIP=false
+      - ALLOWED_NETWORKS=192.168.0.0/255.255.255.0,172.16.0.0/255.240.0.0,10.0.0.0/255.0.0.0
+      #- DEBUG=false
+    #depends_on:
+    #  email-relay:
+    #    condition: service_started
+#    tmpfs:
+#      # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
+#      - /run:rw,nosuid,noexec,relatime,size=65536k,mode=755
+#      - /run/s6:rw,relatime,size=65536k,mode=755
+#      - /run/lock:rw,nosuid,nodev,noexec,relatime,size=5120k,mode=1777
+#      #- /var/log
+#      #- /var/cache
+#      #- /var/tmp
+#      - /tmp:rw,nosuid,nodev,noexec,size=131072k,mode=1777,strictatime
+#      # required for syslog
+#      #- /var/lib/syslog-ng:rw,nosuid,nodev,noexec,relatime,size=16k
+#      # required for logrotate
+#      - /var/lib/logrotate:rw,nosuid,nodev,noexec,relatime,size=16k
+    volumes:
+      - /opt/plex:/config
+      #- /tmp/plex:/transcode
+      #- /srv/plex:/data:ro
+    #networks:
+    #  - pms-front
+      #- pms-back
+      #- pms-back-internal
+    cpu_shares: 768
+    memswap_limit: 512m
+    # 1st run: set read_only to false
     read_only: false
     restart: unless-stopped
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '1.0'  # number of cores
+          memory: 384m
+        reservations:
+          cpus: '0.1'  # number of cores
+          memory: 128m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        #max_attempts: 3  # (default: never give up)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
+
+########################################################################
+
+  kavita:
+    <<: *base-service
+    image: kizaing/kavita
+    init: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kavita-http.rule=Host(`kavita.example.net`)"
+      - "traefik.http.routers.kavita-http.entrypoints=http"
+      - "traefik.http.routers.kavita-http.middlewares=defaultchain-http"
+      - "traefik.http.routers.kavita-https.rule=Host(`kavita.example.net`)"
+      - "traefik.http.routers.kavita-https.entrypoints=https"
+      - "traefik.http.routers.kavita-https.middlewares=std-ipwhitelist,defaultchain-https"
+      - "traefik.http.services.kavita-service.loadbalancer.server.port=5000"
+    expose:
+      - "5000"
+    environment:
+      - TZ=Europe/Paris
+    depends_on:
+      kavita-email:
+        condition: service_started
+    volumes:
+      - /opt/kavita:/kavita/config
+      #- /srv/http-proxy/manga:/srv/manga:ro
+      #- /srv/http-proxy/comics:/srv/comics:ro
+      #- /srv/http-proxy/light-novels:/srv/light-novels:ro
+      - /srv/http-proxy/ebooks:/srv/ebooks:ro
+    networks:
+      - kavita-front
+      - kavita-back
+    memswap_limit: 512m
+    deploy:
+      resources:
+        limits:
+          memory: 384m
+        reservations:
+          memory: 256m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
+    read_only: false
+
+  kavita-email:
+    <<: *base-service
+    image: kizaing/kavitaemail
+    init: true
+    labels:
+      - "traefik.enable=false"
+    expose:
+      - "5003"
+    environment:
+      - DOTNET_CLI_TELEMETRY_OPTOUT=1
+    volumes:
+      - /opt/kavita-email:/app/config
+    networks:
+      kavita-back:
+        aliases:
+          - stats.kavitareader.com
+          - email.kavitareader.com
+    memswap_limit: 192m
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+        reservations:
+          memory: 32m
+      restart_policy:
+        condition: unless-stopped  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
+    read_only: false
+
+########################################################################
+
+  # https://rclone.org/commands/rclone_serve_restic/
+  base-rclone-restic-server:
+    image: rclone/rclone:${RCLONE_VERSION:-1.63}
+    init: true
+    labels:
+      - "traefik.enable=false"
+      #- "traefik.http.routers.rclone-restic-http.rule=Host(`restic.example.net`)"
+      #- "traefik.http.routers.rclone-restic-http.entrypoints=http"
+      #- "traefik.http.routers.rclone-restic-http.middlewares=403"
+      #- "traefik.http.routers.rclone-restic-https.rule=Host(`restic.example.net`)"
+      #- "traefik.http.routers.rclone-restic-https.entrypoints=https"
+      #- "traefik.http.routers.rclone-restic-https.middlewares=std-ipwhitelist,defaultchain-https"
+      #- "traefik.http.services.rclone-restic-service.loadbalancer.server.port=8080"
+    expose:
+      - "8080"
+    environment:
+      - RCLONE_ADDR=0.0.0.0:8080
+      - RCLONE_HTPASSWD=/config/htpasswd
+      - RCLONE_PRIVATE_REPOS=true
+      - RCLONE_APPEND_ONLY=true
+      - RCLONE_QUIET=true
+      - RCLONE_DSCP=BE
+      - RCLONE_CUTOFF_MODE=soft
+      - RCLONE_FAST_LIST=true
+      - RCLONE_METADATA=true
+      - RCLONE_LINKS=true
+      #- RCLONE_CHECKSUM=true
+      #- RCLONE_TRACK_RENAMES=true
+      #- RCLONE_TRACK_RENAMES_STRATEGY=size,hash,leaf,modtime
+      - RCLONE_ONEDRIVE_NO_VERSIONS=true
+      - RCLONE_COMPRESS_LEVEL=1
+      - RCLONE_BWLIMIT=40M
+    user: rclone
+    # add your remote:path to serve at the end of following command!
+    command: [ "serve", "restic" ]
+    #command: [ "cleanup" ]
+    volumes:
+      - /opt/rclone/config:/config/rclone
+      - /opt/rclone/htpasswd:/config/htpasswd:ro
+    tmpfs:
+      # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
+      - /tmp:rw,nosuid,nodev,noexec,relatime,size=65536k
+      - /home/rclone/.cache/rclone:rw,nosuid,nodev,noexec,relatime,size=65536k
+    networks:
+      - rclone-front
+    cpu_shares: 512
+    memswap_limit: 512m
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'  # number of cores
+          memory: 384m
+        reservations:
+          memory: 64m
+      restart_policy:
+        condition: always  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 10s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
+    read_only: true
+
+  # https://restic.net/
+  # On-demand container: external scheduling
+  base-restic-client:
+    image: restic/restic:${RESTIC_VERSION:-0.16.0}
+    init: true
+    labels:
+      - "traefik.enable=false"
+    environment:
+      - GOMAXPROCS=2
+      - RESTIC_PACK_SIZE=32M
+      - RESTIC_CACHE_DIR=/srv/cache/restic
+      - TMPDIR=/tmp
+      #- RESTIC_REPOSITORY=rest:https://user:pass@restic.example.net/my-server/
+      - RESTIC_PASSWORD_FILE=/opt/restic/password
+      #- RESTIC_PROGRESS_FPS=0.016666
+    user: root
+    # fixed hostname to enable restic to find parent snapshot
+    hostname: "restic-client"
+    command: [ "backup", "-o", "rest.connections=2", "--no-scan", "--ignore-inode", "--exclude-caches", "--exclude", "**/.zfs", "--exclude", "**/.cache/**", "/mnt/server" ]
+    #command: [ "unlock" ]
+    #command: [ "forget", "--group-by", "paths", "--keep-within", "15d", "--max-unused", "15%", "--prune", "--cleanup-cache" ]
+    #command: [ "check" ]
+    #command: [ "cache", "--cleanup" ]
+    #command: [ "snapshots" ]
+    cap_add:
+      - DAC_READ_SEARCH
+    volumes:
+      - /opt/restic:/opt/restic:ro
+      - /srv/restic-cache:/srv/cache/restic
+      - /home:/mnt/server/home:ro
+      - /root:/mnt/server/root:ro
+      - /usr/local:/mnt/server/usr/local:ro
+      - /etc:/mnt/server/etc:ro
+      - /opt:/mnt/server/opt:ro
+      - /srv:/mnt/server/srv:ro
+    tmpfs:
+      # default tmpfs opts: rw,nosuid,nodev,noexec,relatime,size=65536k
+      - /tmp:rw,nosuid,nodev,noexec,relatime,size=131072k
+    #networks:
+    #  - restic-back-internal
+    cpu_shares: 512
+    memswap_limit: 512m
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'  # number of cores
+          memory: 384m
+        reservations:
+          memory: 64m
+      restart_policy:
+        condition: no  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+    read_only: true
+
+  # usage: docker compose run --rm -e RESTIC_REPOSITORY=... base-restic-mount
+  base-restic-mount:
+    extends:
+      service: base-restic-client
+    command: [ "mount", "-o", "rest.connections=2", "/mnt/restic" ]
+    cap_add:
+      - SYS_ADMIN
+      - MKNOD
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - /mnt/restic:/mnt/restic:shared
+      #- /etc/fuse.conf:/etc/fuse.conf:ro
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+    devices:
+      - /dev/fuse
 
 ########################################################################
 
   # https://docs.newrelic.com/docs/release-notes/infrastructure-release-notes/infrastructure-agent-release-notes/
   newrelic-infrastructure:
-    extends:
-      service: base-service
+    <<: *base-service
     image: newrelic/infrastructure
     init: false
     labels:
@@ -1793,15 +2249,21 @@ services:
     expose:
       - "8001"
     cpu_shares: 256
-    mem_limit: 64m
     memswap_limit: 96m
-    mem_reservation: 32m
+    deploy:
+      resources:
+        limits:
+          memory: 64m
+        reservations:
+          memory: 32m
+      restart_policy:
+        condition: always  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     privileged: true
-    restart: always
 
   newrelic-php-daemon:
-    extends:
-      service: base-service
+    <<: *base-service
     image: newrelic/php-daemon
     init: true
     labels:
@@ -1828,11 +2290,18 @@ services:
     expose:
       - "31339"
     cpu_shares: 256
-    mem_limit: 48m
     memswap_limit: 64m
-    mem_reservation: 24m
+    deploy:
+      resources:
+        limits:
+          memory: 48m
+        reservations:
+          memory: 24m
+      restart_policy:
+        condition: always  # no, on-failure[:max-retries], always, unless-stopped (default: no)
+        delay: 5s  # (default: 0)
+        window: 60s  # How long to wait before deciding if a restart has succeeded (default: decide immediately)
     #privileged: false
-    restart: always
 
 ########################################################################
 ########################################################################
@@ -1877,6 +2346,14 @@ networks:
     ipam:
       config:
         - subnet: 172.30.1.0/24
+  kavita-front:
+    ipam:
+      config:
+        - subnet: 172.31.2.0/24
+  kavita-back:
+    ipam:
+      config:
+        - subnet: 172.30.2.0/24
   nextcloud-front:
     ipam:
       config:
@@ -1971,10 +2448,10 @@ networks:
     ipam:
       config:
         - subnet: 172.31.15.0/24
-  statping-front:
+  rclone-front:
     ipam:
       config:
-        - subnet: 172.31.16.0/24
+        - subnet: 172.31.17.0/24
   vpn:
     ipam:
       config:

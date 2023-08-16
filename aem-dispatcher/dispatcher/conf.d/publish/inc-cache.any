@@ -53,6 +53,9 @@
           }
         /0044 { /type "deny" /glob "/libs/granite/security/currentuser.json" }  # data must not be cached
         /0045 { /type "deny" /glob "/libs/granite/dispatcher/content/vanityUrls.html" }  # data must not be cached
+        /0090 { /type "deny" /glob "/content/screens/svc.channels.json" }
+        /0091 { /type "deny" /glob "/content/screens/svc/channels.channels.json" }
+        /0092 { /type "deny" /glob "/screens/channels.json" }
         # https://helpx.adobe.com/experience-manager/dispatcher/using/configuring-dispatcher-to-prevent-csrf.html
         /0999 { /glob "/libs/granite/csrf/token.json" /type "deny" }
         }
@@ -83,6 +86,11 @@
         /0003
           {
           /glob "*/analytics.sitecatalyst.js"
+          /type "allow"
+          }
+        /0099
+          {
+          /glob "/content/forms/**/*.html"
           /type "allow"
           }
         }

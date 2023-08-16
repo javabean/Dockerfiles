@@ -1,9 +1,9 @@
-FROM php:8.0-apache
+FROM php:8.1-apache
 LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 ############### FIXME  change depending on base OS / version! ###############
 ARG MYSQL_VERSION=8.0
-ARG NEWRELIC_PHP_AGENT_URL=https://download.newrelic.com/php_agent/release/newrelic-php5-10.2.0.314-linux.tar.gz
+ARG NEWRELIC_PHP_AGENT_URL=https://download.newrelic.com/php_agent/release/newrelic-php5-10.11.0.3-linux.tar.gz
 ARG NEWRELIC_LICENSE_KEY=
 
 

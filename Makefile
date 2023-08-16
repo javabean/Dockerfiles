@@ -10,7 +10,7 @@ unexport IMG_VERSION = 0.11.0.1
 include .env
 #export $(shell sed 's/=.*//' .env)
 
-DOCKER_APT_VERSION = 20.10.*
+DOCKER_APT_VERSION = 23.0.*
 # url fragment
 DOCKER_COMPOSE_VERSION = 1.29.2
 
@@ -35,7 +35,7 @@ APT_MIRROR ?= fr.archive.ubuntu.com
 # END set versions here
 ########################################################################
 
-docker_compose_build = http-proxy http-static tomcat dovecot email-relay mysql-backup nextcloud wordpress tiddlywiki openvpn web-accelerator transmission tt-rss sslh web-ssh
+docker_compose_build = http-proxy http-static tomcat dovecot mysql-backup nextcloud wordpress tiddlywiki openvpn web-accelerator transmission tt-rss sslh web-ssh
 .PHONY: $(docker_compose_build)
 
 
@@ -52,17 +52,17 @@ help: ## Display this help menu
 
 .PHONY: pull
 pull: ## pull base Docker images from Docker Hub
-	#docker-compose pull
+	#docker compose pull
 	#docker image pull memcached:1.6-alpine
 	docker image pull redis:6-alpine
 	#docker image pull portainer/portainer-ce
 	#docker image pull certbot/certbot
 	#docker image pull traefik:$(TRAEFIK_VERSION)
-	docker image pull docker:20.10
+	docker image pull docker:23.0
 	#docker image pull tomat:9-jdk11-openjdk-slim
 	#docker image pull nextcloud:production-apache
-	docker image pull node:lts-alpine
-	docker image pull python:3.8-slim
+	#docker image pull node:lts-alpine
+	#docker image pull python:3.11-slim
 
 .PHONY: build
 build: ## build all Docker images
@@ -82,18 +82,17 @@ httpd-base: baseimage
 .PHONY: php8-apache
 php8-apache: ## build Docker base PHP 8 image (Apache httpd-based) with MySQL client
 php8-apache:
-	docker image pull php:8.0-apache
+	docker image pull php:8.1-apache
 	docker image build --build-arg MYSQL_VERSION=$(MYSQL_VERSION) --build-arg NEWRELIC_LICENSE_KEY=$(NEWRELIC_LICENSE_KEY) -t cedrik/php8-apache --rm php8-apache
 
 
-dovecot email-relay web-accelerator transmission: baseimage
+dovecot web-accelerator transmission: baseimage
 http-proxy http-static: httpd-base
 tt-rss: php8-apache
-wordpress: email-relay
 openvpn: web-accelerator
 
 $(docker_compose_build):
-	docker-compose build $@
+	docker compose build $@
 
 ########################################################################
 
@@ -127,7 +126,7 @@ health:
 .PHONY: clean
 clean: ## remove stopped containers, unused volumes, untagged images, unused networks
 clean:
-	# See also Docker 1.13 `docker system df [-v]` / `docker system prune [--volumes] -f` == `docker container prune -f && docker volume prune -f && docker image prune -f && docker network prune -f`
+	# See also Docker 1.13 `docker system df [-v]` / `docker system prune [--volumes] -f` == `docker container prune -f && docker volume prune -f && docker image prune -f && docker network prune -f && docker builder prune -f`
 	# remove stopped containers
 	# WARNING: be aware if you use data-only container, it will remove them also if you set "--volumes=true"
 	docker container ls --no-trunc -a -q -f "status=exited" | xargs --no-run-if-empty docker container rm --volumes=false
@@ -170,7 +169,6 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	/opt/mysql/docker-entrypoint-initdb.d /opt/mysql/healthcheck.cnf /opt/mysql/mysql-init-complete \
 	  /srv/mysql/data /srv/mysql/backup           /srv/logs/mysql/mysql \
 	/opt/dovecot           /srv/dovecot           /srv/logs/dovecot \
-	/opt/email-relay/dkim/keys                    /srv/logs/email-relay \
       /srv/tiddlywiki  \
       /srv/wordpress/wp-content  /srv/wordpress/wp-includes-languages \
                                                   /srv/logs/wordpress/apache2 \
@@ -196,8 +194,6 @@ mkdirs: ## create required directories in  /opt  and  /srv
 	# usd:gid 101:103 == dovecot
 	sudo chown -R 101:103 /opt/dovecot
 	sudo chown -R mail:mail /srv/dovecot
-	#sudo chown -R opendkim:postfix /opt/email-relay
-	sudo chown -R 103:104 /opt/email-relay
 	sudo chown 101:102 /srv/transmission
 	sudo chown 100:101 /srv/redis*
 	sudo touch /opt/icecast/htpasswd && sudo chown 100:101 /opt/icecast/htpasswd
@@ -215,9 +211,10 @@ install-docker: ## install Docker; this target also works for a Raspberry Pi
 	if [ ! -f /etc/apt/sources.list.d/docker.list ]; then \
 		curl -fsSL https://get.docker.com/ | sudo sh; \
 		sudo usermod -aG docker `whoami`; \
-		sudo apt-get install nfs-common; \
+		sudo apt-get install uidmap nfs-common; \
+		sudo setcap cap_net_bind_service=ep $(which rootlesskit); \
 	else \
-		sudo apt-get install docker-ce=$(DOCKER_APT_VERSION); \
+		sudo apt-get install docker-ce=$(DOCKER_APT_VERSION) docker-ce-cli=$(DOCKER_APT_VERSION) docker-buildx-plugin=$(DOCKER_APT_VERSION); \
 	fi
 
 .PHONY: install-docker-compose
@@ -232,7 +229,7 @@ install-docker-compose: ## install docker-compose
 	sudo touch -r /usr/local/bin/docker-compose /etc/bash_completion.d/docker-compose
 	# v2
 	for d in ("$HOME/.docker/cli-plugins" "/usr/local/lib/docker/cli-plugins" "/usr/local/libexec/docker/cli-plugins" "/usr/lib/docker/cli-plugins" "/usr/libexec/docker/cli-plugins"); do if [ -d "$d" ]; then sudo curl -fsSLR -o "$d"/docker-compose https://github.com/docker/compose/releases/download/$(DOCKER_COMPOSE_VERSION)/docker-compose-`uname -s`-`uname -m`; sudo chmod +x "$d"/docker-compose; fi done
-	# or use: apt-get install docker-compose-plugin
+	# or use: apt-get install docker-compose-plugin=$(DOCKER_APT_VERSION)
 
 .PHONY: install
 install: ## install docker + docker-compose & create required directories (see 'mkdirs')

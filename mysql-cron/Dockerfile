@@ -1,5 +1,5 @@
 #FROM alpine:latest
-FROM docker:20.10
+FROM docker:23.0
 LABEL org.opencontainers.image.authors="Cédrik LIME"
 
 RUN apk add --no-cache --virtual .run-deps curl logrotate dash \

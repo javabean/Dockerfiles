@@ -1,7 +1,7 @@
-ARG DOCKER_FROM_VERSION=9-jdk11-openjdk-slim
+ARG DOCKER_FROM_VERSION=9-jdk11
 
 FROM tomcat:${DOCKER_FROM_VERSION}
-ARG DOCKER_FROM_VERSION=9-jdk11-openjdk-slim
+ARG DOCKER_FROM_VERSION=9-jdk11
 LABEL org.opencontainers.image.title="Tomcat" \
       org.opencontainers.image.version="${DOCKER_FROM_VERSION}" \
       org.opencontainers.image.authors="Cédrik LIME"
@@ -30,7 +30,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
 #	fi; \
 #	apt-get update; DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends locales; rm -rf /var/lib/apt/lists/*; \
 #	localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
-#ENV LANG en_US.utf8
+#ENV LANG=en_US.utf8
 
 RUN rm -rf /usr/local/tomcat/webapps/docs /usr/local/tomcat/webapps/examples \
 	&& mkdir -p /usr/local/tomcat/lib/org/apache/catalina/util && echo "server.info=Apache Tomcat/42.x" > /usr/local/tomcat/lib/org/apache/catalina/util/ServerInfo.properties \

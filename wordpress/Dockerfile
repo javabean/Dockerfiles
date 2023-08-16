@@ -1,6 +1,6 @@
-ARG DOCKER_FROM_TAG=5.9.3-apache
+ARG DOCKER_FROM_TAG=6.1.1-apache
 FROM wordpress:${DOCKER_FROM_TAG}
-ARG DOCKER_FROM_TAG=5.9.3-apache
+ARG DOCKER_FROM_TAG=6.1.1-apache
 LABEL org.opencontainers.image.title="WordPress" \
       org.opencontainers.image.version="${DOCKER_FROM_TAG}" \
       org.opencontainers.image.authors="Cédrik LIME"
@@ -11,7 +11,7 @@ LABEL org.opencontainers.image.title="WordPress" \
 # https://wordpress.org/support/article/hardening-wordpress/
 
 
-ARG NEWRELIC_PHP_AGENT_URL=https://download.newrelic.com/php_agent/release/newrelic-php5-10.2.0.314-linux.tar.gz
+ARG NEWRELIC_PHP_AGENT_URL=https://download.newrelic.com/php_agent/release/newrelic-php5-10.11.0.3-linux.tar.gz
 ARG NEWRELIC_LICENSE_KEY=
 ARG NEWRELIC_APPLICATION_NAME=Wordpress
 
@@ -116,7 +116,8 @@ RUN echo "newrelic.logfile=/dev/null" > ${PHP_INI_DIR}/conf.d/zz_newrelic_tmp.in
     opcache pcntl \
   && rm -f ${PHP_INI_DIR}/conf.d/zz_newrelic_tmp.ini \
 # bash is needed for 'wp shell'
-  && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests bash imagemagick ghostscript \
+# less is needed for 'wp help'
+  && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests bash less imagemagick ghostscript \
   && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
   && docker-php-source delete \
   && rm -f ${PHP_INI_DIR}/conf.d/opcache-recommended.ini \
